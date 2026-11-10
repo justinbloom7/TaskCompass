@@ -45,6 +45,35 @@ and dialogs/editors for tasks, objectives, projects and planning. Guided quarter
 sprint, weekly and daily planning workflows belong in the desktop feature set.
 Sorting/filtering a view must remain separate from changing stored manual order.
 
+### Organization and alternate desktop views
+
+Use the confirmed single-parent organization in [DataModel.md](DataModel.md):
+projects belong to one pillar/subpillar or project; objectives belong to one pillar/
+subpillar or project and have no objective children. Tasks belong to one objective,
+one direct project without an objective, or neither. Derive objective-task context
+from its owner rather than storing conflicting task pillar/project links.
+
+Provide three presentations of the same IDs/records:
+
+- **Project-oriented:** pillars and nested subpillars, projects/subprojects under
+  their owners, objectives under their owning pillar/project; access direct project
+  tasks as well as objective tasks.
+- **Objective-oriented:** objectives with their pillar/project paths and tasks.
+  This is an alternate query/presentation, not new objectives or another ownership tree.
+- **Sprint-oriented:** objectives selected through PeriodObjective and their tasks.
+  Selection can reuse an objective across sprints without moving or copying it.
+
+For example, TaskCompass → Complete desktop prototype remains the organizational
+path whether November 2026, December 2026 or neither sprint selects the objective.
+Removing a selection affects only that link; allocations and work history remain
+separate. Reorganizing a parent changes current context, not task scheduling or
+completion. No unfinished work rolls forward automatically.
+
+The earlier many-to-many project/objective, task/objective and explicit pillar-link
+proposals are superseded; no confirmed requirement requires retaining them. The
+prototype uses only static path labels/filter tags to demonstrate navigation. This
+does not create production relationship enforcement or a shared domain model.
+
 The native iPhone application will have a separate UI and potentially reduced scope.
 Candidate workflows are quick capture, today's scheduled tasks, completion, Done
 for Today, and basic task review/editing, with offline operation and eventual sync.
@@ -134,7 +163,8 @@ is separate from domain status.
 
 Suggested *future* source boundaries: `domain/`, `application/`,
 `infrastructure/storage/`, `infrastructure/sync/`, `desktop/`, future `mobile/`, `migrations/`,
-and `tests/`. These folders are not created until implementation needs them.
+and `tests/`. Phase 0.1 creates only desktop fixture/model/dialog code, an isolated
+storage diagnostic and focused tests; no shared domain/application core is built.
 VIM plus shell commands is the baseline workflow; build/run/test instructions must
 not require editor extensions.
 
@@ -142,8 +172,10 @@ not require editor extensions.
 
 - **Linux:** develop on CentOS Stream 9 using VIM, CMake and command-line tools.
   Validate C++20 compiler support, CMake/Qt 6 Widgets versions, MariaDB connector
-  and QMYSQL plugin availability/compatibility on the actual host. No toolchain
-  validation or dependency installation has been performed in this revision.
+  and QMYSQL plugin availability/compatibility on the actual host. Phase 0.1 now
+  builds with GCC 11.5/CMake 3.31.8/Qt 6.10.3; QMYSQL loads with Connector/C 3.2.6.
+  See [Building.md](Building.md) and [Roadmap.md](Roadmap.md) for actual results
+  and pending live database/Windows validation.
 - **Windows:** build and package on Windows or a Windows VM/runner, as explicitly
   accepted by the user. Test the same core with Windows Qt/connector binaries;
   document whether a local MariaDB service is installed separately. Linux-to-Windows

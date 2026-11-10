@@ -1,8 +1,8 @@
 # Preliminary relational model
 
-**Proposal only.** This is a logical schema for discussion, not executable DDL or
-an instruction to create all tables in the first release. Columns and states below
-remain subject to the review decisions in Requirements.md. Table names use
+**Logical schema only; no executable DDL.** Organizational cardinalities are
+confirmed; physical representation and other proposed columns/states remain for
+review. This is not an instruction to create tables or migrations. Table names use
 PascalCase and column names camelCase; no SQL snake_case exception is assumed.
 
 ## Domain relationships
@@ -10,18 +10,12 @@ PascalCase and column names camelCase; no SQL snake_case exception is assumed.
 ```mermaid
 erDiagram
    Pillar o|--o{ Pillar : parent
-   Project o|--o{ Project : parent
-   Project o|--o{ Task : contains
-   Task ||--o{ TaskPillar : links
-   Pillar ||--o{ TaskPillar : links
-   Project ||--o{ ProjectPillar : links
-   Pillar ||--o{ ProjectPillar : links
-   Objective ||--o{ ObjectivePillar : links
-   Pillar ||--o{ ObjectivePillar : links
-   Project ||--o{ ProjectObjective : supports
-   Objective ||--o{ ProjectObjective : supportedBy
-   Task ||--o{ TaskObjective : supports
-   Objective ||--o{ TaskObjective : supportedBy
+   Pillar o|--o{ Project : ownsRootProject
+   Project o|--o{ Project : ownsSubproject
+   Pillar o|--o{ Objective : ownsDirectObjective
+   Project o|--o{ Objective : ownsObjective
+   Objective o|--o{ Task : ownsTask
+   Project o|--o{ Task : ownsDirectTask
    PlanningPeriod ||--o{ PeriodObjective : selects
    Objective ||--o{ PeriodObjective : selectedFor
    Task ||--o{ Allocation : plannedAs
@@ -35,11 +29,13 @@ erDiagram
    Context ||--o{ TaskContext : tags
 ```
 
-Pillar and project parent pointers form separate trees; cross-links do not combine
-these trees. Objectives start flat. A project supports zero or more objectives;
-a task can directly support objectives even without a project. Pillar navigation
-includes explicitly linked entities and visible descendants/inherited paths,
-deduplicated. Direct links stay distinguishable from derived associations.
+Projects and objectives each have exactly one organizational parent. Projects
+belong to a pillar (including a subpillar) or a parent project; objectives belong
+to a pillar or project and cannot contain objectives. Tasks have either one
+objective, one direct project, or no organizational parent. The optional diagram
+edges are alternatives constrained by the parent rules below, not permission to
+choose both parents. Sprint selection is a separate many-to-many relationship
+through PeriodObjective; a sprint is a PlanningPeriod with horizon=sprint.
 
 ## Shared conventions
 
@@ -69,18 +65,58 @@ Shared columns above are omitted from this table.
 | --- | --- | --- |
 | Dataset | name, timeZone | Local dataset root, available without login; later mapped to authenticated server ownership. |
 | Pillar | parentPillarId?, name, description, archivedAt? | Self FK; reject self-parenting and cycles; no arbitrary depth cap. |
-| Objective | title, description, lifecycleStatus, targetStartDate?, targetEndDate?, completedAt?, archivedAt? | Proposed active/onHold/completed/cancelled; date range valid when provided. No period ownership. |
-| Project | parentProjectId?, title, description, lifecycleStatus, archivedAt? | Self FK; acyclic tree; project completion rules independent of child completion pending review. |
-| Task | projectId?, title, notes, taskKind, lifecycleStatus, triageStatus, planningVisibility, dueDate?, estimatedMinutes?, completedAt?, archivedAt?, captureSource?, captureReference? | kind oneTime/continuing/recurring; proposed lifecycle active/onHold/completed/cancelled; triage inbox/organized; visibility normal/someday; estimate nonnegative. Source metadata optional, provider-neutral. |
-| TaskPillar | taskId, pillarId | Unique live pair; explicit association. |
-| ProjectPillar | projectId, pillarId | Unique live pair. |
-| ObjectivePillar | objectiveId, pillarId | Unique live pair; UI can require a pillar when organizing an objective. |
-| TaskObjective | taskId, objectiveId | Unique live pair. |
-| ProjectObjective | projectId, objectiveId | Unique live pair. |
+| Objective | pillarId?, projectId?, title, description, lifecycleStatus, targetStartDate?, targetEndDate?, completedAt?, archivedAt? | Proposed active/onHold/completed/cancelled; date range valid when provided. Exactly one of pillarId/projectId; flat, with no parent-objective reference. No period ownership. |
+| Project | pillarId?, parentProjectId?, title, description, lifecycleStatus, archivedAt? | Exactly one of pillarId/parentProjectId; acyclic parent chain terminating at a pillar; may be long-running. Project completion rules independent of child completion pending review. |
+| Task | objectiveId?, directProjectId?, title, notes, taskKind, lifecycleStatus, triageStatus, planningVisibility, dueDate?, estimatedMinutes?, completedAt?, archivedAt?, captureSource?, captureReference? | kind oneTime/continuing/recurring; proposed lifecycle active/onHold/completed/cancelled; triage inbox/organized; visibility normal/someday; estimate nonnegative. At most one of objectiveId/directProjectId; both null allowed. No stored pillarId or derived projectId. Source metadata optional, provider-neutral. |
 | Context | name, description, archivedAt? | User-defined; decide case-insensitive name uniqueness later. |
 | TaskContext | taskId, contextId | Unique live pair; contexts may overlap. |
 | TaskDependency | predecessorTaskId, successorTaskId, dependencyKind | Unique live directed pair/kind; proposed kind finishToStart; reject self-links and directed cycles. |
 | TaskRelation | firstTaskId, secondTaskId, relationKind | Non-blocking related links; canonical endpoint order for symmetric kinds; no self-links. |
+
+### Valid parent combinations and context derivation
+
+Propose separate, typed nullable foreign keys rather than a generic parentType/id
+pair: they are few and allow database foreign keys plus simple row CHECK constraints.
+The following rules are required regardless of the eventual physical representation:
+
+| Entity | Valid identifier combinations | Invalid combinations |
+| --- | --- | --- |
+| Pillar | parentPillarId null (root), or one existing parent pillar | Self-parenting or cycles |
+| Project | pillarId set and parentProjectId null; **or** pillarId null and parentProjectId set | Both set; both null; project ancestry cycles |
+| Objective | pillarId set and projectId null; **or** pillarId null and projectId set | Both set; both null; any objective-as-parent relationship |
+| Task | objectiveId set and directProjectId null; **or** objectiveId null and directProjectId set; **or** both null | Both set; any direct pillar ownership field |
+
+All referenced parents must exist in the same dataset. Enforce the project/objective
+exclusive-or and task at-most-one rules with row constraints; validate ancestor
+cycles and parent availability in atomic application operations as well. There is
+no arbitrary pillar/subproject depth cap. No TaskPillar, ProjectPillar,
+ObjectivePillar, ProjectObjective or TaskObjective association tables remain in the
+proposal. Those were earlier alternatives, not confirmed requirements requiring
+many-to-many organizational membership.
+
+- A project's effective pillar comes from its pillarId, or recursively from its
+  parent project. Its parent project chain provides its project context.
+- An objective under a project derives its pillar and project ancestry from that
+  project. An objective directly under a pillar has that pillar's ancestor path and
+  no project. Objectives never gain parents from sprint selection.
+- A task under an objective derives **all** pillar/project context from that
+  objective. Store only objectiveId for ownership; do not also store a project or
+  pillar reference. A direct-project task derives context from directProjectId.
+  A task with both references null is independent, including inbox captures.
+  Recurring occurrences derive organization from their Task template; they do not
+  acquire independent organizational parents.
+- Compute navigation paths when querying/presenting records. Any later cache must
+  be rebuildable, not an independently editable source of ownership. A parent move
+  changes current descendant context without rewriting tasks, sprint selections,
+  allocations or work history. Historical organizational-path snapshots, if ever
+  needed, require a separate decision; audit/work records are not deleted on moves.
+
+For parent removal, propose archive or reject deletion until live children are
+explicitly moved/reassigned (tasks can be made independent). Do not orphan a live
+project/objective, cascade-delete tasks or silently choose a replacement parent.
+Keep tombstoned parents for references/history; validate concurrent reparent/delete
+operations under the existing sync conflict protocol. Final archive/restore and
+subtree-delete UX remains to be reviewed.
 
 A task is unallocated when no applicable live allocation exists; it is not a task
 status. Inbox tasks can already have dates, and someday tasks can be explicitly
@@ -100,13 +136,21 @@ can still have non-blocking related links.
 | Table | Proposed additional columns | Relationships / constraints |
 | --- | --- | --- |
 | PlanningPeriod | horizon, startDate, endDateExclusive, label, timeZone | horizon quarter/sprint/week/day; start < end; day exactly one local calendar date. Proposed unique live horizon/bounds within dataset, one timeline per horizon initially. |
-| PeriodObjective | periodId, objectiveId, priorityLabel?, manualOrder? | Unique live period/objective; selection has no effect on objective lifecycle; priority label vocabulary undecided. |
+| PeriodObjective | periodId, objectiveId, priorityLabel?, manualOrder? | Unique live period/objective; many-to-many selection, including sprint periods. Selection/removal changes neither objective ownership/lifecycle nor tasks; priority vocabulary undecided. |
 | Allocation | taskId, occurrenceId?, periodId, allocationStatus, priorityLabel?, manualOrder?, plannedMinutes?, replacesAllocationId? | Status planned/doneForPeriod/cancelled/rescheduled; minutes nonnegative. For recurring work occurrenceId required; otherwise null. Same-task occurrence FK required. |
 | WorkEntry | taskId, occurrenceId?, allocationId?, workDate, timeZone, recordedAt, startedAt?, endedAt?, durationMinutes?, note, outcome, voidedAt? | outcome progress/doneForToday/completed; timestamps/duration optional and validated; linked allocation must target same task/occurrence. Corrections preserve original via void/new entry. |
 | PlanningSession | periodId, wizardKind, currentStep, sessionStatus, startedAt, finishedAt?, draftVersion, draftData | Resumable draft/finished/abandoned; draftData is versioned draft intent, not authoritative domain state. Device-local initially; exclude from domain sync until cross-device session requirements are known. |
 | PlanningPreference | sprintIntervalUnit, sprintIntervalCount, sprintAnchorDate, weekStartsOn, calendarTimeZone, defaultDailyCapacityMinutes? | One live row per dataset; defaults proposed month/1 with calendar-month anchor. Preference changes affect new periods only. |
 | ProtectedDayPreference | weekday, timeZone, advisoryCapacityMinutes?, note, enabled | Advisory only. |
 | ProtectedDayPillar | preferenceId, pillarId | Unique live pair; expresses preferred responsibilities, not access rules. |
+
+Objective selection and task allocation remain separate: selecting an objective
+for a sprint does not automatically schedule its tasks. An objective may be selected
+for November 2026 and December 2026 while remaining under the TaskCompass project.
+Removing one PeriodObjective row tombstones only that selection; it does not delete
+the objective/tasks or cancel their allocations. No automatic unfinished-work rollover
+occurs. Quarterly/weekly/daily objective selection remains supported by the generic
+PeriodObjective table where the planning workflow needs it.
 
 An allocation references one concrete PlanningPeriod; a daily period supplies the
 planned date. A task can have quarterly and sprint commitments and several daily
@@ -212,7 +256,7 @@ Outbox acknowledgment never deletes newer local revisions. Sync applies incoming
 changes without creating outbound echoes. Central server and client infrastructure
 schemas differ; do not replicate migration or device-state records as domain rows.
 
-Proposed indexes: parent pointers; all association endpoints; task lifecycle/project/
+Proposed indexes: parent pointers; all association endpoints; task lifecycle/objective/directProject/
 visibility; allocation period/status and task/occurrence; work target/date; occurrence
 natural key; pending outbox order; tombstone retention scans. Daily backlog queries
 should use indexed period dates and allocation status. Verify real query plans

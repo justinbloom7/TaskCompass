@@ -80,3 +80,17 @@ All six TaskCompass documents were reviewed for this UI revision. No UI dependen
 or inconsistency requiring a relational-model change was found; DataModel.md is
 unchanged. Storage and synchronization design remain unchanged. Checkbook inspection
 findings above are unchanged; this revision did not access or modify that project.
+
+## Phase 0.1 environment inspection and prototype
+
+On 2026-11-10, GCC 11.5.0, CMake 3.31.8, Ninja 1.10.2, MariaDB 10.5.29 packages and
+Connector/C 3.2.6 runtime were present. Qt 6 development/QMYSQL and connector headers
+were initially missing; the Qt 5 mysql plugin was not usable by the new Qt 6 build.
+After an authentication-blocked sudo attempt, the user confirmed installation of
+Qt 6.10.3 development/QMYSQL packages and Connector/C 3.2.6 headers. The prototype
+now compiles; focused tests and offscreen/actual-display startup pass. Live isolated
+MariaDB connectivity and Windows validation remain pending. See
+[Building.md](Building.md) and [Roadmap.md](Roadmap.md) for reproducible results.
+This iteration did not connect to, run, inspect configuration from or modify
+eEnvelopes. The prototype's Qt fixture types make no decision about the future
+shared C++ domain's use of standard-library versus Qt Core value types.

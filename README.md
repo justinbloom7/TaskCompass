@@ -3,10 +3,14 @@
 A traditional desktop task manager organized around responsibilities, objectives,
 projects, and guided planning at quarterly, sprint, weekly, and daily horizons.
 
-**Status: architecture review.** This repository contains planning documents only.
-No application, database schema, dependencies, or synchronization service has been
-implemented. C++20 with Qt 6 Widgets is the preferred desktop framework; schema
-and remaining architecture proposals await review.
+**Status: Phase 0.1 technical prototype, partially validated.** The C++20/Qt 6
+Widgets desktop runs with disposable in-memory samples and an optional, separate
+MariaDB connectivity diagnostic. No TaskCompass domain system, task persistence,
+schema, migrations or synchronization service has been implemented. Windows and
+live database validation remain pending; architecture/schema review continues.
+
+See [Building.md](docs/Building.md) for prerequisites, build/run/test commands,
+optional QMYSQL diagnostics, Windows instructions and validation limitations.
 
 Read in this order:
 
@@ -15,6 +19,12 @@ Read in this order:
 3. [Preliminary relational model](docs/DataModel.md)
 4. [Phased implementation roadmap](docs/Roadmap.md)
 5. [Repository inspection and checkbook reuse findings](docs/Inspection.md)
+
+Organization uses nested pillars and projects, with flat objectives owned by one
+pillar or project. Tasks belong to one objective, directly to one project, or remain
+independent. Objective tasks derive their context from the objective. Sprint
+selection is independent of ownership; project-, objective- and sprint-oriented
+views reference the same records. See the [logical model](docs/DataModel.md).
 
 Development targets CentOS Stream 9 with a terminal/VIM workflow. Offline desktop
 use comes first, with MariaDB on Linux and Windows builds on Windows. A native

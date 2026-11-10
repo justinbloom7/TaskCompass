@@ -14,10 +14,12 @@ influence the design; they need not ship in the first usable release.
 | Platforms | Offline desktop first on CentOS Stream 9; Windows executable builds on Windows/VM are acceptable; native iPhone app later, possible Android. |
 | Storage/deployment | MariaDB on Linux, like eEnvelopes; local database operation with a path to self-hosted or managed online storage. Mobile must still work offline. |
 | Internet service and sync | Native phone connects over the internet to a TaskCompass service hosted on Linux or Windows. Phone-local and service-side databases synchronize changes in both directions, including offline edits after reconnection. |
-| Pillars | Editable, relatively permanent responsibilities; nested without an arbitrary application depth cap; tasks, projects, and objectives can be associated and viewed through the hierarchy. |
-| Objectives | Temporary goals lasting weeks to years; reusable across planning periods; selecting a sprint priority does not change the objective's lifecycle. |
-| Projects | Nested projects/subprojects containing tasks; can support objectives without requiring one; avoid a single forced hierarchy. |
-| Tasks | One-time, continuing, and recurring work; dependencies/relationships and next actionable work. Continuing tasks have Done for Today without whole-task completion. |
+| Pillars | Editable/reorganizable, relatively permanent responsibilities; arbitrarily nested subpillars; directly contain projects and objectives. Task context is derived through its objective or direct project, not a task-to-pillar ownership link. |
+| Objectives | Flat outcomes/milestones, lasting weeks to years; exactly one pillar/subpillar or project parent; may contain tasks and span multiple sprints. Lifecycle and parent are independent of sprint selection. |
+| Projects | Bodies of related work, possibly long-running; exactly one pillar/subpillar or parent-project owner; may contain subprojects, objectives and direct tasks without objectives. |
+| Tasks | One-time, continuing, recurring work; zero or one objective, otherwise zero or one direct project, or independent. Objective tasks inherit context; no redundant pillar/project ownership. No parent is required for capture. Dependencies, next actions and Done for Today behavior preserved. |
+| Sprint objectives | Objectives and sprints are many-to-many selections. Removing a selection never deletes the objective/tasks or changes its parent. Selection, task scheduling and actual work/completion are separate; no automatic rollover. |
+| Navigation views | Project-oriented pillar/subpillar/project/objective tree with direct-project and objective tasks; objective-oriented view with ownership context; sprint-oriented view of selected objectives/tasks. All reference the same records. |
 | Planning | Quarterly, sprint, weekly, daily; configurable sprint duration initially one month; eventual wizard sessions. |
 | Reviews | Objectives, commitments, unallocated tasks, unfinished scheduled work, rescheduling, period selection, workload, and priorities. |
 | Unfinished work | Remains scheduled until explicitly rescheduled; review in planning wizards. No automatic rollover. |
@@ -27,7 +29,7 @@ influence the design; they need not ship in the first usable release.
 | Separation | Lifecycle, allocation, horizon, period priority, actual work, and completion are distinct. Unallocated is not inherently a lifecycle state. |
 | Capture | Fast inbox entry; future mobile voice capture independent of speech provider. |
 | Long term | Someday/long-term work stays available without cluttering daily planning. |
-| This iteration | Documentation and proposed relational schema only; no application features, implemented schema, sync service, dependencies, or Git commit. |
+| Current iteration | Organizational documentation refinement and limited Phase 0.1 fixture updates only: C++20/Qt 6 Widgets with disposable fixtures, optional isolated QMYSQL diagnostic and focused tests. No actual domain features, task persistence, schema/migrations, sync, mobile code or Git commit. Dependency installation requires approval. |
 
 ## Proposed behavior needing review
 
@@ -35,9 +37,6 @@ influence the design; they need not ship in the first usable release.
 | --- | --- | --- |
 | Desktop toolchain versions | Compatible Qt 6/compiler/CMake and connector versions | C++20/Qt 6 Widgets is decided; validate exact versions and MariaDB driver on CentOS and Windows. See Architecture.md. |
 | Mobile strategy | Qt Quick/QML or another native-compatible presentation | Separate, potentially reduced mobile UI using shared C++ use cases; Qt Quick/QML remains provisional. Candidate features: capture, today, completion, Done for Today and basic task editing; scope undecided. Evaluate native iOS suitability, licensing, macOS/Xcode tooling and core integration when mobile work begins. Android optional. |
-| Pillar associations | One owning pillar; many direct pillars; inheritance only | Allow many explicit links. Show inherited project/objective pillar paths separately, deduplicated, without copying links. No automatic propagation of edits. |
-| Task/project membership | Single project; multiple projects | Zero or one containing project per task, with independent many-to-many objective/pillar links. Review if cross-project membership is needed. |
-| Objective hierarchy | Flat; tree; general graph | Start flat. Add a parent tree later only if real planning needs decomposition; supporting projects already provide decomposition. |
 | Lifecycle vocabulary | Simple active/completed; add hold/cancel/archive | Propose active, onHold, completed, cancelled; archive separately. Final labels and reopen semantics need review. |
 | Continuing work | Daily flag; append-only work records | Record work entries plus allocation outcomes; allow multiple sessions/day and a deliberate reopen after Done for Today. Duration optional. |
 | Recurrence | Reopen same task; independent occurrences; cloned tasks | Template plus stable occurrences with independent completion and allocation; preserve history. Start with fixed calendar dates; completion-relative repetition later. |
@@ -58,7 +57,9 @@ influence the design; they need not ship in the first usable release.
    versions and a distribution approach; the desktop language/framework is decided.
    Decide whether shared value types use only standard C++ or allow Qt Core, while
    keeping Widgets and QML out of domain/application interfaces.
-2. Confirm single-project task membership, explicit pillar links, and flat objectives.
+2. Implement the confirmed exclusive parent rules in DataModel.md when Phase 1
+   is authorized; first resolve deletion/reparent/archive UX and physical constraints.
+   Flat objectives and single-parent membership are settled, not open alternatives.
 3. Confirm minimal lifecycle, inbox/someday meaning, date scheduling, and Done for
    Today/reopen semantics. A completed scheduled session must not finish continuing work.
 4. Confirm calendar-month sprint default and local-date/time-zone behavior.
@@ -71,3 +72,17 @@ Later review gates: recurrence rules (month-end, DST, missed occurrences, edits 
 series); priority versus drag-order precedence; hard versus advisory dependency
 behavior; optional Android; hosting/authentication; privacy/encryption; deletion
 retention and maximum offline interval. None is silently treated as finalized.
+
+## Resolved relationships and remaining choices
+
+The prior many-to-many project/objective, task/objective and explicit pillar links
+were proposals, not requirements that demand retention. They are replaced by the
+confirmed single-parent hierarchy. No remaining confirmed requirement conflicts
+with these cardinalities; context is inherited through organizational ownership.
+Direct task-to-pillar ownership is excluded by the specified task parent choices.
+
+Parent move/delete/archive/restore UX, physical constraint/index choices, and any
+historical path snapshots remain open. Recommend retaining current-context queries
+and prohibiting deletion of parents with live children until explicit reassignment.
+These details do not block Phase 0.1 fixture/technology validation. Organizational
+membership is settled; sprint selection never becomes ownership or task scheduling.
