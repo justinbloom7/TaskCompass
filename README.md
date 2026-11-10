@@ -1,11 +1,12 @@
 # TaskCompass
 
-A personal task manager organized around responsibilities, objectives, projects,
-and guided planning at quarterly, sprint, weekly, and daily horizons.
+A traditional desktop task manager organized around responsibilities, objectives,
+projects, and guided planning at quarterly, sprint, weekly, and daily horizons.
 
 **Status: architecture review.** This repository contains planning documents only.
 No application, database schema, dependencies, or synchronization service has been
-implemented. Technology and schema recommendations await review.
+implemented. C++20 with Qt 6 Widgets is the preferred desktop framework; schema
+and remaining architecture proposals await review.
 
 Read in this order:
 
@@ -17,9 +18,10 @@ Read in this order:
 
 Development targets CentOS Stream 9 with a terminal/VIM workflow. Offline desktop
 use comes first, with MariaDB on Linux and Windows builds on Windows. A native
-iPhone app (possibly Android later) must also work offline. Hosted storage must
-remain possible through a future API. The phone will synchronize its offline
+iPhone app (possibly Android later) will have a separate UI, potentially fewer
+features, and must also work offline. Qt Quick/QML is a provisional mobile option.
+Hosted storage must remain possible through a future API. The phone will synchronize its offline
 database bidirectionally with a TaskCompass service running on Linux or Windows
-over the internet. See the architecture
-proposal for coding preferences and language convention conflicts to resolve before
-implementation.
+over the internet. Shared C++ domain/application logic stays independent of
+Widgets and QML. See the architecture proposal for layer boundaries, coding
+preferences, and remaining implementation decisions.

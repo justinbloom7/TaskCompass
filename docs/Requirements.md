@@ -8,7 +8,9 @@ influence the design; they need not ship in the first usable release.
 
 | Area | Requirement |
 | --- | --- |
-| Product | Personal task manager; sophisticated guided planning, not a general life-management suite. |
+| Product | Traditional desktop task manager with sophisticated guided planning; desktop is primary and eventually provides the complete feature set. Not a general life-management suite. |
+| Desktop UI | C++20 with Qt 6 Widgets; CMake CLI/VIM workflow. Menus, toolbars, shortcuts, pillar/project trees, sortable/filterable task tables/lists and manual ordering, splitters/resizable panels, editors/dialogs, and guided planning. |
+| Shared core | Shared C++ domain rules and application use cases independent of Widgets and QML; separate presentations, persistence, and future sync infrastructure. No generic UI abstraction framework. |
 | Platforms | Offline desktop first on CentOS Stream 9; Windows executable builds on Windows/VM are acceptable; native iPhone app later, possible Android. |
 | Storage/deployment | MariaDB on Linux, like eEnvelopes; local database operation with a path to self-hosted or managed online storage. Mobile must still work offline. |
 | Internet service and sync | Native phone connects over the internet to a TaskCompass service hosted on Linux or Windows. Phone-local and service-side databases synchronize changes in both directions, including offline edits after reconnection. |
@@ -31,8 +33,8 @@ influence the design; they need not ship in the first usable release.
 
 | Decision | Alternatives | Recommendation and reason |
 | --- | --- | --- |
-| Desktop stack | Python/PySide6, Java/JavaFX, C++/Qt, Dart/Flutter, TypeScript desktop/web wrapper | C++/Qt Quick is the revised leading shared desktop/native-mobile proposal; Python plus a separate native client remains an alternative. Validate CentOS and SQL plugins first. See Architecture.md. |
-| Mobile strategy | Share UI/runtime now; independent mobile UI later | Native iPhone confirmed; possible Android. Propose shared C++ domain core with Qt Quick UI, SQLite on the phone, and an API. Native iOS builds need macOS/Xcode access. |
+| Desktop toolchain versions | Compatible Qt 6/compiler/CMake and connector versions | C++20/Qt 6 Widgets is decided; validate exact versions and MariaDB driver on CentOS and Windows. See Architecture.md. |
+| Mobile strategy | Qt Quick/QML or another native-compatible presentation | Separate, potentially reduced mobile UI using shared C++ use cases; Qt Quick/QML remains provisional. Candidate features: capture, today, completion, Done for Today and basic task editing; scope undecided. Evaluate native iOS suitability, licensing, macOS/Xcode tooling and core integration when mobile work begins. Android optional. |
 | Pillar associations | One owning pillar; many direct pillars; inheritance only | Allow many explicit links. Show inherited project/objective pillar paths separately, deduplicated, without copying links. No automatic propagation of edits. |
 | Task/project membership | Single project; multiple projects | Zero or one containing project per task, with independent many-to-many objective/pillar links. Review if cross-project membership is needed. |
 | Objective hierarchy | Flat; tree; general graph | Start flat. Add a parent tree later only if real planning needs decomposition; supporting projects already provide decomposition. |
@@ -52,13 +54,18 @@ influence the design; they need not ship in the first usable release.
 
 ## Decisions to settle before the first application slice
 
-1. Approve the desktop language/toolkit and its naming/syntax tradeoffs.
+1. Select compatible C++20/Qt 6 Widgets, CMake, compiler and MariaDB connector
+   versions and a distribution approach; the desktop language/framework is decided.
+   Decide whether shared value types use only standard C++ or allow Qt Core, while
+   keeping Widgets and QML out of domain/application interfaces.
 2. Confirm single-project task membership, explicit pillar links, and flat objectives.
 3. Confirm minimal lifecycle, inbox/someday meaning, date scheduling, and Done for
    Today/reopen semantics. A completed scheduled session must not finish continuing work.
 4. Confirm calendar-month sprint default and local-date/time-zone behavior.
-5. Confirm proposed local MariaDB on Windows and SQLite on native mobile; plan
-   macOS/Xcode access for iPhone builds. Windows builds on Windows are confirmed.
+5. Resolve MariaDB physical naming/collation and migration portability before
+   persistence implementation. Desktop/service MariaDB, mobile SQLite, and Windows
+   builds on Windows remain the storage/platform direction. Mobile UI scope, toolkit
+   and macOS/Xcode build access are later decisions, not desktop-prototype gates.
 
 Later review gates: recurrence rules (month-end, DST, missed occurrences, edits to a
 series); priority versus drag-order precedence; hard versus advisory dependency

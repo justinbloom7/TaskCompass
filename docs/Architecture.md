@@ -4,21 +4,28 @@ Confirmed storage/platform direction: **MariaDB on Linux, Windows builds on a
 Windows machine/VM, and a native iPhone app; Android is optional later.** Local
 storage and eventual hosted storage must both remain possible. The phone must
 connect over the internet to a TaskCompass service running on Linux or Windows,
-and its local database must synchronize bidirectionally with the service database. Toolkit, exact
-versions, API implementation, and hosting provider remain proposals.
+and its local database must synchronize bidirectionally with the service database.
+
+**Desktop decision: C++20 with Qt 6 Widgets**, developed with CMake and a
+terminal/VIM workflow. Desktop is the primary target and will eventually provide
+the complete feature set. Mobile has a separate presentation and may offer fewer
+features; Qt Quick/QML is a provisional mobile option only. Exact dependency
+versions, mobile framework, API implementation, and hosting provider remain open.
 
 ## Technology evaluation
 
 These are engineering judgments for this project's scope, rather than claims that
-one toolkit is universally preferable.
+one toolkit is universally preferable. The desktop decision is now settled; other
+entries record alternatives considered, rather than reopening that choice.
 
 | Candidate | Advantages here | Costs and risks | Assessment |
 | --- | --- | --- | --- |
-| Python + PySide6 / Qt Widgets | Concise domain/application code; built-in SQLite access; mature desktop trees, lists, dialogs, and model/view structure; terminal tooling. | Packaging native Qt dependencies; dynamic typing benefits from type hints; Python convention conflicts; mobile UI reuse requires separate evaluation. | Viable desktop option, but a separate native mobile implementation would be the conservative plan. |
-| Java + JavaFX + MariaDB JDBC | Strong types; user preferences closely match Java naming and braces; explicit class/module boundaries; CLI build supported. | JDK/JavaFX/runtime packaging plus JDBC dependency; more ceremony; mobile reuse is not automatic. | Best alternative if Java preference or Python syntax tradeoffs outweigh development speed. No Spring needed. |
-| C++ + Qt Quick + MariaDB desktop / SQLite mobile | Native integration; Qt can serve desktop/mobile; requested braces/naming fit well. | More memory/lifetime/build complexity for one developer; Qt Quick introduces a second UI language. | Revised leading proposal for shared desktop/native-mobile core; validate Qt Quick desktop usability and packaging first. |
-| Dart + Flutter + storage adapters | Potential desktop/mobile UI and logic reuse; language naming largely aligns. | New language and plugin/build ecosystem; CentOS not in Flutter's published Linux support matrix; formatter/file conventions differ. | Strong shared-UI alternative; validate CentOS and a desktop MariaDB bridge before selection. |
-| TypeScript + Electron or Tauri + MariaDB desktop | Language overlap with checkbook; familiar web UI; potential contract/test reuse. | Electron bundles browser/runtime; Tauri adds Rust/native integration and Linux webview dependencies; neither automatically delivers a mobile client with the same runtime. | Viable with strong web preference, adds machinery for current desktop scope. |
+| Python + PySide6 / Qt Widgets | Concise domain/application code; built-in SQLite access; mature desktop trees, lists, dialogs, and model/view structure; terminal tooling. | Packaging native Qt dependencies; dynamic typing benefits from type hints; Python convention conflicts; mobile UI reuse requires separate evaluation. | Previously considered; superseded by the C++20/Qt Widgets desktop decision. |
+| Java + JavaFX + MariaDB JDBC | Strong types; user preferences closely match Java naming and braces; explicit class/module boundaries; CLI build supported. | JDK/JavaFX/runtime packaging plus JDBC dependency; more ceremony; mobile reuse is not automatic. | Previously considered; superseded by the C++20/Qt Widgets desktop decision. |
+| C++20 + Qt 6 Widgets + MariaDB desktop | Traditional menus, toolbars, trees, tables, splitters and dialogs fit the desktop product; C++ core can be reused independently of presentation. | C++ lifetime/build complexity and per-platform Qt SQL packaging. | Preferred desktop framework by architectural decision; validate on CentOS and Windows. |
+| Shared C++ core + Qt Quick/QML mobile | Potential reuse of domain/application logic with a distinct touch-oriented UI. | QML bindings, ownership, iOS tooling/licensing and native integration need evaluation; UI reuse is not assumed. | Provisional mobile option; evaluate when mobile development begins. |
+| Dart + Flutter + storage adapters | Potential desktop/mobile UI and logic reuse; language naming largely aligns. | New language and plugin/build ecosystem; CentOS not in Flutter's published Linux support matrix; formatter/file conventions differ. | Previously considered; shared UI is no longer the desktop/mobile goal. |
+| TypeScript + Electron or Tauri + MariaDB desktop | Language overlap with checkbook; familiar web UI; potential contract/test reuse. | Electron bundles browser/runtime; Tauri adds Rust/native integration and Linux webview dependencies; neither automatically delivers a mobile client with the same runtime. | Previously considered; superseded by the traditional Qt Widgets desktop direction. |
 | Browser/PWA like checkbook | Closest direct code reuse; installable mobile web UI. | Browser storage/lifecycle constraints and a different offline persistence model; less direct fit for requested compiled desktop and native iPhone targets. | Could complement hosted access; does not meet the confirmed native iPhone delivery on its own. |
 
 Qt documents Widgets as its classic desktop UI toolkit and offers a separate Qt
@@ -31,14 +38,21 @@ Flutter publishes Linux support for Debian and Ubuntu, not CentOS Stream:
 
 ## Recommended application composition
 
-The expanded platform requirements change the earlier desktop-only recommendation.
-Propose **C++ with Qt 6 and Qt Quick/QML**, using an adaptive desktop/mobile UI and
-shared domain/application code. This avoids relying on Python packaging as the
-foundation for a native iPhone product and fits the requested C++ naming/braces.
-C++ build/lifetime complexity and QML are real costs; Python/PySide6 plus a separate
-native mobile client remains a reasonable simpler-desktop alternative. Flutter is
-another shared-client option, subject to CentOS and MariaDB integration checks.
-None is selected for implementation yet.
+Use **C++20 and Qt 6 Widgets** for the traditional desktop application. Plan menus,
+toolbars and keyboard shortcuts; hierarchical pillar/project navigation; sortable,
+filterable task tables/lists with manual ordering; splitter-based resizable panels;
+and dialogs/editors for tasks, objectives, projects and planning. Guided quarterly,
+sprint, weekly and daily planning workflows belong in the desktop feature set.
+Sorting/filtering a view must remain separate from changing stored manual order.
+
+The native iPhone application will have a separate UI and potentially reduced scope.
+Candidate workflows are quick capture, today's scheduled tasks, completion, Done
+for Today, and basic task review/editing, with offline operation and eventual sync.
+These are candidates, not a finalized mobile feature list. The desktop need not
+wait for mobile UI validation or be constrained to mobile navigation patterns.
+Evaluate Qt Quick/QML later against native iOS requirements, licensing, build and
+signing tooling, device behavior, and practical reuse of C++ application logic.
+Android remains optional. No shared UI abstraction framework is planned.
 
 Use a modular application with explicit SQL, focused persistence interfaces, and
 transaction boundaries. Desktop MariaDB access can use Qt SQL's MariaDB-compatible
@@ -47,6 +61,21 @@ QMYSQL driver; mobile SQLite can use QSQLITE
 libraries, redistribution requirements, and ABI compatibility per build target.
 No ORM, dependency-injection framework, or local HTTP server is necessary for the
 standalone desktop phase. Do not build adapters for hypothetical services now.
+
+The presentation and infrastructure boundaries are separate from the deployment
+topology below. Arrows in this first diagram show code dependencies, not sync flows.
+
+```mermaid
+flowchart TD
+   DESKTOP[Qt Widgets desktop presentation] --> APP[Shared C++20 application services and use cases]
+   MOBILE[Future mobile presentation - possibly Qt Quick/QML] --> APP
+   APP --> DOMAIN[Shared C++20 domain models and business rules]
+   APP --> PORTS[UI-independent repository and transaction interfaces]
+   STORAGE[MariaDB desktop/service and SQLite mobile adapters] -.-> PORTS
+   SYNC[Future synchronization infrastructure] --> APP
+```
+
+Deployment topology (unchanged):
 
 ```mermaid
 flowchart LR
@@ -58,14 +87,44 @@ flowchart LR
    OTHER[Optional other desktop replica] <-->|HTTPS sync| SERVICE
 ```
 
-Domain code has no GUI, SQL, or networking dependencies. Application operations coordinate
-rules and transactions: captureTask, scheduleWork, recordWork, completeTask, and
-rescheduleAllocation. Views call operations rather than writing rows. Repositories
-express focused task/planning queries; avoid one enormous generic database class.
-Shared transaction boundaries ensure completion, work history, and allocation
-changes commit together. Inject clocks and ID generation where deterministic
-behavior matters. Qt models expose application results to QML through signals/properties; avoid a second copy
-of domain state in widgets.
+Domain models and rules live in a shared C++ library with no GUI, SQL, or networking
+dependencies. Shared application services coordinate use cases such as captureTask,
+scheduleWork, recordWork, completeTask and rescheduleAllocation through focused
+repository/transaction interfaces. Both layers must build and be testable without
+Qt Widgets, Qt Quick or QML. The desktop target needs no Qt Quick/QML runtime.
+Domain rules never live in dialog handlers or QML.
+Whether to allow a small Qt Core dependency or use only standard C++ value types
+is an implementation decision; no presentation types may cross these boundaries.
+
+Desktop controllers, item models, delegates and dialogs adapt results to Widgets.
+A future mobile adapter can expose the same services through QObject properties,
+signals and QML-facing models. These are presentation adapters, not shared domain
+entities. Share use cases and rules rather than forcing both UIs into the same
+screen structure or model roles. Views call use cases rather than writing rows;
+repositories avoid one enormous generic database class. Transaction boundaries
+keep completion, work history and allocation changes atomic. Inject clocks and ID
+generation where deterministic behavior matters.
+
+### Risks when sharing the C++ core
+
+- Widgets tables/trees and mobile lists need different shapes, selection state and
+  model roles. Keep those in separate adapters; share stable entity IDs and use-case
+  results rather than widget pointers, QModelIndex values or QML objects.
+- QObject ownership, QML object lifetimes and GUI-thread notifications differ from
+  ordinary C++ value lifetimes. Define ownership at the adapter boundary and deliver
+  asynchronous results safely; core operations must not depend on an open dialog
+  or a particular GUI event loop. Qt supports C++ model exposure to QML, but that
+  does not make the presentation models interchangeable
+  ([Qt C++ models with Quick views](https://doc.qt.io/qt-6/qtquick-modelviewsdata-cppmodels.html)).
+- Mobile suspension, reconnects and limited screens require resumable operations
+  and a smaller UI. Preserve full domain data and validation even when some editing
+  workflows are unavailable on mobile; do not weaken shared rules for a reduced UI.
+- Separate MariaDB and SQLite adapters must honor the same use-case contracts and
+  transaction semantics. Build targets should keep MariaDB libraries out of mobile
+  and Widgets/QML libraries out of shared-core and headless-service targets.
+- iOS toolchain/ABI compatibility, module licensing, signing and platform adapters
+  (for example voice capture) need later device validation. Reusing C++ code does
+  not eliminate those checks or settle the mobile framework.
 
 Database access runs through a serialized worker with connections owned by their
 thread; GUI updates return through signals. Future networking must not block the
@@ -74,7 +133,7 @@ error. Offline saves become authoritative on this device immediately; sync statu
 is separate from domain status.
 
 Suggested *future* source boundaries: `domain/`, `application/`,
-`infrastructure/storage/`, `infrastructure/sync/`, `desktop/`, `migrations/`,
+`infrastructure/storage/`, `infrastructure/sync/`, `desktop/`, future `mobile/`, `migrations/`,
 and `tests/`. These folders are not created until implementation needs them.
 VIM plus shell commands is the baseline workflow; build/run/test instructions must
 not require editor extensions.
@@ -82,13 +141,15 @@ not require editor extensions.
 ## Platform build and compatibility gates
 
 - **Linux:** develop on CentOS Stream 9 using VIM, CMake and command-line tools.
-  Validate supported compiler/CMake/Qt versions, QML graphics, MariaDB connector
-  and QMYSQL plugin packaging on the actual host. No toolchain has been installed.
+  Validate C++20 compiler support, CMake/Qt 6 Widgets versions, MariaDB connector
+  and QMYSQL plugin availability/compatibility on the actual host. No toolchain
+  validation or dependency installation has been performed in this revision.
 - **Windows:** build and package on Windows or a Windows VM/runner, as explicitly
   accepted by the user. Test the same core with Windows Qt/connector binaries;
   document whether a local MariaDB service is installed separately. Linux-to-Windows
   cross-compilation is not a requirement.
-- **iPhone:** produce a native compiled application with offline storage. Qt's iOS
+- **iPhone (later):** evaluate the mobile framework for a native application with
+  offline storage; Qt Quick/QML is provisional. Qt's iOS
   workflow requires Xcode tooling; plan access to a Mac or macOS build runner,
   device testing, signing, and provisioning. This is a build-environment constraint,
   not a change to Linux as the main development environment. See
@@ -98,16 +159,14 @@ not require editor extensions.
 
 Use the release-specific [Qt platform matrix](https://doc.qt.io/qt-6.10/supported-platforms.html)
 to select supported versions; it does not certify a CentOS binary or bundled SQL
-plugin. Prototype a tree/list/dialog workflow and responsive mobile view before
-freezing the toolkit. Qt Widgets remains a desktop alternative, but would imply
-separate mobile presentation. Review Qt/module and connector distribution terms
-when selecting packages.
-
-If Python remains preferred, its host Python 3.9 is below current PySide setup's
-Python 3.10+ requirement; use a separate supported runtime, not a system replacement
-([PySide setup](https://doc.qt.io/qtforpython-6/gettingstarted.html)). Packaging a
-Windows Python app with PyInstaller runs on Windows; it is not cross-compilation
-([PyInstaller documentation](https://pyinstaller.org/en/stable/)).
+plugin. The first technical prototype validates a Widgets main window with a
+hierarchical tree, task table/list and task-editing dialog using temporary in-memory
+fixtures. Include menus/toolbars/shortcuts and a splitter to check the traditional
+layout. Verify the MariaDB driver can load and connect to a designated isolated test
+instance without creating application tables. Build with CMake CLI on CentOS and
+Windows. This does not implement task-management rules, migrations or sync.
+Review Qt/module and connector distribution terms before selecting packages.
+Mobile/Qt Quick validation comes later and is not a gate for this desktop prototype.
 
 ## Coding preferences and conflicts to discuss
 
@@ -116,26 +175,13 @@ functions; PascalCase classes and matching filenames; 3 spaces; same-line openin
 braces. For multiline declarations/calls, put the first parameter after `(`, align
 subsequent parameters, and put `)` on the final parameter's line.
 
-For the C++/QML proposal, retain the requested 3-space indentation, names, brace
-placement, and aligned multiline parameters. Keep framework-mandated API overrides
-and QML-reserved spellings intact; discuss any naming exception before code is
-introduced. QML type files can follow PascalCase; component IDs use camelCase.
-
-If the Python alternative is selected, Python's usual function/variable/module naming and 4-space indentation differ
-from these preferences ([PEP 8](https://peps.python.org/pep-0008/)). The proposal for that alternative
-is to retain the user's camelCase, PascalCase class files, and 3-space indentation
-for project-owned Python code; do not enable a formatter that rewrites them.
-Python uses colons and indentation for blocks, so the requested brace style cannot
-apply to Python control flow. This syntax tradeoff needs agreement before choosing
-Python. Mandatory special methods such as `__init__` and external override/API names
-must preserve required spelling; propose these narrow exceptions for review, not
-as permission to adopt snake_case throughout. Qt APIs already commonly use camelCase.
-Package/build-tool reserved names may also require specific spelling.
-
-Java fits the requested naming/braces more directly. Dart conventionally uses
-lowercase_with_underscores filenames; C++ framework overrides also keep prescribed
-names. Discuss any such exceptions if selecting an alternative. No implementation
-exceptions are introduced in this documentation-only iteration.
+For C++20/Qt Widgets, retain these preferences for project-owned code and do not
+adopt a formatter that rewrites them. C++ does not require a conflicting naming or
+brace convention. Framework-mandated override names and build-tool-reserved names
+may require specific spellings; discuss any exception before introducing it.
+If Qt Quick is chosen later, review its reserved spellings at that time; QML type
+files can follow PascalCase and component IDs camelCase. No naming exceptions are
+introduced by this documentation revision.
 
 ## Persistence and deployment modes
 

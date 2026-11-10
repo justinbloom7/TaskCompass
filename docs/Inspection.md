@@ -55,7 +55,8 @@ TaskCompass should improve on initialization-time schema adjustments with explic
 numbered migrations and backup/restore verification. A database implementation
 switch alone does not provide offline synchronization.
 
-Direct TypeScript/IndexedDB code reuse is limited with a native C++/Qt client or the Python desktop alternative. Extracting a shared package now would couple two changing projects.
+Direct TypeScript/IndexedDB code reuse is limited with the C++20/Qt client.
+Extracting a shared package now would couple two changing projects.
 Later, agree on a language-neutral synchronization envelope and conformance tests,
 then consider a small transport/retry library where language overlap exists.
 Keep independent databases, migrations, domain validators, API namespaces, and
@@ -68,6 +69,14 @@ The user confirmed MariaDB on Linux, builds on a Windows host/VM, and a native
 iPhone app, with Android possible later. The architecture now follows the
 checkbook's pluggable database pattern more directly, while proposing MariaDB for
 standalone desktop and hosted storage, and SQLite for embedded mobile storage.
-C++/Qt Quick is the revised leading cross-platform client proposal; Python is
-retained as an alternative, not an approved implementation choice. Checkbook
-inspection findings above are unchanged; the checkbook has not been modified.
+The subsequent UI decision selects C++20/Qt 6 Widgets as the preferred traditional
+desktop framework. Mobile will have a separate, potentially reduced presentation;
+Qt Quick/QML is only a provisional mobile option. Shared C++ domain/application
+logic stays independent of both presentations. The next proposed milestone is a
+small Widgets/CMake/MariaDB-driver prototype on CentOS and Windows, requiring
+explicit instruction before work starts. Mobile validation is deferred.
+
+All six TaskCompass documents were reviewed for this UI revision. No UI dependency
+or inconsistency requiring a relational-model change was found; DataModel.md is
+unchanged. Storage and synchronization design remain unchanged. Checkbook inspection
+findings above are unchanged; this revision did not access or modify that project.
