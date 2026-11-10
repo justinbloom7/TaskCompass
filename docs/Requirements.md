@@ -11,6 +11,7 @@ influence the design; they need not ship in the first usable release.
 | Product | Personal task manager; sophisticated guided planning, not a general life-management suite. |
 | Platforms | Offline desktop first on CentOS Stream 9; Windows executable builds on Windows/VM are acceptable; native iPhone app later, possible Android. |
 | Storage/deployment | MariaDB on Linux, like eEnvelopes; local database operation with a path to self-hosted or managed online storage. Mobile must still work offline. |
+| Internet service and sync | Native phone connects over the internet to a TaskCompass service hosted on Linux or Windows. Phone-local and service-side databases synchronize changes in both directions, including offline edits after reconnection. |
 | Pillars | Editable, relatively permanent responsibilities; nested without an arbitrary application depth cap; tasks, projects, and objectives can be associated and viewed through the hierarchy. |
 | Objectives | Temporary goals lasting weeks to years; reusable across planning periods; selecting a sprint priority does not change the objective's lifecycle. |
 | Projects | Nested projects/subprojects containing tasks; can support objectives without requiring one; avoid a single forced hierarchy. |

@@ -18,6 +18,8 @@ Read in this order:
 Development targets CentOS Stream 9 with a terminal/VIM workflow. Offline desktop
 use comes first, with MariaDB on Linux and Windows builds on Windows. A native
 iPhone app (possibly Android later) must also work offline. Hosted storage must
-remain possible through a future API. See the architecture
+remain possible through a future API. The phone will synchronize its offline
+database bidirectionally with a TaskCompass service running on Linux or Windows
+over the internet. See the architecture
 proposal for coding preferences and language convention conflicts to resolve before
 implementation.

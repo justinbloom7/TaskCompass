@@ -240,7 +240,11 @@ silently rename only one platform's schema.
 LocalChange must commit with domain changes in a MariaDB transaction on desktop
 and a SQLite transaction on mobile. A local MariaDB service is required for desktop
 offline use; no remote service is needed. Server receipt/change-log tables remain
-deferred until synchronization, and are not the standalone desktop schema.
+deferred until synchronization, and are not the standalone desktop schema. In the
+proposed service-host topology, enabling synchronization adds hub metadata to the
+host's MariaDB storage and routes host desktop mutations through the service's
+validated write path. The phone's SQLite replica exchanges domain changes with
+that Linux/Windows service over HTTPS; no extra cloud database is required.
 
 Start with the phase-one subset described in Roadmap.md. No SQL file, migration,
 or database has been created in this iteration.

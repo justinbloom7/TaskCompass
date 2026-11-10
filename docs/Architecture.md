@@ -2,7 +2,9 @@
 
 Confirmed storage/platform direction: **MariaDB on Linux, Windows builds on a
 Windows machine/VM, and a native iPhone app; Android is optional later.** Local
-storage and eventual hosted storage must both remain possible. Toolkit, exact
+storage and eventual hosted storage must both remain possible. The phone must
+connect over the internet to a TaskCompass service running on Linux or Windows,
+and its local database must synchronize bidirectionally with the service database. Toolkit, exact
 versions, API implementation, and hosting provider remain proposals.
 
 ## Technology evaluation
@@ -48,16 +50,12 @@ standalone desktop phase. Do not build adapters for hypothetical services now.
 
 ```mermaid
 flowchart LR
-   DESKTOP[Linux or Windows desktop] --> APP[Application and domain rules]
-   APP --> PORT[Repository and transaction interfaces]
-   PORT --> MARIA[(Local MariaDB)]
-   PHONE[Native iPhone client] --> CORE[Shared application and domain core]
-   CORE --> SQLITE[(Phone SQLite)]
-   MARIA --> SYNC[Future desktop sync worker]
-   SQLITE --> MSYNC[Future mobile sync worker]
-   SYNC --> API[Authenticated HTTPS API]
-   MSYNC --> API
-   API --> HOST[(Self-hosted or managed MariaDB)]
+   DESKTOP[Desktop on service host] <--> SERVICE[TaskCompass service on Linux or Windows]
+   SERVICE <--> MARIA[(Service-host MariaDB)]
+   PHONE[Native iPhone application] <--> SQLITE[(Phone-local SQLite)]
+   PHONE <--> SYNC[Mobile sync worker]
+   SYNC <-->|Internet HTTPS| SERVICE
+   OTHER[Optional other desktop replica] <-->|HTTPS sync| SERVICE
 ```
 
 Domain code has no GUI, SQL, or networking dependencies. Application operations coordinate
@@ -151,7 +149,8 @@ checkbook data even if both use the same MariaDB server installation.
 | Standalone Linux desktop | MariaDB service on the same computer; dedicated TaskCompass database | Works without internet while the local service is running. No online account/API required. |
 | Standalone Windows desktop (proposed) | Local MariaDB service using the same repository contract | Windows build tested with MariaDB connector/plugin; service setup required. SQLite desktop alternative only if later requested. |
 | Native iPhone, possible Android | Embedded SQLite replica, not a MariaDB server on the phone | Reads and edits offline; synchronizes when API connectivity returns. |
-| Connected desktop and phone | Respective local stores plus configured HTTPS API | API uses self-hosted or managed MariaDB; queued edits survive network failure. |
+| Desktop hosting service and phone | MariaDB on Linux or Windows host, SQLite on phone | Phone synchronizes bidirectionally over internet HTTPS with the host service. Host desktop writes through the same validated service path. No third database required. |
+| Additional desktop or hosted hub | Local MariaDB replica plus configured HTTPS API | Optional topology; local changes synchronize with the selected hub. Managed MariaDB may back the hub instead of host-local MariaDB. |
 | Other hosted database service | Local stores unchanged; server-side persistence adapter | Evaluate the service's transactions, IDs, revisions, and API support before adding an adapter. Not every service is a drop-in replacement. |
 
 A local MariaDB service is a local client/server database, rather than an embedded
@@ -197,10 +196,43 @@ language remains undecided: a small TypeScript service could follow checkbook
 patterns, while a C++ service could reuse domain code. Evaluate that when service
 work begins, with shared conformance tests for rules in either case.
 
-Standalone desktop may access its own local MariaDB directly. Remote/mobile
-clients access central storage only through the API. Local and central stores are
-separate replicas when synchronization is enabled; avoid simultaneously treating
-the same schema as both replica and sync hub without a designed server write path.
+### Linux/Windows service and bidirectional database synchronization
+
+The service is an independently running TaskCompass process, separate from the GUI
+and the MariaDB process. It must be deployable on either Linux or Windows and
+continue serving the phone when the desktop GUI is closed. The host must be running
+and reachable for synchronization; the phone keeps working from its own database
+when it is not. Package service startup/configuration appropriately for each OS.
+
+The simplest proposed connected topology uses the user's Linux or Windows computer
+as the hub: its TaskCompass service owns the MariaDB write path, and the phone's
+SQLite database is an offline replica. An additional cloud database is optional.
+The desktop on that host uses the same service/application commands over loopback,
+so its edits create revisions and change-log entries just like phone uploads.
+When the host has no internet, local desktop use still works while its local
+service and MariaDB are running. Standalone mode before sync can access MariaDB
+directly; enabling service mode requires explicit adoption/bootstrap of existing
+data and a single coordinated write path, not arbitrary direct SQL writes.
+
+Synchronization is **two-way application-level data synchronization**: phone edits
+flow to MariaDB, desktop/service edits flow to the phone, and accepted changes
+converge after reconnection and conflict resolution. Different SQL engines do not
+need identical physical schemas. Do not synchronize whole database files or rely
+on MariaDB replication to synchronize SQLite. Tasks, associations, schedules, work
+records, recurrence occurrences, and tombstones follow the shared protocol;
+device-local metadata remains local as specified in DataModel.md.
+
+Use authenticated HTTPS over the internet. Plan TLS termination, hostname,
+reachability through firewall/router or a suitable private network/tunnel, and
+protected credential storage at deployment time. The phone receives API credentials,
+not MariaDB credentials. The implementation choice for networking/deployment remains
+open; no network configuration is performed during this planning phase.
+
+If a separate hosted hub is chosen later, the host desktop can instead maintain its
+own MariaDB replica and synchronize through that hub's API. Initially choose one hub
+per dataset; simultaneous independent Linux, Windows, and cloud hubs would require
+an additional multi-server synchronization design and are not assumed by “Linux or
+Windows service.” Keep the endpoint configurable so the user can choose hosting.
 
 Use UUIDv4 IDs generated locally, retained forever across replicas. Reserve a
 local datasetId from the start; bind it to a server account/dataset on enrollment.
