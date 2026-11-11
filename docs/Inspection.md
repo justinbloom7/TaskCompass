@@ -94,3 +94,20 @@ MariaDB connectivity and Windows validation remain pending. See
 This iteration did not connect to, run, inspect configuration from or modify
 eEnvelopes. The prototype's Qt fixture types make no decision about the future
 shared C++ domain's use of standard-library versus Qt Core value types.
+
+## Phase 0.2 review — documentation and license only
+
+Reviewed all seven requested documents, CMake and the prototype navigation/model/
+filter/dialog/action/test code. The sample model stores presentation strings and
+fixture tags, the status editor directly changes sample rows, and sorting is a
+proxy operation. Those remain prototype behavior, not production lifecycle,
+organizational, numeric-priority, context, work-recording or undo implementations.
+No source, test, CMake, database, build dependencies or eEnvelopes files were changed.
+
+Added Interactions.md and Licensing.md; refined requirements, command architecture,
+logical persistence candidates and phased acceptance gates. LICENSE is an exact
+copy of the standard GPLv3 text shipped in the local Qt package; the README grant
+and SPDX identifier select GPL-3.0-or-later for TaskCompass. Reviewed installed RPM
+license metadata and official Qt/SPDX references. Desktop adoption has no identified
+blocker; artifact-specific notices/source obligations and native-iOS distribution
+review remain. No Phase 0.1 pending check is marked passed by this design work.

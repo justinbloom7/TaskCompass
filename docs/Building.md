@@ -6,6 +6,14 @@ disposable presentation fixtures. Only window geometry, splitter position and
 navigation visibility persist through QSettings. No TaskCompass tables, migrations,
 application records, shared domain implementation or synchronization exist.
 
+Phase 0.2 adds documentation and GPL-3.0-or-later licensing only. The prototype
+still has sample text priorities, a sample status editor and fixture filter tags;
+it has no production Worked Today/Done for Today/Completed controls, contexts,
+undo/redo, ordering persistence, date-filter engine or custom fields. Do not use its
+sample behavior as the production contract. See [Interactions.md](Interactions.md)
+and [Licensing.md](Licensing.md) for the designs and redistribution review. Build
+and test commands below are unchanged; outstanding 0.1 checks remain pending.
+
 ## CentOS Stream 9 prerequisites and observed environment
 
 Inspection/validation: 2026-11-10.

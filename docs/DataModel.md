@@ -27,6 +27,13 @@ erDiagram
    TaskOccurrence o|--o{ WorkEntry : receives
    Task ||--o{ TaskContext : tagged
    Context ||--o{ TaskContext : tags
+   Task ||--o{ TaskDayDisposition : dailyState
+   TaskOccurrence o|--o{ TaskDayDisposition : dailyState
+   CustomFieldDefinition ||--o{ CustomFieldOption : permits
+   CustomFieldDefinition ||--o{ TaskCustomFieldValue : defines
+   Task ||--o{ TaskCustomFieldValue : stores
+   TaskCustomFieldValue ||--o{ TaskCustomFieldChoice : selects
+   CustomFieldOption ||--o{ TaskCustomFieldChoice : chosen
 ```
 
 Projects and objectives each have exactly one organizational parent. Projects
@@ -67,9 +74,9 @@ Shared columns above are omitted from this table.
 | Pillar | parentPillarId?, name, description, archivedAt? | Self FK; reject self-parenting and cycles; no arbitrary depth cap. |
 | Objective | pillarId?, projectId?, title, description, lifecycleStatus, targetStartDate?, targetEndDate?, completedAt?, archivedAt? | Proposed active/onHold/completed/cancelled; date range valid when provided. Exactly one of pillarId/projectId; flat, with no parent-objective reference. No period ownership. |
 | Project | pillarId?, parentProjectId?, title, description, lifecycleStatus, archivedAt? | Exactly one of pillarId/parentProjectId; acyclic parent chain terminating at a pillar; may be long-running. Project completion rules independent of child completion pending review. |
-| Task | objectiveId?, directProjectId?, title, notes, taskKind, lifecycleStatus, triageStatus, planningVisibility, dueDate?, estimatedMinutes?, completedAt?, archivedAt?, captureSource?, captureReference? | kind oneTime/continuing/recurring; proposed lifecycle active/onHold/completed/cancelled; triage inbox/organized; visibility normal/someday; estimate nonnegative. At most one of objectiveId/directProjectId; both null allowed. No stored pillarId or derived projectId. Source metadata optional, provider-neutral. |
-| Context | name, description, archivedAt? | User-defined; decide case-insensitive name uniqueness later. |
-| TaskContext | taskId, contextId | Unique live pair; contexts may overlap. |
+| Task | objectiveId?, directProjectId?, title, notes, taskKind, lifecycleStatus, triageStatus, planningVisibility, dueDate?, estimatedMinutes?, priority, manualOrderKey, completedAt?, archivedAt?, captureSource?, captureReference? | kind oneTime/continuing/recurring; proposed lifecycle active/onHold/completed/cancelled; triage inbox/organized; visibility normal/someday; estimate nonnegative; priority positive integer (proposed default 5); manual key independent of due date. At most one of objectiveId/directProjectId; both null allowed. No stored pillarId or derived projectId. Source metadata optional, provider-neutral. |
+| Context | name, description, sortKey, archivedAt? | Entirely user-defined; persistent fractional order, stable UUID ties. Name case/uniqueness policy remains to be reviewed. |
+| TaskContext | taskId, contextId, isPrimary | Recommended initial at most one live row per task, isPrimary=true; optional assignment. Unique live pair; future multiple live rows must retain exactly one primary. No organizational ownership meaning. |
 | TaskDependency | predecessorTaskId, successorTaskId, dependencyKind | Unique live directed pair/kind; proposed kind finishToStart; reject self-links and directed cycles. |
 | TaskRelation | firstTaskId, secondTaskId, relationKind | Non-blocking related links; canonical endpoint order for symmetric kinds; no self-links. |
 
@@ -111,12 +118,14 @@ many-to-many organizational membership.
   allocations or work history. Historical organizational-path snapshots, if ever
   needed, require a separate decision; audit/work records are not deleted on moves.
 
-For parent removal, propose archive or reject deletion until live children are
-explicitly moved/reassigned (tasks can be made independent). Do not orphan a live
-project/objective, cascade-delete tasks or silently choose a replacement parent.
-Keep tombstoned parents for references/history; validate concurrent reparent/delete
-operations under the existing sync conflict protocol. Final archive/restore and
-subtree-delete UX remains to be reviewed.
+Archive/restore/move policy is specified as a recommendation in
+[Interactions.md](Interactions.md): explicit archivedAt plus effective inherited
+archive, without rewriting descendants' lifecycle or schedules. Contexts are
+separate optional groups and never alter the ownership constraints above. Reject
+organizational deletion with live children until explicit reassignment; keep
+parent tombstones for historical references. Apply cycle/parent validation again
+for concurrent sync edits under the existing conflict protocol. Historical path
+snapshots remain a future choice, not redundant editable task ownership.
 
 A task is unallocated when no applicable live allocation exists; it is not a task
 status. Inbox tasks can already have dates, and someday tasks can be explicitly
@@ -135,12 +144,13 @@ can still have non-blocking related links.
 
 | Table | Proposed additional columns | Relationships / constraints |
 | --- | --- | --- |
-| PlanningPeriod | horizon, startDate, endDateExclusive, label, timeZone | horizon quarter/sprint/week/day; start < end; day exactly one local calendar date. Proposed unique live horizon/bounds within dataset, one timeline per horizon initially. |
+| PlanningPeriod | horizon, startDate, endDateExclusive, label, timeZone | horizon quarter/sprint/week/day; start < end; day exactly one local calendar date. Unique UUID; valid bounds. Default calendar quarters/month sprints; custom sprint bounds and overlaps permitted with explicit current-period disambiguation. Duplicate live horizon/bounds can be rejected. |
 | PeriodObjective | periodId, objectiveId, priorityLabel?, manualOrder? | Unique live period/objective; many-to-many selection, including sprint periods. Selection/removal changes neither objective ownership/lifecycle nor tasks; priority vocabulary undecided. |
 | Allocation | taskId, occurrenceId?, periodId, allocationStatus, priorityLabel?, manualOrder?, plannedMinutes?, replacesAllocationId? | Status planned/doneForPeriod/cancelled/rescheduled; minutes nonnegative. For recurring work occurrenceId required; otherwise null. Same-task occurrence FK required. |
-| WorkEntry | taskId, occurrenceId?, allocationId?, workDate, timeZone, recordedAt, startedAt?, endedAt?, durationMinutes?, note, outcome, voidedAt? | outcome progress/doneForToday/completed; timestamps/duration optional and validated; linked allocation must target same task/occurrence. Corrections preserve original via void/new entry. |
+| WorkEntry | taskId, occurrenceId?, allocationId?, commandId, workDate, timeZone, recordedAt, startedAt?, endedAt?, durationMinutes?, note, outcome, entrySource, correctionOfEntryId?, voidedAt?, voidedByCommandId? | Progress/day-closure/completion/correction history; optional time/duration. Source distinguishes quick marker/session/day closure/completion. Linked allocation must match target. Void projection plus new correction audit preserves original payload/history. |
+| TaskDayDisposition | taskId, occurrenceId?, workDate, timeZone, dayStatus, closureCommandId? | Unique live target/workDate with explicit null-occurrence uniqueness; zone records the command basis, not another identity. open/closed is daily intent, not Task lifecycle or a worked boolean. Can exist without any allocation. Latest validated closure/resume command sets projection. |
 | PlanningSession | periodId, wizardKind, currentStep, sessionStatus, startedAt, finishedAt?, draftVersion, draftData | Resumable draft/finished/abandoned; draftData is versioned draft intent, not authoritative domain state. Device-local initially; exclude from domain sync until cross-device session requirements are known. |
-| PlanningPreference | sprintIntervalUnit, sprintIntervalCount, sprintAnchorDate, weekStartsOn, calendarTimeZone, defaultDailyCapacityMinutes? | One live row per dataset; defaults proposed month/1 with calendar-month anchor. Preference changes affect new periods only. |
+| PlanningPreference | sprintIntervalUnit, sprintIntervalCount, sprintAnchorDate, weekStartsOn, calendarTimeZone, selectedSprintId?, selectedQuarterId?, defaultDailyCapacityMinutes? | One live row per dataset; defaults proposed month/1 with calendar-month anchor. Preference changes affect new periods only; selected current-period IDs must be live, same horizon/dataset and contain today, otherwise selection is historical or needs resolution. |
 | ProtectedDayPreference | weekday, timeZone, advisoryCapacityMinutes?, note, enabled | Advisory only. |
 | ProtectedDayPillar | preferenceId, pillarId | Unique live pair; expresses preferred responsibilities, not access rules. |
 
@@ -174,18 +184,51 @@ labeled with their original dates. Completion and doneForPeriod outcomes remain
 queryable as history. Default daily presentation groups continuing work already
 Done for Today separately so it does not keep appearing as unfinished that day.
 
-Keep optional `priorityLabel` and `manualOrder` separate from due dates and lifecycle.
-The first UI can offer manual ordering without a global numeric score. A deterministic
-ID tiebreaker stabilizes equal order values. Reordering a list is one logical command;
-simultaneous reorders need conflict review. Exact priority/order precedence and rank
-encoding are deferred; these nullable fields do not prescribe a scoring algorithm.
+### Priority, context, manual order and dates
+
+Task numeric priority and manualOrderKey are authoritative base task properties,
+introduced in Phase 1.3. Context.sortKey orders groups. Initial TaskContext uses one
+optional primary assignment; retaining the table avoids duplicating context IDs
+when secondary assignments are eventually added. Do not also store Task.contextId.
+Physical live-uniqueness constraints must handle tombstones in both MariaDB and
+SQLite. Archive preserves assignments; default grouping treats an archived context
+as effectively unassigned. Deleting a context tombstones its links and leaves tasks.
+
+The synthetic No context group has no row/UUID and always comes last. The default
+daily tuple is assigned/unassigned, context sortKey/UUID, numeric priority, manual
+key, stable work-target identity. Recommend default priority 5, positive signed
+64-bit storage with its technical range documented; no arbitrary UI cap. Manual
+keys are canonical variable-length fractional tokens with binary comparison,
+not floating point. Exact token format and bounded rebalance algorithm are a
+Phase 1.3 design gate. Cross-priority dragging may change only the moved task's
+numeric priority plus key; equal-priority dragging changes only its key. See
+[Interactions.md](Interactions.md) for successor/predecessor policy and drop modes.
+
+Allocation.priorityLabel/manualOrder and PeriodObjective.priorityLabel/manualOrder
+remain *period* preferences, not substitutes for task numeric priority. The default
+daily view does not silently consult these to override task order. A separate
+planning-ranked view can make period order explicit later. Renaming these fields
+before physical schema implementation may improve clarity but changes no domain
+meaning. No global score or relationship between due date and priority is implied.
+
+PlanningPeriod uses half-open dates, with an inclusive end-date editor mapped to
+endDateExclusive. Custom sprint/quarter overlap, current selection, range edits,
+calendar/week boundaries and precise due-versus-allocation predicates are specified
+in Interactions.md. Period timeZone records its creation/calendar basis; current
+filter date uses configured calendarTimeZone and date labels do not shift as UTC
+instants when that preference changes. Fiscal quarter generation is deferred.
+
+FilterSpec and presentation rules are versioned value objects. Initially they need
+no relational tables; saved filters/preferences may use validated versioned JSON
+later. They must never store executable SQL. Persist cross-device preferences only
+with an explicit settings-sync policy; transient active filters stay device-local.
 
 ## Recurrence
 
 | Table | Proposed additional columns | Relationships / constraints |
 | --- | --- | --- |
 | RecurrenceRule | taskId, ruleVersion, ruleDefinition, timeZone, startDate, endDate?, enabled | Unique live task/ruleVersion; only recurring templates; versioned structured rule, not provider-specific text. Store old versions for historical occurrences. |
-| TaskOccurrence | taskId, recurrenceRuleId, occurrenceKey, nominalDate, lifecycleStatus, completedAt?, overrideTitle?, overrideDueDate? | Same-task rule FK; proposed active/completed/skipped/cancelled; unique dataset/task/occurrenceKey across replicas; per-instance completion. |
+| TaskOccurrence | taskId, recurrenceRuleId, occurrenceKey, nominalDate, lifecycleStatus, completedAt?, overrideTitle?, overrideDueDate?, priorityOverride?, manualOrderKeyOverride? | Same-task rule FK; proposed active/completed/skipped/cancelled; unique dataset/task/occurrenceKey across replicas; per-instance completion; positive priority override or inherited template value. Context assignment stays template-level initially. |
 
 Rule definitions need an explicit supported subset (daily/selected weekdays/monthly
 first), including interval, month-end behavior, exclusions, and date boundaries.
@@ -213,13 +256,21 @@ explicitly scheduled date until the user skips, completes, or reschedules it.
 - **Capture:** insert active Task with inbox triage and no required project/pillar/
   allocation. Voice recognition supplies editable text and optional generic source
   reference; no speech vendor belongs in the relational core.
-- **Done for Today:** in one transaction insert WorkEntry, mark today's allocation
-  doneForPeriod (creating a daily allocation if needed), leave continuing Task active.
-  A stable operation ID prevents accidental double submission. More work can be
-  recorded; returning the item to today's active list is an explicit reopen command.
+- **Worked Today:** record a progress WorkEntry for the captured local calendar
+  date/zone; leave lifecycle and allocations unchanged. The checkbox is derived
+  from non-void progress entries, never a Task boolean. Undo adds a correction/
+  void command and preserves the original. Other surviving sessions keep it checked.
+- **Done for Today:** atomically ensure a work marker, close TaskDayDisposition
+  and close existing today's allocations if any; leave lifecycle active. Do not
+  auto-create an allocation. Resume reopens that daily intent with history intact.
+  This refines the earlier allocation-creation proposal so Phase 1.3 work recording
+  does not require scheduling or imply a planned date; Phase 1.4 adds allocation
+  integration without changing the work command's meaning.
 - **Complete one-time task:** mark Task completed with completedAt, insert completion
   WorkEntry, and close outstanding planned allocations atomically. Keep old rows;
   reopening is explicit and does not silently reopen every old commitment.
+  Enforce completed lifecycle iff current completedAt is non-null for this target;
+  explicit reopening clears the projection but retains completion audit/history.
 - **Complete recurrence:** complete TaskOccurrence and its outstanding allocations,
   insert WorkEntry against that occurrence; leave recurring Task active.
 - **Reschedule:** set old allocation rescheduled and create target allocation with
@@ -234,8 +285,45 @@ Task completion and WorkEntry outcome must be coordinated by commands rather tha
 independent UI row edits. Void/correction semantics must not accidentally reopen
 completed work. Due dates never automatically generate or move allocations.
 Date-only planning remains on its chosen calendar date when traveling; actual UTC
-work instants remain unchanged. Review which home/travel zone generates “today”
-and recurring dates before mobile implementation.
+work instants remain unchanged. Work commands capture workDate/timeZone from the
+configured calendar zone; later preference changes never redate history. Undo/redo
+use the original date intent, while new work uses the new current date.
+
+## Future task custom fields — implement in Phase 3.1
+
+Use definition/value tables, never a physical Task column per field. Reuse UUID,
+dataset, revision and tombstone conventions. These are a future logical schema,
+not part of the first task migration.
+
+| Table | Proposed additional columns | Constraints / behavior |
+| --- | --- | --- |
+| CustomFieldDefinition | targetKind, name, fieldType, sortKey, required, validationVersion, validationRules, archivedAt? | Initially targetKind=task. Type text/integer/decimal/date/boolean/singleChoice/multipleChoice; name/type/options are definitions, not executable expressions. |
+| CustomFieldOption | fieldId, label, sortKey, archivedAt? | Stable option IDs; same dataset. Preserve archived choices in historical values; reject new selection unless explicitly allowed. |
+| TaskCustomFieldValue | taskId, fieldId, textValue?, integerValue?, decimalValue?, dateValue?, booleanValue? | One live task/field pair. Scalar exactly matches definition type; unset means no value row. Boolean false is distinct from unset; empty text allowed if validation permits. Choice types use child choice rows instead of scalar columns. |
+| TaskCustomFieldChoice | valueId, fieldId, optionId | Unique live value/option; option must belong to same field/dataset as value. SingleChoice exactly one; MultipleChoice zero or more. All choice mutations atomic. |
+
+Validate type and cross-table cardinality in shared commands plus enforceable SQL
+constraints. Integers follow an explicit numeric range; decimals use canonical
+fixed-precision base-10 values (propose DECIMAL(38,10) / canonical text in SQLite),
+never binary floating point. Confirm precision/rounding before implementation;
+reject excess precision instead of silently rounding. Dates remain local dates.
+No formula fields, arbitrary scripts or automatic type coercion.
+
+Definition edits, option removal and value changes are versioned/undoable. Reject
+incompatible type changes with existing values until an explicit validated migration
+is reviewed; archive definitions instead of dropping columns/data. Required fields
+must not break quick capture: validate at organized/editor completion, with a
+missing-field indicator for preexisting/inbox tasks. Option renames retain IDs.
+Choice count/required semantics must be enforced on save as a unit.
+
+Dialogs can render controls from definitions; table columns reference field UUIDs.
+Sort/filter use typed values, explicit unset-last policy and stable-ID ties;
+multichoice sorting uses configured option order and filtering supports any/all
+selected option IDs. Saved FilterSpec can later reference field IDs with typed
+predicates. Query planning/indexes follow real use. A future ProjectCustomFieldValue
+or ObjectiveCustomFieldValue table can provide typed owner FKs; do not use an
+unconstrained polymorphic ownerId or add core schema columns for every field.
+Occurrence-specific custom values and computed fields are deferred.
 
 ## Persistence and synchronization support
 
@@ -245,6 +333,7 @@ is needed in each phase; reserve the domain identities/transaction seams early.
 | Table | Phase | Proposed fields / role |
 | --- | --- | --- |
 | SchemaMigration | First persistence slice | version, checksum, appliedAt; local database evolution, no sync. |
+| CommandRecord | Phase 1.1 onward | id/commandId, operationId, commandType, payloadVersion, affected IDs, recordedAt, before/after touched values, resulting revisions, compensatesCommandId?, reappliesCommandId?; durable audit/receipts written with mutation. Session stack is not reconstructed from these automatically; remote payload/retention policy remains to be designed. |
 | LocalChange | First mutation slice, dormant outbox | operationId, datasetId, entityType, entityId, localRevision, baseServerRevision?, operationKind, payloadVersion, immutablePayload, createdAt, acknowledgmentState; transactionally tied to domain changes; multiple rows grouped by operationId for atomic commands. |
 | DeviceState | Sync phase | deviceId, datasetId, serverEndpoint, pullCursor?, lastSuccessAt?; device-local state, not replicated. |
 | SyncConflict | Sync phase | id, datasetId, operationId, entityId, baseSnapshot?, localSnapshot, remoteSnapshot, remoteRevision, resolutionState; durable unsent work and conflict review. |
@@ -290,5 +379,6 @@ host's MariaDB storage and routes host desktop mutations through the service's
 validated write path. The phone's SQLite replica exchanges domain changes with
 that Linux/Windows service over HTTPS; no extra cloud database is required.
 
-Start with the phase-one subset described in Roadmap.md. No SQL file, migration,
+Start with the Phase 1.1 subset described in Roadmap.md; work/contexts/order arrive
+in 1.3, allocations in 1.4, full period management in 3 and custom fields in 3.1. No SQL file, migration,
 or database has been created in this iteration.

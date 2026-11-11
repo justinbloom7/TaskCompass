@@ -75,8 +75,8 @@ prototype uses only static path labels/filter tags to demonstrate navigation. Th
 does not create production relationship enforcement or a shared domain model.
 
 The native iPhone application will have a separate UI and potentially reduced scope.
-Candidate workflows are quick capture, today's scheduled tasks, completion, Done
-for Today, and basic task review/editing, with offline operation and eventual sync.
+Candidate workflows are quick capture, today's scheduled tasks, completion, Worked
+Today, Done for Today, and basic task review/editing, with offline operation and eventual sync.
 These are candidates, not a finalized mobile feature list. The desktop need not
 wait for mobile UI validation or be constrained to mobile navigation patterns.
 Evaluate Qt Quick/QML later against native iOS requirements, licensing, build and
@@ -167,6 +167,85 @@ and `tests/`. Phase 0.1 creates only desktop fixture/model/dialog code, an isola
 storage diagnostic and focused tests; no shared domain/application core is built.
 VIM plus shell commands is the baseline workflow; build/run/test instructions must
 not require editor extensions.
+
+## Persistent command and undo architecture — introduced in Phase 1.1
+
+Interaction policies are specified in [Interactions.md](Interactions.md). They are
+production designs, not behaviors provided by the in-memory prototype. Keep command
+requests/results, validation, inverse recipes and transaction interfaces in the
+shared C++ application layer; presentation types never enter the business API.
+
+Recommend a CommandService receiving typed intents such as createTask, editTask,
+completeTask, reopenTask, recordWork, assignContext, reorderContexts, moveTask,
+moveOrganization, rescheduleAllocation and selectPeriodObjective. Validate IDs,
+expected revisions and touched invariants, then atomically commit domain rows,
+CommandRecord/history, and dormant LocalChange records in MariaDB. An inverse is a
+new compensating command against current revisions, never SQL rollback of a past
+transaction or deletion of audit history. A failed command rolls back all its writes.
+
+Receipts contain commandId, operationId, payload version, affected IDs, expected/
+result revisions and the specific before/after values needed for inverse/redo.
+Undo a create by tombstoning the created entity only if its current dependencies
+permit it; undo field edits restores only touched fields with valid preconditions.
+Completion receipts include lifecycle/timestamp/allocation changes. A cross-context
+drop includes assignment, priority and rank changes (and any local rebalance) in
+one receipt/transaction. Organizational moves validate both ancestry and related
+row revisions; a dialog's stale snapshot is never authoritative.
+
+Evaluate **QUndoStack as a desktop history adapter**, not as the transaction engine.
+It provides labels, stack indexing and redo-branch handling, but push calls redo
+immediately and undo/redo callbacks do not report database success. See
+[Qt QUndoStack](https://doc.qt.io/qt-6/qundostack.html). Recommendation:
+
+1. A desktop CommandController executes/awaits the shared service operation first.
+   On success it pushes an already-applied receipt adapter; the push-triggered
+   QUndoCommand::redo performs no second database mutation.
+2. Route desktop Undo/Redo actions through that controller. It applies the inverse/
+   forward intent via CommandService, awaits commit, then advances QUndoStack's
+   index through bookkeeping-only callbacks. On failure, leave index and visible
+   data unchanged and explain the failed precondition. Do not connect standard
+   stack actions or arbitrary setIndex calls directly to persistence.
+3. Serialize edits/undo while a commit is in flight, use revision preconditions,
+   and refresh every view after commit. QUndoStack macros alone are not atomic
+   database transactions. One dialog save or multi-property drag is one command;
+   merely selecting, filtering or hovering is not a persistent command.
+
+This adapter approach must have failure-injection tests in Phase 1.1. If it makes
+stack bookkeeping fragile, use a small desktop history controller instead of
+forcing persistence into QUndoCommand callbacks. Neither option changes shared
+business APIs or requires a generic UI abstraction framework.
+
+Recommend one chronological session stack per open dataset, shared across desktop
+views, initially limited to 100 user commands (configurable later). Clear it on
+close/restart/dataset change; persisted audit records are retained separately.
+A new successful edit after undo drops only the in-memory redo branch. Failed or
+cancelled edits do not discard redo. Redo is a new validated application of the
+original intent with new operationId/revisions, same stable entity IDs and original
+work-date intent; each retry of that *attempt* reuses its operationId. Store
+compensatesCommandId/reappliesCommandId to relate durable history. Do not merge
+already committed/synchronized audit entries as a typing optimization.
+
+Cannot safely undo physical purge, destructive schema migration, backup restore,
+or external side effects such as exported files via the ordinary stack. Require
+separate recovery workflows. Reject stale inverses or creates with new dependents
+rather than overwriting newer work. Restore/reopen commands may still be available
+after session undo is gone, using current-state validation; audit retention does
+not promise arbitrary long-term automatic rollback. Database autosave means the
+stack's clean index is not an “unsaved data” indicator.
+
+Future sync sends inverse/redo as normal new changes with tombstones/revisions.
+Never rewind server receipts, cursors or acknowledged history. Conservative initial
+policy: an externally applied sync/import change clears session undo/redo with a
+notice; uncommitted/in-flight operations must finish or fail before applying it.
+This avoids stale history replay. Later selective invalidation can retain unaffected
+commands if proven safe; conflicting offline compensation remains reviewable under
+the existing sync protocol. Local undo is not long-term distributed time travel.
+
+Date/filter/order services use value inputs (clock, calendar zone, preferences,
+FilterSpec, stable target IDs). Context ranks, task priority/manual ranks, and
+PeriodObjective ranking are distinct state. Custom-field definitions/typed values
+use repositories, not schema-per-field generation; details are in DataModel.md.
+No command engine, undo stack or custom-field code is added in Phase 0.2.
 
 ## Platform build and compatibility gates
 
@@ -369,3 +448,13 @@ shared artifact with the checkbook. Do not extract a generic sync framework unti
 both applications demonstrate the same needs. Authentication, TLS deployment,
 backups, local sensitive-data protection, and server retention need concrete design
 at that phase; no cloud provider or public multi-user service is assumed.
+
+## Project license and distribution
+
+Project-owned work is licensed **GPL-3.0-or-later**; see [LICENSE](../LICENSE) and
+[Licensing.md](Licensing.md). No current desktop dependency blocker was identified.
+Qt/connector/transitive notices and corresponding-source obligations still apply.
+Future iOS signing/store terms and library replacement rights require a separate
+release review; native iPhone distribution is not licensed/validated by this
+architecture proposal. A commercial Qt license alone does not remove the project's
+GPL obligations. No alternate license or linking exception is granted here.
