@@ -90,6 +90,20 @@ promptPassword() {
    printf '\n' >&2
 }
 
+# Keep client diagnostics out of SQL result parsing without writing credential files.
+redactClientDiagnostics() {
+   local line=''
+   local escapedAdmin=${adminPassword//\'/\'\'}
+   local escapedDev=${devPassword//\'/\'\'}
+   while IFS= read -r line || [[ -n "$line" ]]; do
+      [[ -z "$escapedAdmin" ]] || line=${line//"$escapedAdmin"/<redacted>}
+      [[ -z "$escapedDev" ]] || line=${line//"$escapedDev"/<redacted>}
+      [[ -z "$adminPassword" ]] || line=${line//"$adminPassword"/<redacted>}
+      [[ -z "$devPassword" ]] || line=${line//"$devPassword"/<redacted>}
+      printf '%s\n' "${line//$'\r'/}" >&2
+   done
+}
+
 # Passwords exist only in shell memory and each child process environment; not argv.
 # --no-defaults prevents unrelated application/client option files being read.
 runClient() {
@@ -97,7 +111,6 @@ runClient() {
    local sql=$2
    local password=''
    local output=''
-   local escapedPassword=${devPassword//\'/\'\'}
    local -a options=(--no-defaults --batch --raw --skip-column-names --connect-timeout=5)
    if [[ "$mode" == admin ]]; then
       password=$adminPassword
@@ -112,12 +125,9 @@ runClient() {
       options+=(--protocol=TCP --host="$DATABASE_HOST" --port="$DATABASE_PORT"
                 --user="$DATABASE_USER" "$DATABASE_NAME")
    fi
-   if ! output=$(printf '%s\n' "$sql" | MYSQL_PWD="$password" "$clientPath" "${options[@]}" 2>&1); then
-      [[ -z "$adminPassword" ]] || output=${output//"$adminPassword"/<redacted>}
-      [[ -z "$devPassword" ]] || output=${output//"$devPassword"/<redacted>}
-      [[ -z "$escapedPassword" ]] || output=${output//"$escapedPassword"/<redacted>}
-      fail "MariaDB failed: $output
-Check the running service, TCP 3306, account host match and password; no automatic repair attempted."
+   if ! output=$(printf '%s\n' "$sql" | MYSQL_PWD="$password" "$clientPath" "${options[@]}" 2> >(redactClientDiagnostics)); then
+      fail 'MariaDB client failed; see diagnostics above.
+Check the running service, TCP 3306, account host match and password; no automatic repair attempted.'
    fi
    output=${output//$'\r'/}
    printf '%s' "$output"

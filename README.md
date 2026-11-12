@@ -11,8 +11,10 @@ MariaDB connectivity diagnostic. No TaskCompass domain system, task persistence,
 schema, migrations or synchronization service has been implemented. Windows and
 live database validation remain pending; architecture/schema review continues.
 
-See [Building.md](docs/Building.md) for prerequisites, build/run/test commands,
-optional QMYSQL diagnostics, Windows instructions and validation limitations.
+Start with [Installation.md](docs/Installation.md) for Windows/UCRT64 and CentOS
+Stream 9 prerequisites, MariaDB Server installation and service startup. See
+[Building.md](docs/Building.md) for build/run/test commands, scripted database
+setup, QMYSQL diagnostics and validation limitations.
 
 Read in this order:
 

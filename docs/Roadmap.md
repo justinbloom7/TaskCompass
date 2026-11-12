@@ -94,6 +94,17 @@ available/loadable, which closes neither the Windows build/runtime review nor li
 server validation. See Building.md for the short scripted workflows. These are
 Phase 0.1 development tools, not production persistence or Phase 1.1 work.
 
+### MariaDB client-warning parsing correction
+
+Fixed the database helper's merging of successful client stderr into SQL result
+stdout. A client TLS warning could previously make an empty resource query look
+nonempty and stop setup with a false already-exists message. Sanitized warnings
+now remain visible separately; no SSL/password/account policy was changed. Added
+regression coverage for fresh setup and read-only validation with successful-query
+warnings, retained secret redaction and existing-resource rejection. This is a
+Phase 0.1 helper correction, not production persistence or a new live connection
+validation result. Windows live setup still needs a rerun of the corrected script.
+
 ### Organizational refinement validation
 
 The current hierarchy decisions supersede the earlier many-to-many organizational

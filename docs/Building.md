@@ -1,5 +1,10 @@
 # Phase 0.1 development guide
 
+Start with [Installation.md](Installation.md) for the complete Windows/UCRT64 and
+CentOS Stream 9 prerequisite checklist, MariaDB Server installation/service setup,
+and the install → build → dedicated database → validation sequence. This guide
+covers the existing project's commands, script behavior and observed results.
+
 This is a **desktop technology prototype**, not the task manager. It uses C++20,
 Qt 6 Widgets, Qt SQL and CMake. Tasks, statuses, priorities and navigation links are
 disposable presentation fixtures. Only window geometry, splitter position and
@@ -124,11 +129,12 @@ tables. A running local MariaDB service on port 3306 remains a prerequisite.
 
 ### Windows/UCRT64 quick start
 
-Open the **UCRT64 terminal**, then:
+After installing the prerequisites/server from Installation.md, open the
+**UCRT64 terminal** in the repository. Source the environment and build first;
+setup runs the compiled diagnostic automatically.
 
 ```bash
 source scripts/dev-environment.sh
-bash scripts/dev-database.sh setup
 ```
 
 The environment helper sets the existing TASKCOMPASS_DB_* non-secret settings,
@@ -140,6 +146,7 @@ changes only this shell, not Windows settings or startup files. Use a fresh
 cmake -S . -B build-ucrt64 -G Ninja -DCMAKE_BUILD_TYPE=Debug
 cmake --build build-ucrt64 --parallel 2
 ctest --test-dir build-ucrt64 --output-on-failure
+bash scripts/dev-database.sh setup
 ```
 
 If the client is not on PATH, setup searches standard `C:/Program Files/MariaDB*/bin`
@@ -284,12 +291,28 @@ changes or global grants. The diagnostic's existing exit codes remain documented
 in its source: 0 skipped/success, 2 missing plugin, 3 bad configuration, 4 connection
 failure, 5 query failure. Read the text to distinguish skipped from connected.
 
+### MariaDB client warnings are diagnostics, not query rows
+
+The helper keeps SQL results on stdout and forwards sanitized client stderr
+separately, including warnings from otherwise successful commands. A prior version
+merged both streams and could mistake a warning on an empty query for an existing
+database/account. The resulting “Database/account already exists” message was false
+in that case; that run stopped before creation. Use the corrected script and retry
+setup, without dropping/resetting accounts or changing server configuration.
+
+Some MariaDB clients can issue the “insecure passwordless login” TLS warning when
+a password is supplied through MYSQL_PWD; the TLS option check examines the client's
+explicit opt_password setting. The warning alone does not establish that the server
+account has an empty password. See the [MariaDB TLS-option check](https://github.com/MariaDB/server/blob/11.8/include/sslopt-vars.h).
+Warnings remain visible; this parsing fix does not disable SSL/certificate checking
+or change passwords. It also preserves rejection of genuinely existing resources.
+
 ### Helper validation status
 
-Shell syntax and six mock-client test groups pass on Linux, including paths with
+Shell syntax and seven mock-client test groups pass on Linux, including paths with
 spaces, native-client CRLF output, exact grant SQL, quoting a password containing
 quote/backslash, rejection of existing resources/nonempty schemas/extra roles,
-redaction and environment cleanup. CTest now includes DevDatabaseScripts when Bash
+redaction, successful-query stderr warnings and environment cleanup. CTest now includes DevDatabaseScripts when Bash
 is available; these tests create no real databases. No extra test library is used.
 The normal C++ build and all three CTest targets passed. A live Linux helper run
 failed before authentication with ERROR 2002 (HY000), unable to reach

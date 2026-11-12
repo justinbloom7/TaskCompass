@@ -11,6 +11,10 @@ cat > "$clientPath" <<'CLIENT'
 #!/usr/bin/env bash
 set -euo pipefail
 sql=$(cat)
+if [[ "${MOCK_WARNING:-0}" == 1 ]]; then
+   printf 'WARNING: option --ssl-verify-server-cert is disabled, because of an insecure passwordless login.\r\n' >&2
+   printf 'WARNING: redaction fixture %s\n' "${MYSQL_PWD:-}" >&2
+fi
 [[ "$1" == --no-defaults ]]
 for argument in "$@"; do
    [[ "$argument" != *'fixture-password'* ]] || exit 91
@@ -99,6 +103,18 @@ output=$(printf '%s\n%s\n%s\n' admin-fixture-password "$newPassword" "$newPasswo
 [[ -e "$temporaryDirectory/created" && "$output" == *'CLI and Qt validation passed'* ]]
 [[ "$output" != *'fixture-password'* && "$output" != *'FAKE-HASH'* ]]
 printf 'PASS: fresh setup uses escaped password SQL, exact grant and restricted validation.\n'
+warningOutput=$(printf '%s\n%s\n%s\n' admin-fixture-password "$newPassword" "$newPassword" |
+   MOCK_WARNING=1 bash "$scriptPath" setup --client "$clientPath" --build-dir "$temporaryDirectory/build" 2>&1)
+[[ "$warningOutput" == *'CLI and Qt validation passed'* ]]
+[[ "$warningOutput" == *'TaskCompass database: (absent)'* && "$warningOutput" == *'TaskCompass account hosts: (absent)'* ]]
+[[ "$warningOutput" == *'Server: 10.5.mock'* && "$warningOutput" == *'WARNING: option --ssl-verify-server-cert'* ]]
+[[ "$warningOutput" != *'fixture-password'* && "$warningOutput" != *'FAKE-HASH'* ]]
+warningOutput=$(MOCK_WARNING=1 bash "$scriptPath" test --client "$clientPath" --build-dir "$temporaryDirectory/build" 2>&1)
+[[ "$warningOutput" == *'CLI and Qt validation passed'* && "$warningOutput" != *'fixture-password'* ]]
+if printf 'admin-fixture-password\n' | MOCK_EXISTING=1 MOCK_WARNING=1 bash "$scriptPath" setup --client "$clientPath" >/dev/null 2>&1; then
+   printf 'FAIL: warnings bypassed existing-resource protection.\n' >&2; exit 1
+fi
+printf 'PASS: successful client stderr warnings stay visible/redacted without becoming SQL data.\n'
 bash -ec 'source "$1" --no-password; [[ "$TASKCOMPASS_DB_NAME" == taskcompass_dev ]]; clearTaskCompassDatabasePassword; [[ ! -v TASKCOMPASS_DB_PASSWORD ]]' bash "$repositoryDirectory/scripts/dev-environment.sh" >/dev/null
 if bash "$repositoryDirectory/scripts/dev-environment.sh" >/dev/null 2>&1; then
    printf 'FAIL: executing environment helper should require sourcing.\n' >&2; exit 1
