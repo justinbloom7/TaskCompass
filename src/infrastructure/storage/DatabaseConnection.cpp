@@ -3,12 +3,14 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QUuid>
+#include <QVariant>
 #include <stdexcept>
 
 namespace taskcompass {
 
 DatabaseConnection::DatabaseConnection(const DatabaseConfig &config)
    : connectionName(QUuid::createUuid().toString(QUuid::WithoutBraces)) {
+   config.validate(); // Also protects callers that construct DatabaseConfig directly.
    connection = QSqlDatabase::addDatabase("QMYSQL", connectionName);
    connection.setHostName(config.host);
    connection.setPort(config.port);
@@ -27,10 +29,22 @@ DatabaseConnection::DatabaseConnection(const DatabaseConfig &config)
       reject("Cannot open MariaDB. Check service/TCP availability, QMYSQL, account, password and grants.");
    }
    QSqlQuery query(connection);
+   if (!query.exec("SELECT DATABASE(), CURRENT_USER()") || !query.next()) {
+      query = QSqlQuery();
+      reject("Cannot verify the selected database and authenticated account; connection closed.");
+   }
+   try {
+      config.validateIdentity(query.value(0).toString(), query.value(1).toString());
+   } catch (...) {
+      query = QSqlQuery();
+      reject("Database/account identity check failed; connection closed before session initialization or table access.");
+   }
+   query.finish();
    if (!query.exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci")
        || !query.exec("SET SESSION time_zone = '+00:00'")
        || !query.exec("SET SESSION sql_quote_show_create = 1")
        || !query.exec("SET SESSION check_constraint_checks = ON")
+       || !query.exec("SET SESSION foreign_key_checks = ON")
        || !query.exec("SET SESSION sql_mode = 'STRICT_ALL_TABLES,NO_ENGINE_SUBSTITUTION'")) {
       query.finish();
       query = QSqlQuery();

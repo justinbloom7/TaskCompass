@@ -111,6 +111,9 @@ endif()
 if(BUILD_TESTING)
    add_executable(StorageSafetyTests tests/StorageSafetyTests.cpp)
    target_link_libraries(StorageSafetyTests PRIVATE TaskStorage)
-   add_test(NAME StorageSafetyTests COMMAND StorageSafetyTests "${CMAKE_CURRENT_SOURCE_DIR}/migrations/mariadb/001_PersistentTaskFoundation.sql")
+   add_dependencies(StorageSafetyTests MariaDbIntegrationTests)
+   add_test(NAME StorageSafetyTests COMMAND StorageSafetyTests
+            "${CMAKE_CURRENT_SOURCE_DIR}/migrations/mariadb/001_PersistentTaskFoundation.sql"
+            $<TARGET_FILE:MariaDbIntegrationTests>)
    set_tests_properties(MigrationSqlPreview PROPERTIES PASS_REGULAR_EXPRESSION "CREATE TABLE Task")
 endif()

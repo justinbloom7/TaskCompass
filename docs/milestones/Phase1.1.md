@@ -3,6 +3,10 @@
 # Phase 1.1 — Persistent Task Foundation
 
 Status: Step B source implementation delivered; live validation pending approval.
+
+Latest checkpoint: Stage 1 pre-approval safety review completed with source
+corrections; see the dated review and revised **Approval Requested** section at
+the end of this document. Live SQL/provisioning remains unexecuted and unauthorized.
 Recorded: 2026-11-12. This document saves the proposed implementation plan;
 the original Step A plan below is preserved as design history. The subsequent owner
 approval authorizes source, migration, test and documentation work, but not live
@@ -355,6 +359,10 @@ Windows execution requires an owner-operated Windows/UCRT64 machine and separate
 reported results. No approval is inferred from elapsed time or previous Step B approval.
 
 ### Stage 1 — exact integration provisioning SQL
+
+Historical initial proposal: the later Stage 1 safety review supersedes this
+section's DELETE grant and startup-reset behavior. Use its revised minimal SQL
+and fresh-schema procedure; the original proposal is preserved below as history.
 
 Use an authorized administrator for provisioning only. Inspect the two named schemas
 and the three new account names first; never print authentication hashes/passwords.
@@ -931,3 +939,274 @@ link already in DataModel.md. Interactive viewing and future renderer upgrades c
 be reviewed normally; neither is a new database approval. Phase 1.1 live Stage 1
 integration approval remains pending and Phase 1.1 remains incomplete. No change
 to previous source authorization, database conditions or milestone scope.
+
+## Stage 1 pre-approval safety review — 2026-11-12
+
+**Verdict: ready for owner review/approval of Stage 1, with the revised safeguards
+and SQL below. No live SQL, connection, account provisioning or grant changes were
+performed.** This is source-level/database-free verification, not successful live
+integration validation. Stage 2 remains a separate approval.
+
+Reviewed `tests/MariaDbIntegrationTests.cpp`, `MigrationRunner.h/.cpp`,
+`DatabaseConfig.h/.cpp`, `DatabaseConnection.h/.cpp`, `MigrateMain.cpp`, migration
+001, CMake test registration, safety tests and the earlier proposed grants/recovery
+procedures. The migration remains unchanged; its embedded/source equality and
+schema diagram checks still pass. No production schema change is proposed here.
+
+### Findings and corrections
+
+| Review requirement | Finding and resulting safeguard | Evidence / limitation |
+| --- | --- | --- |
+| Integration target only | `fromEnvironment(true)` reads only TASKCOMPASS_TEST_DB_*; exact taskcompass_integration/taskcompass_test and loopback host are required. Runtime variables never supply missing test configuration. | Pure configuration and subprocess rejection tests passed; no connection attempted. |
+| Identity/account protection | Previously configuration was validated only by the environment reader; direct construction could bypass it. The connection now validates configuration before driver creation/open, then checks DATABASE()/CURRENT_USER() before session initialization or table access. | Pure tests reject development/unrelated names and wrong accounts/hosts; actual server identity execution remains untested. |
+| Explicit opt-in/unexpected contents | Both exact --run --allow-reset arguments are required before reading configuration. Previously startup reset accepted any table with a recognized name, regardless of its origin. Startup now requires a completely empty schema; recognized pre-existing tables are protected too. | Pure policy tests and executable subprocess tests passed. Default integration CTest still skips without reading configuration. |
+| Limited grants | The previous proposed seven-privilege grant was scoped correctly, but DELETE was unused. Revised proposal removes it: SELECT, INSERT, UPDATE, CREATE, DROP, ALTER only on the exact escaped integration schema. | Static SQL review only. Existing/effective server grants have not been queried or verified. |
+| Failure/partial initialization | Migration writes now independently validate driver/configured and authenticated identities before any lock or DDL; runtime/admin credentials are refused. Existing partial/newer/checksum/fingerprint failures still stop without automatic resume or deletion. | Closed-handle rejection and embedded migration tests passed; live failure/rollback cases remain pending. |
+| No development reset | Every test DROP is explicitly qualified with taskcompass_integration. Reset checks authenticated identity again, requires current-run fresh-schema ownership and rejects unknown names, views/non-InnoDB tables and visible stored code. | Source audit and pure reset-policy tests passed; no destructive SQL executed. |
+
+Additional corrections/details:
+
+- Added `tests/IntegrationTestSafety.h`, a database-free policy shared by the live
+  test and safety tests. A fresh policy instance cannot reset anything. `begin`
+  accepts only an empty catalog; it cannot be called again to adopt existing data.
+  Later known test tables/partial initialization can be reset only within that
+  same process. Case handling follows server lower_case_table_names; a case-sensitive
+  Linux database rejects case variants instead of accidentally leaving other tables.
+- Catalog inspection is explicitly filtered to taskcompass_integration and includes
+  TABLES (name/type/engine), ROUTINES, TRIGGERS and EVENTS. Query failure stops the
+  run. Reset validates the catalog before DROP and verifies emptiness afterward.
+- A suite-lifetime advisory lock uses `TaskCompassMigration:taskcompass_integration`,
+  the same key as MigrationRunner. Competing cooperating suites/migration applies
+  fail before changes. Nested acquisition on the same connection is recursive;
+  inner migration release leaves the suite lease held. A second connection tests
+  exclusion in the pending live suite. See [MariaDB GET_LOCK](https://mariadb.com/docs/server/reference/sql-functions/secondary-functions/miscellaneous-functions/get_lock).
+- `DatabaseConfig::validateIdentity` rejects wrong selected schemas and mismatched
+  authenticated accounts, including localhost/root/other identities. No credentials
+  or actual identity values are printed in failure messages.
+- Connections explicitly enable foreign_key_checks in addition to CHECK enforcement;
+  migration writes and test catalog/reset checks require both enabled. Tests never
+  disable FK checks to force a DROP. A dependency error stops instead of cascading
+  into another schema.
+- `MigrationRunner::verify` also checks identity before inspecting tables. Raw
+  QSqlDatabase callers cannot accidentally migrate an arbitrary selected database;
+  supported development runtime reads remain permitted, while write access requires
+  the dedicated migration/test account. The SELECT-only diagnostic is unchanged.
+
+### Partial-failure and recovery assessment
+
+Migration 001 contains only the five reviewed CREATE TABLE statements, InnoDB,
+utf8mb4, same-schema FKs/indexes/CHECKs and the prepared metadata inserts already
+recorded above. There is no DROP, ALTER, GRANT, account operation, USE or unrelated
+schema reference in migration SQL. No migration/source checksum changes were made.
+
+DDL may already be committed when a later statement fails. The tool never claims
+DDL rollback: it records success only after creating/verifying the schema and
+committing Dataset/SchemaMigration metadata together. A partial existing table set,
+missing metadata, unexpected table, checksum/fingerprint mismatch or unsupported
+version is rejected, not repaired. Metadata commit uncertainty requires inspection.
+The existing backup/restore and separately approved cleanup procedure remains valid.
+No backup/restore, partial-failure SQL or repair was executed during this review.
+
+**Important recovery change:** after a failed integration run, a new invocation
+will refuse any leftover tables, even known ones. It will not use --allow-reset as
+permission to erase previous-run evidence. Preserve the failure and obtain a separate,
+concrete recovery approval for leftover integration objects before another run.
+Within one approved run, deliberately injected partial DDL/fault states may be reset
+because the suite previously established its own fresh schema and still holds its
+lease. This distinction does not authorize cleaning up development data.
+
+### Files changed in this review
+
+- `src/infrastructure/storage/DatabaseConfig.h/.cpp`: reusable preconnection and
+  authenticated-identity validation.
+- `src/infrastructure/storage/DatabaseConnection.cpp`: enforce those guards and
+  foreign-key checking before domain/table work.
+- `src/infrastructure/storage/MigrationRunner.h/.cpp`: independent identity/role/
+  constraint guards on verify/apply boundaries.
+- New `tests/IntegrationTestSafety.h`; updated `tests/MariaDbIntegrationTests.cpp`:
+  exact opt-in, fresh-start policy, catalog checks, suite lease, qualified DROP,
+  retained failure evidence and post-reset emptiness check.
+- `tests/StorageSafetyTests.cpp`: pure guards plus blocked subprocess cases;
+  `CMakeLists.txt`: pass the integration executable to these tests and ensure it
+  is built first. Default live test registration remains OFF.
+- `docs/Building.md`: fresh-start, no automatic recovery and concurrency/metadata
+  caveats. This milestone records findings and the superseding approval material.
+
+No domain/application/GUI feature code, migration SQL, diagram schema, diagnostic
+account or unrelated project was changed. The shared storage boundary now rejects
+unsafe configurations earlier; ordinary approved runtime configuration is preserved.
+
+### Exact executed commands and actual results
+
+```bash
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DTASKCOMPASS_ENABLE_DB_TESTS=OFF
+cmake --build build --parallel 2
+ctest --test-dir build --output-on-failure
+./build/StorageSafetyTests migrations/mariadb/001_PersistentTaskFoundation.sql ./build/MariaDbIntegrationTests
+python3 docs/diagrams/GenerateDatabaseSchema.py --check
+git diff --check
+```
+
+Configured with live registration explicitly OFF before CTest, avoiding a stale
+cache enabling destructive tests. Linux build succeeded. CTest: **seven passed,
+one skipped (MariaDbIntegrationTests), zero failures**. StorageSafetyTests covers:
+
+- Valid test configuration versus development/unrelated database, root/diagnostic/
+  other accounts, non-loopback host, invalid port and missing explicit isolation.
+- Direct-constructor rejection before opening, authenticated identity mismatch and
+  unopened migration handles failing before SQL.
+- Reset-before-begin rejection; protected recognized/unknown pre-existing tables;
+  routines/triggers/events; wrong table case, view type, non-InnoDB engine; expected
+  in-run partial table acceptance and Windows case-insensitive behavior.
+- Subprocesses with no flags, one flag, reversed flags and extra flags exit 77;
+  both flags with runtime-only environment or invalid test schema/user/host exit 1
+  at configuration validation. Only fake test credentials are used, never printed;
+  no valid connection case is launched by these process tests.
+
+Actual MariaDB authentication/current-user handling, object visibility, lock
+recursion/exclusion, grant enforcement, migration DDL, rollback/fault injection and
+Windows execution remain **not run live**. Database-free tests validate decisions
+and guard paths; source review does not prove a live server is correctly configured.
+
+### Limitations and required operator preflight
+
+Named locks are cooperative, not protection against an administrator ignoring them.
+No other writer/admin process may modify the disposable schema during the approved
+suite. Known-table shape is not frozen during in-run reset because the suite
+intentionally changes it to test migration drift; fresh start plus exclusive use
+establishes ownership. Stop on unexpected interference rather than trusting names.
+
+Restricted metadata may not expose every stored object/effective grant. The test's
+catalog rejection is defense in depth, not a server-wide security audit. The approved
+administrator must confirm empty objects, account scope and inherited role/PUBLIC
+policy before allowing the first test. Do not grant TRIGGER/EVENT/ROUTINE/global
+rights merely to improve visibility. See MariaDB's [trigger metadata](https://mariadb.com/docs/server/reference/system-tables/information-schema/information-schema-tables/information-schema-triggers-table).
+Unrelated PUBLIC test/test_% grants are not automatically modified; no test query
+uses those databases. Unexpected effective rights affecting development or broader
+write authority require explicit review, not silent privilege repair.
+
+## Approval Requested — Stage 1 after safety review
+
+**Ready for approval, not approved or executed.** This supersedes the earlier Stage 1
+startup-reset procedure and DELETE grant. Request only: approved administrator
+preflight and fresh integration provisioning, followed by the guarded Linux live
+suite below. Do not access/migrate taskcompass_dev or provision runtime/migration
+accounts under this Stage 1 approval. Stage 2 remains separate.
+
+Future read-only administrator preflight (do not execute until approved):
+
+```sql
+SELECT VERSION();
+SELECT SCHEMA_NAME, DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME
+   FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='taskcompass_integration';
+SELECT TABLE_NAME,TABLE_TYPE,ENGINE FROM information_schema.TABLES
+   WHERE TABLE_SCHEMA='taskcompass_integration';
+SELECT ROUTINE_NAME FROM information_schema.ROUTINES
+   WHERE ROUTINE_SCHEMA='taskcompass_integration';
+SELECT TRIGGER_NAME FROM information_schema.TRIGGERS
+   WHERE TRIGGER_SCHEMA='taskcompass_integration';
+SELECT EVENT_NAME FROM information_schema.EVENTS
+   WHERE EVENT_SCHEMA='taskcompass_integration';
+SELECT User,Host FROM mysql.user WHERE User='taskcompass_test';
+```
+
+If the database or any same-name account already exists, stop for inspection and
+explicit reuse/recovery approval; do not overwrite it. For confirmed absent
+resources only, the revised provisioning SQL is:
+
+```sql
+CREATE DATABASE taskcompass_integration
+   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'taskcompass_test'@'127.0.0.1'
+   IDENTIFIED BY '<distinct-strong-test-password>';
+GRANT SELECT, INSERT, UPDATE, CREATE, DROP, ALTER
+   ON `taskcompass\_integration`.*
+   TO 'taskcompass_test'@'127.0.0.1';
+```
+
+This is the entire requested privilege scope: exact integration schema only, no
+DELETE, global grant, GRANT OPTION, TRIGGER/EVENT/ROUTINE or development rights.
+Each privilege is exercised by the test: reading; inserting domain/audit/metadata;
+updating tasks and fault fixtures; initial CREATE; known-table DROP; drift-test
+ALTER. DROP also grants powerful authority within the disposable schema, so the
+account is test-only. The test contains no DROP DATABASE or account/grant SQL.
+Keep the existing diagnostic/runtime/migration users unchanged. Supply the real
+password through a reviewed private stdin mechanism, never source, shell history,
+command arguments, logs or Git; the placeholder is not a usable literal password.
+
+After authorized provisioning, inspect direct USER_PRIVILEGES/SCHEMA_PRIVILEGES/
+TABLE_PRIVILEGES/COLUMN_PRIVILEGES and role mappings for this exact test account;
+expect no global authority and only the six schema rights above, without grant
+options or extra roles. On MariaDB 10.11+ review PUBLIC grants (and any inherited
+roles) too; do not issue a PUBLIC query on 10.5 where that role is unavailable.
+Do not print account authentication hashes. Stop on unreadable/unexpected policy;
+no automatic privilege repair is authorized. Live grant correctness is an acceptance
+check still to perform, not a result of this review.
+
+Exact future privilege-metadata queries (administrator, after approval only):
+
+```sql
+SET @testGrantee = CONCAT(CHAR(39),'taskcompass_test',CHAR(39),'@',CHAR(39),'127.0.0.1',CHAR(39));
+SELECT PRIVILEGE_TYPE,IS_GRANTABLE FROM information_schema.USER_PRIVILEGES
+   WHERE GRANTEE=@testGrantee;
+SELECT TABLE_SCHEMA,PRIVILEGE_TYPE,IS_GRANTABLE FROM information_schema.SCHEMA_PRIVILEGES
+   WHERE GRANTEE=@testGrantee;
+SELECT TABLE_SCHEMA,TABLE_NAME,PRIVILEGE_TYPE,IS_GRANTABLE FROM information_schema.TABLE_PRIVILEGES
+   WHERE GRANTEE=@testGrantee;
+SELECT TABLE_SCHEMA,TABLE_NAME,COLUMN_NAME,PRIVILEGE_TYPE,IS_GRANTABLE FROM information_schema.COLUMN_PRIVILEGES
+   WHERE GRANTEE=@testGrantee;
+SELECT Host,User,Role FROM mysql.roles_mapping WHERE User='taskcompass_test';
+```
+
+Only when the server version supports PUBLIC (10.11+, including 13.0.2):
+
+```sql
+SHOW GRANTS FOR PUBLIC;
+```
+
+The direct schema name should be the exact escaped grant pattern, with six rights
+and IS_GRANTABLE=NO; no account-global rights except possible USAGE, and no table/
+column/explicit role grants are expected. If PUBLIC grants roles, stop for a complete
+inherited-policy review before the live suite; do not assume its first-level listing
+is sufficient. These read-only privilege queries deliberately avoid raw account
+SHOW GRANTS output containing authentication material.
+
+Once approved and confirmed fresh/empty, exact test command:
+
+```bash
+export TASKCOMPASS_TEST_DB_HOST=127.0.0.1 TASKCOMPASS_TEST_DB_PORT=3306
+export TASKCOMPASS_TEST_DB_NAME=taskcompass_integration
+export TASKCOMPASS_TEST_DB_USER=taskcompass_test TASKCOMPASS_TEST_DB_ISOLATED=1
+read -r -s -p 'Integration database password: ' TASKCOMPASS_TEST_DB_PASSWORD
+export TASKCOMPASS_TEST_DB_PASSWORD
+./build/MariaDbIntegrationTests --run --allow-reset
+unset TASKCOMPASS_TEST_DB_PASSWORD
+```
+
+Do not run yet. `dev-environment.sh` selects the diagnostic configuration and is not
+a substitute for these explicit TEST variables. Windows later uses the same TEST
+variables and `./build-ucrt64/MariaDbIntegrationTests.exe --run --allow-reset`.
+
+Approved in-run resets would use only these fully qualified statements after all
+identity/catalog/ownership checks and while holding the migration lease:
+
+```sql
+DROP TABLE IF EXISTS `taskcompass_integration`.`LocalChange`;
+DROP TABLE IF EXISTS `taskcompass_integration`.`CommandRecord`;
+DROP TABLE IF EXISTS `taskcompass_integration`.`Task`;
+DROP TABLE IF EXISTS `taskcompass_integration`.`Dataset`;
+DROP TABLE IF EXISTS `taskcompass_integration`.`SchemaMigration`;
+```
+
+A failed first run leaves evidence, not an automatically reusable empty schema.
+Request separate approved cleanup if needed; never target development for test
+recovery. On success the test verifies the integration schema is empty. Record
+actual Stage 1 results here and stop before Stage 2. No commit, merge, tag or push.
+
+Final review checks: the direct StorageSafetyTests command above passed, as did
+the browser-free diagram/source consistency check. Updated Markdown references,
+fences, the latest six-privilege isolated GRANT text and inline/source migration
+equality were checked with Python's standard library and passed. `git diff --check`
+passed; `git diff -- migrations/mariadb/001_PersistentTaskFoundation.sql` is empty.
+No build/test failures were observed. Review is complete; await explicit Stage 1
+approval before any live preflight SQL, provisioning or integration execution.

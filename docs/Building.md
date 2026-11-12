@@ -16,6 +16,17 @@ prints the embedded DDL without connecting; `--verify` is read-only. **Do not us
 --apply or enable live integration tests until the milestone SQL/procedures are
 approved.** Integration tests only accept taskcompass_integration/taskcompass_test.
 
+The integration database must start completely empty, even of recognized tables
+from an earlier failed run. Tests never clean up pre-existing objects at startup.
+Only known InnoDB tables created after the current process's fresh-schema check
+may be reset, with fully qualified integration-only DROP statements. Unexpected
+objects/types/engines or stored code stop the run. Preserve failure evidence and
+request reviewed recovery; do not rerun expecting automatic cleanup. An advisory
+migration lock excludes other cooperating test/migration runs. Initial stored-object
+and effective-grant inspection by the authorized operator is still required because
+restricted metadata visibility and noncooperating writers cannot be ruled out by
+client checks alone. See the milestone's latest pre-approval safety review.
+
 ```bash
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
 cmake --build build --parallel 2

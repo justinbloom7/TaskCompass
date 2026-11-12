@@ -1,4 +1,5 @@
 #include "MigrationRunner.h"
+#include "DatabaseConfig.h"
 #include "domain/Task.h"
 
 #include <QCryptographicHash>
@@ -40,6 +41,21 @@ QStringList tableNames(QSqlDatabase database) {
 
 MigrationRunner::MigrationRunner(QSqlDatabase database) : database(database) {}
 
+void MigrationRunner::requireIdentity(bool writing) {
+   require(database.isOpen() && database.driverName() == "QMYSQL", "Migration access requires an open QMYSQL connection to an approved TaskCompass database.");
+   DatabaseConfig config{database.hostName(), database.port(), database.databaseName(), database.userName(), database.password()};
+   config.validate();
+   if (writing) {
+      require(config.user == (config.databaseName == "taskcompass_integration" ? "taskcompass_test" : "taskcompass_migrate"),
+              "Migration writes require the dedicated migration/test account, never runtime or administrator credentials.");
+   }
+   QSqlQuery identity(database);
+   require(identity.exec("SELECT DATABASE(), CURRENT_USER(), @@foreign_key_checks, @@check_constraint_checks") && identity.next(), "Cannot verify migration database/account identity.");
+   config.validateIdentity(identity.value(0).toString(), identity.value(1).toString());
+   require(!writing || (identity.value(2).toInt() == 1 && identity.value(3).toInt() == 1),
+           "Migration writes require foreign-key and CHECK enforcement enabled.");
+}
+
 QByteArray MigrationRunner::migrationSql() {
    initializeMigrations();
    QFile file(":/migrations/001.sql");
@@ -64,6 +80,7 @@ QString MigrationRunner::fingerprint() {
 }
 
 std::string MigrationRunner::verify() {
+   requireIdentity(false);
    auto expected = TABLES;
    for (auto &name : expected) {
       name = name.toLower();
@@ -87,6 +104,7 @@ std::string MigrationRunner::verify() {
 }
 
 void MigrationRunner::applyInitial() {
+   requireIdentity(true);
    QSqlQuery lock(database);
    require(lock.exec("SELECT GET_LOCK(CONCAT('TaskCompassMigration:', DATABASE()), 0)")
            && lock.next() && lock.value(0).toInt() == 1, "Migration is locked by another process.");

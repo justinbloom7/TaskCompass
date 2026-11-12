@@ -16,6 +16,7 @@ public:
    static QByteArray migrationSql();
 
 private:
+   void requireIdentity(bool writing);
    QString fingerprint();
    QSqlDatabase database;
 };

@@ -1,3 +1,4 @@
+#include "IntegrationTestSafety.h"
 #include "application/TaskService.h"
 #include "infrastructure/storage/DatabaseConnection.h"
 #include "infrastructure/storage/MariaDbTaskRepository.h"
@@ -35,27 +36,58 @@ int count(QSqlDatabase database, const QString &table) {
    check(query.exec("SELECT COUNT(*) FROM " + table) && query.next(), "Cannot count test rows.");
    return query.value(0).toInt();
 }
-void resetTestSchema(QSqlDatabase database) {
+void requireTestIdentity(QSqlDatabase database) {
+   check(database.isOpen() && database.driverName() == "QMYSQL" && database.hostName() == "127.0.0.1"
+         && database.databaseName() == "taskcompass_integration" && database.userName() == "taskcompass_test",
+         "Integration connection metadata guard failed.");
    QSqlQuery identity(database);
-   check(identity.exec("SELECT DATABASE(), CURRENT_USER()") && identity.next()
+   check(identity.exec("SELECT DATABASE(), CURRENT_USER(), @@foreign_key_checks, @@check_constraint_checks") && identity.next()
          && identity.value(0).toString() == "taskcompass_integration"
-         && identity.value(1).toString() == "taskcompass_test@127.0.0.1", "Test reset identity guard failed.");
-   const QStringList tables = {"LocalChange", "CommandRecord", "Task", "Dataset", "SchemaMigration"};
-   QSqlQuery catalog(database);
-   check(catalog.exec("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()"), "Cannot inspect test schema.");
-   while (catalog.next()) {
-      check(tables.contains(catalog.value(0).toString(), Qt::CaseInsensitive), "Unexpected test table: refusing reset.");
-   }
-   catalog.finish();
-   for (const auto &table : tables) {
-      execute(database, "DROP TABLE IF EXISTS `" + table + "`");
-   }
+         && identity.value(1).toString() == "taskcompass_test@127.0.0.1"
+         && identity.value(2).toInt() == 1 && identity.value(3).toInt() == 1,
+         "Integration authenticated identity/enforcement guard failed.");
 }
+
+IntegrationTestSafety::Catalog readCatalog(QSqlDatabase database) {
+   requireTestIdentity(database);
+   IntegrationTestSafety::Catalog catalog;
+   QSqlQuery tables(database);
+   check(tables.exec("SELECT TABLE_NAME,TABLE_TYPE,ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA='taskcompass_integration'"),
+         "Cannot inspect integration tables; no reset permitted.");
+   while (tables.next()) {
+      catalog.tables.append({tables.value(0).toString(), tables.value(1).toString(), tables.value(2).toString()});
+   }
+   auto readNames = [&database](const QString &sql) {
+      QSqlQuery query(database);
+      check(query.exec(sql), "Cannot inspect integration stored objects; no reset permitted.");
+      QStringList names;
+      while (query.next()) {
+         names.append(query.value(0).toString());
+      }
+      return names;
+   };
+   catalog.routines = readNames("SELECT ROUTINE_NAME FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA='taskcompass_integration'");
+   catalog.triggers = readNames("SELECT TRIGGER_NAME FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA='taskcompass_integration'");
+   catalog.events = readNames("SELECT EVENT_NAME FROM information_schema.EVENTS WHERE EVENT_SCHEMA='taskcompass_integration'");
+   return catalog;
+}
+
+void resetTestSchema(QSqlDatabase database, const IntegrationTestSafety &safety) {
+   safety.requireResetAllowed(readCatalog(database));
+   const QStringList tables = {"LocalChange", "CommandRecord", "Task", "Dataset", "SchemaMigration"};
+   for (const auto &table : tables) {
+      execute(database, "DROP TABLE IF EXISTS `taskcompass_integration`.`" + table + "`");
+   }
+   const auto remaining = readCatalog(database);
+   safety.requireResetAllowed(remaining);
+   check(remaining.tables.isEmpty(), "Integration reset did not leave an empty schema; stop and inspect.");
+}
+
 }
 
 int main(int argc, char *argv[]) {
    QCoreApplication application(argc, argv);
-   if (application.arguments() != QStringList{application.arguments().first(), "--run", "--allow-reset"}) {
+   if (!IntegrationTestSafety::hasExplicitOptIn(application.arguments())) {
       QTextStream(stdout) << "SKIPPED: live tests require explicit --run --allow-reset and isolated TASKCOMPASS_TEST_DB_* configuration.\n";
       return 77;
    }
@@ -64,13 +96,28 @@ int main(int argc, char *argv[]) {
       check(config.user == "taskcompass_test", "Integration tests require the dedicated taskcompass_test account.");
       DatabaseConnection connection(config);
       auto database = connection.database();
-      resetTestSchema(database);
+      requireTestIdentity(database);
+      QSqlQuery lease(database);
+      check(lease.exec("SELECT GET_LOCK('TaskCompassMigration:taskcompass_integration',0)")
+            && lease.next() && lease.value(0).toInt() == 1,
+            "Another integration/migration process owns this schema; refusing to start.");
+      struct LeaseRelease {
+         QSqlDatabase database;
+         ~LeaseRelease() {
+            QSqlQuery query(database);
+            query.exec("SELECT RELEASE_LOCK('TaskCompassMigration:taskcompass_integration')");
+         }
+      } release{database};
+      QSqlQuery caseSetting(database);
+      check(caseSetting.exec("SELECT @@lower_case_table_names") && caseSetting.next(), "Cannot inspect table-name case mode.");
+      IntegrationTestSafety safety;
+      safety.begin(readCatalog(database), caseSetting.value(0).toInt()); // Never delete existing objects at startup.
       MigrationRunner migrations(database);
       rejects([&]() { migrations.verify(); });
       // Simulate a DDL failure after the first implicitly committed statement.
       execute(database, QString::fromUtf8(MigrationRunner::migrationSql()).split(';').first());
       rejects([&]() { migrations.applyInitial(); });
-      resetTestSchema(database);
+      resetTestSchema(database, safety);
       migrations.applyInitial();
       const auto datasetId = migrations.verify();
       migrations.applyInitial();
@@ -80,7 +127,7 @@ int main(int argc, char *argv[]) {
       execute(database, "UPDATE SchemaMigration SET version=1");
       execute(database, "UPDATE SchemaMigration SET checksum=REPEAT('0',64)");
       rejects([&]() { migrations.verify(); });
-      resetTestSchema(database);
+      resetTestSchema(database, safety);
       migrations.applyInitial();
       const auto dataset = migrations.verify();
       MariaDbTaskRepository repository(database, dataset);
@@ -140,6 +187,9 @@ int main(int argc, char *argv[]) {
       {
          // A genuinely new connection/session, not the existing in-memory objects.
          DatabaseConnection restarted(config);
+         QSqlQuery competingLock(restarted.database());
+         check(competingLock.exec("SELECT GET_LOCK('TaskCompassMigration:taskcompass_integration',0)")
+               && competingLock.next() && competingLock.value(0).toInt() == 0, "Integration lease did not exclude a competing connection");
          MariaDbTaskRepository reloaded(restarted.database(), MigrationRunner(restarted.database()).verify());
          check(reloaded.find(id) == repository.find(id), "Restart lost data/timestamps/UUID");
          TaskService fresh(reloaded, dataset, [&now]() { return now; }, uuid);
@@ -147,7 +197,7 @@ int main(int argc, char *argv[]) {
       }
       execute(database, "ALTER TABLE Task ADD COLUMN unexpectedTestColumn INT NULL");
       rejects([&]() { migrations.verify(); });
-      resetTestSchema(database); // Only the explicitly disposable integration schema.
+      resetTestSchema(database, safety); // Only the explicitly disposable integration schema.
       QTextStream(stdout) << "PASS: MariaDB migrations/version/checksum/fingerprint, persistence/restart, commands, constraints and atomic rollback. Test schema left empty.\n";
       return 0;
    } catch (const std::exception &error) {

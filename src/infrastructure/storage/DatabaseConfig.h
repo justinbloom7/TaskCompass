@@ -10,6 +10,8 @@ struct DatabaseConfig {
    QString databaseName;
    QString user;
    QString password;
+   void validate() const;
+   void validateIdentity(const QString &selectedDatabase, const QString &authenticatedAccount) const;
    static DatabaseConfig fromEnvironment(bool integration = false);
 };
 

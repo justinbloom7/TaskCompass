@@ -15,17 +15,28 @@ DatabaseConfig DatabaseConfig::fromEnvironment(bool integration) {
    config.password = environment.value(prefix + "PASSWORD");
    bool validPort = false;
    config.port = environment.value(prefix + "PORT", "3306").toInt(&validPort);
-   const QString expectedDatabase = integration ? "taskcompass_integration" : "taskcompass_dev";
-   if (environment.value(prefix + "ISOLATED") != "1" || config.host != "127.0.0.1"
-       || config.databaseName != expectedDatabase
-       || (integration ? config.user != "taskcompass_test"
-                       : (config.user != "taskcompass_app" && config.user != "taskcompass_migrate"))
-       || config.password.isEmpty() || !validPort || config.port < 1 || config.port > 65535) {
-      throw std::runtime_error(("Explicit isolated loopback configuration required: " + prefix
-                               + "HOST/PORT/NAME/USER/PASSWORD/ISOLATED; database must be "
-                               + expectedDatabase + ". See docs/Building.md.").toStdString());
+   if (environment.value(prefix + "ISOLATED") != "1" || !validPort) {
+      throw std::runtime_error("Explicit isolated database configuration and a valid port are required. See docs/Building.md.");
    }
+   config.validate();
    return config;
+}
+
+void DatabaseConfig::validate() const {
+   const bool integration = databaseName == "taskcompass_integration";
+   if (host != "127.0.0.1" || port < 1 || port > 65535 || password.isEmpty()
+       || (integration ? user != "taskcompass_test"
+                       : (databaseName != "taskcompass_dev"
+                          || (user != "taskcompass_app" && user != "taskcompass_migrate")))) {
+      throw std::runtime_error("Invalid isolated database/account configuration. Only approved loopback TaskCompass pairs are accepted.");
+   }
+}
+
+void DatabaseConfig::validateIdentity(const QString &selectedDatabase, const QString &authenticatedAccount) const {
+   validate();
+   if (selectedDatabase != databaseName || authenticatedAccount != user + "@127.0.0.1") {
+      throw std::runtime_error("Selected database or authenticated account differs from the explicit configuration; refusing access.");
+   }
 }
 
 }
