@@ -753,3 +753,181 @@ approval, execute and record those checks, then request Stage 2 separately. Wind
 Phase 1.1, live persistence and manual/backup checks remain unverified. Phase 1.1
 is not complete. This instruction update requests no new source scope or database
 authorization beyond the existing clearly labeled Approval Requested section.
+
+## Database ER diagram — documentation update, 2026-11-12
+
+Status: requested diagram artifacts and repository convention delivered. Phase 1.1
+live database validation remains pending; this work does not approve or execute it.
+Authority is migration 001 SQL, not the preliminary future logical model or an
+inspected live schema. The migration and application behavior are unchanged.
+
+### Files and implementation
+
+- Created [DatabaseSchema.md](../diagrams/DatabaseSchema.md): Mermaid ER diagram
+  with every table/column/type/nullability/key, FK and unique-constraint inventory,
+  exact CHECK expressions, declared indexes, storage details and enforcement limits.
+- Created [DatabaseSchema.svg](../diagrams/DatabaseSchema.svg): standalone landscape
+  vector diagram, 2264.40 × 938.40 viewBox, legible table cards and labeled connectors.
+  Solid blue FK links and dashed amber logical references have explicit text labels
+  as well as distinct styles; the two logical self-links share one SVG connector
+  for clarity. Mermaid shows them separately.
+- Created [GenerateDatabaseSchema.py](../diagrams/GenerateDatabaseSchema.py):
+  documentation-only Python standard-library helper. Both representations derive
+  from the same parsed migration metadata. `--check` verifies generated artifacts
+  byte-for-byte and checks SVG structure/content against the SQL-derived inventory.
+  The reader deliberately supports migration 001 only; additional migration files
+  cause refusal until cumulative-schema handling is reviewed/extended.
+- Updated [DataModel.md](../DataModel.md) to link the actual SQL schema reference
+  and SVG, distinguishing them from future tables in the preliminary model.
+- Updated [AGENTS.md](../../AGENTS.md) to require Mermaid/SVG updates whenever a
+  migration changes the schema, using cumulative migration SQL, explicit constraint
+  distinctions and recorded validation. Updated this milestone with the report.
+
+Inventory verified: **5 tables, 38 columns, 5 primary keys, 3 additional unique
+constraints, 4 SQL foreign keys, 12 CHECKs and 3 declared non-unique indexes**.
+Six fields are nullable. Task.datasetId/id is one composite unique key; the FK
+labels preserve composite column mappings. SchemaMigration has no relationships.
+Parent-to-child cardinalities come from SQL, including CommandRecord → LocalChange
+zero-or-one due to UNIQUE(operationId), rather than an assumed mandatory audit pair.
+
+The two nullable compensation/reapplication IDs are logical references, not FKs.
+LocalChange.id is not an FK either; operationId is its enforced command reference.
+Separate changeTask/changeCommand constraints do not enforce that the command and
+change name the same task/dataset. These are documented enforcement boundaries,
+not new schema-change proposals. No future domain entities were added to the diagram.
+
+### Validation and renderer findings
+
+Executed commands:
+
+```bash
+python3 --version
+dot -V
+rsvg-convert --version
+python3 docs/diagrams/GenerateDatabaseSchema.py
+python3 docs/diagrams/GenerateDatabaseSchema.py --check
+rsvg-convert -w 2000 docs/diagrams/DatabaseSchema.svg -o /tmp/taskcompass-schema-preview.png
+git diff --check
+```
+
+Results: Python 3.9.25, existing Graphviz 2.44.0 and librsvg 2.50.7 were available.
+Generation and regeneration comparison passed. SVG XML parsing, table/column/key/
+nullability content, relationship counts, landscape aspect and absence of external
+links, DTD, images or scripts passed the helper's structural checks. An independent
+Python standard-library cross-check also matched SQL columns/types/keys/nullability
+to Mermaid and SVG and checked all CHECK expressions against the Markdown inventory.
+Markdown local references/fences and diff whitespace checks passed.
+
+Rendered the SVG to the temporary PNG above and visually inspected it. The initial
+layout had logical self-loops crossing table text; connectors were moved outside
+the card and their two logical labels grouped. The final preview has readable
+labels and clear table contents without those overlaps. The preview PNG is outside
+the repository; the repository artifact is the scalable SVG.
+
+Mermaid CLI was not available. No software was installed: Graphviz generated the
+SVG directly from the same SQL-derived metadata, **not by rendering Mermaid**.
+Mermaid source follows the linked official ER syntax, including key markers and
+nullability comments; local Mermaid rendering was not performed. Firefox interactive
+opening was not performed; standard standalone SVG parsing and librsvg rendering
+passed. Renderer-version changes can alter layout; regenerate/review rather than
+assuming cross-version byte identity. No application build/CTest rerun was needed
+for this documentation-only change; prior source-validation evidence is unchanged.
+
+### Remaining work and approval status
+
+No schema, migration file, application source, accounts or database contents changed.
+No live migration, package installation, commit or push was performed. No conflict
+with the approved architecture or new repository policies was found. Diagram
+deliverables are complete, with Mermaid rendering and interactive Firefox viewing
+explicitly unverified. Existing Stage 1 live-integration Approval Requested remains
+pending; no new authorization is needed to create these documentation artifacts.
+
+## Mermaid CLI installation verified — 2026-11-12
+
+Owner reported installing Mermaid CLI. Verified `/home/justin/.nvm/versions/node/v26.13.0/bin/mmdc`
+is available and reports **12.2.0**. The existing Mermaid ER source parsed and
+rendered successfully. This supersedes the earlier renderer-unavailable observation
+and Graphviz fallback; those earlier results remain above as history.
+
+### Changes and decisions
+
+- Updated `docs/diagrams/GenerateDatabaseSchema.py` to render the actual generated
+  Mermaid source through the installed CLI instead of maintaining a separate DOT
+  layout. It still reads migration 001 as authority; no database is contacted.
+- Added `docs/diagrams/MermaidConfig.json` with a neutral theme, landscape direction
+  inherited from the ER source, explicit fonts/spacing, HTML labels and deterministic
+  IDs. CLI/browser dependencies are documentation tooling, not application dependencies.
+- Regenerated `DatabaseSchema.svg` as native Mermaid SVG, retaining XHTML labels.
+  Added an 80-pixel outer viewBox margin because CLI 12.2.0's initial bounds clipped
+  the upper logical-reference label. No table/connector layout is manually redrawn.
+  Four solid actual FKs and both dashed logical references are rendered separately.
+- Updated `DatabaseSchema.md` regeneration/validation notes and this milestone.
+  Schema content, relationships and constraints are unchanged. Earlier AGENTS/data
+  model edits remain in the working tree but were not changed in this follow-up.
+- Replaced Graphviz-specific byte regeneration checking with SQL/Mermaid/config
+  provenance hashes plus structural/content validation of the native Mermaid SVG.
+  `--check` runs without launching a browser or writing files. It checks all 38
+  column types/keys/nullability/comments, five entities, four solid FK connectors,
+  two dashed logical connectors, landscape bounds and no external resources/scripts.
+  It does not claim byte-identical output across renderer upgrades.
+
+### Commands, results and failures
+
+```bash
+command -v mmdc
+mmdc --version
+mmdc --help
+```
+
+Passed: CLI 12.2.0 installed. Extracted the Mermaid block from DatabaseSchema.md
+to `/tmp/taskcompass-schema.mmd`, then tested:
+
+```bash
+mmdc -i /tmp/taskcompass-schema.mmd -o /tmp/taskcompass-mermaid-schema.svg -t neutral -b white
+```
+
+The restricted sandbox initially blocked its browser process:
+`sandbox_host_linux.cc:41 ... shutdown: Operation not permitted (1)`.
+The same command succeeded with an approved execution outside the restricted
+sandbox. This was a browser sandbox boundary, not a missing installation or ER
+syntax error. No packages were installed and no Chromium `--no-sandbox` flag was used.
+
+Preview investigation: librsvg could not display Mermaid's XHTML labels. Trial
+`htmlLabels=false` exports wrapped/clipped row comments, so that configuration was
+rejected. Browser-rendered PNGs with HTML labels displayed the table contents
+correctly; the final helper adds outer margin for the top self-link label. These
+were documentation rendering issues, not database or application defects.
+
+Final generation/check and browser preview commands:
+
+```bash
+python3 docs/diagrams/GenerateDatabaseSchema.py
+python3 docs/diagrams/GenerateDatabaseSchema.py --check
+mmdc -i /tmp/taskcompass-schema.mmd -o /tmp/taskcompass-mermaid-final.png \
+   -c docs/diagrams/MermaidConfig.json -I TaskCompassSchema -t neutral -b white --size 2400
+mkdir -p /tmp/taskcompass-firefox-diagram-profile
+firefox --headless --no-remote --profile /tmp/taskcompass-firefox-diagram-profile \
+   --screenshot /tmp/taskcompass-mermaid-firefox.png --window-size 3600,1200 \
+   file:///home/justin/repo/TaskCompass/docs/diagrams/DatabaseSchema.svg
+git diff --check
+```
+
+Generation and browser preview were executed with the required tool-level sandbox
+approval; `--check` works within the restricted sandbox. All final commands passed.
+Firefox exited successfully using a separate temporary profile; the screenshot of
+the **final standalone SVG** was visually inspected and shows all text and both
+logical-reference labels without clipping. Temporary screenshots/profiles remain
+outside the repository. Interactive Firefox use was not tested.
+
+Markdown relative references/fences and diff whitespace checks passed. No application
+build/CTest rerun was needed: only documentation artifacts, renderer configuration
+and the documentation helper changed. No schema SQL, application behavior, live
+database, accounts or privileges changed; no commit or push performed.
+
+### Status and remaining work
+
+Mermaid rendering and headless Firefox display are now verified. Use the same SVG
+link already in DataModel.md. Interactive viewing and future renderer upgrades can
+be reviewed normally; neither is a new database approval. Phase 1.1 live Stage 1
+integration approval remains pending and Phase 1.1 remains incomplete. No change
+to previous source authorization, database conditions or milestone scope.

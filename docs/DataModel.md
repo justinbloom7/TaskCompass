@@ -1,5 +1,10 @@
 # Preliminary relational model
 
+For the actual Phase 1.1 migration schema, see the
+[database ER diagram and constraint reference](diagrams/DatabaseSchema.md) or
+[open its standalone SVG](diagrams/DatabaseSchema.svg). Those artifacts derive
+from migration SQL; the broader logical model below includes future features.
+
 **Future logical model; Phase 1.1 now has proposed executable DDL for its subset.**
 See [migration 001](../migrations/mariadb/001_PersistentTaskFoundation.sql) and the
 [Phase 1.1 report](milestones/Phase1.1.md). DDL has not been executed against a live

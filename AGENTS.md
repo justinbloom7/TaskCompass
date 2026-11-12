@@ -127,6 +127,24 @@ requesting the final approval needed for execution.
   and backup/rollback limitations before requesting execution approval. Do not
   assume MariaDB DDL rolls back transactionally or silently repair schema history.
 
+## Database schema diagrams
+
+Whenever a migration changes the database schema, update
+[docs/diagrams/DatabaseSchema.md](docs/diagrams/DatabaseSchema.md) and
+[docs/diagrams/DatabaseSchema.svg](docs/diagrams/DatabaseSchema.svg) in the same
+change. Use the cumulative actual migration SQL as authority, not the preliminary
+future model or assumptions about a live deployment.
+
+Include all tables, columns, SQL types, nullability, primary/foreign/unique keys,
+relationships, CHECK constraints and indexes. Clearly distinguish enforced SQL
+foreign keys from logical references without FK constraints, including composite
+keys and SQL-permitted cardinalities. Keep the Mermaid source and standalone SVG
+consistent, legible and linked from the data model. Update/review any generation
+helper for later migrations; do not assume a narrow migration reader applies new
+DDL automatically. Record regeneration commands, schema consistency checks, visual
+inspection and renderer limitations in the milestone report. Diagram generation
+does not authorize database access, migration execution or dependency installation.
+
 ## Validation and completion
 
 - Run relevant builds and automated tests after changes. For documentation-only
