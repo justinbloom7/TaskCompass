@@ -5,11 +5,14 @@
 A traditional desktop task manager organized around responsibilities, objectives,
 projects, and guided planning at quarterly, sprint, weekly, and daily horizons.
 
-**Status: Phase 0.2 requirements/design refinement; Phase 0.1 partially validated.** The C++20/Qt 6
+**Status: Phase 0.1 accepted; Phase 1.1 plan awaiting implementation approval.** The C++20/Qt 6
 Widgets desktop runs with disposable in-memory samples and an optional, separate
 MariaDB connectivity diagnostic. No TaskCompass domain system, task persistence,
-schema, migrations or synchronization service has been implemented. Windows and
-live database validation remain pending; architecture/schema review continues.
+schema, migrations or synchronization service has been implemented. The owner
+reports successful Linux/Windows builds, GUI launches and MariaDB diagnostics.
+The [Phase 1.1 milestone plan](docs/milestones/Phase1.1.md) records the proposed
+persistent foundation and approval gates. Milestone plans and results live under
+`docs/milestones/`.
 
 Start with [Installation.md](docs/Installation.md) for Windows/UCRT64 and CentOS
 Stream 9 prerequisites, MariaDB Server installation and service startup. See

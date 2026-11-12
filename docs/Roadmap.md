@@ -1,16 +1,29 @@
 # Implementation roadmap
 
-Current work is **Phase 0.1 connectivity validation and approved ordering documentation**,
-following completed Phase 0.2 documentation/licensing. The existing
-Phase 0.1 prototype remains implemented but validation-incomplete. All production
-phases below require explicit authorization; this plan does not start Phase 1.
+Current work is **Phase 1.1 Step A: inspection and design**, awaiting owner approval
+for implementation. The owner has completed and accepted Phase 0.1, reporting
+successful Linux/Windows builds, GUI launches and MariaDB diagnostics. Phase 0.2
+documentation/licensing is delivered. Earlier dated pending results below are
+historical observations, superseded by this owner acceptance. No Phase 1.1
+production implementation or database changes have begun.
 The architecture stays C++20/Qt 6 Widgets/CMake with MariaDB, a shared UI-independent
 core, later mobile SQLite and Linux/Windows bidirectional synchronization service.
+
+## Milestone documents
+
+Keep one document per milestone under `docs/milestones/`, named `Phase<version>.md`.
+Each records its status, prerequisites/evidence, scope, implementation plan, safety
+and approval gates, tests/completion criteria, and actual results/remaining work.
+Create documents as milestones are planned; keep this roadmap as the cross-phase
+overview and requirements/architecture as the shared design baseline.
+
+- [Phase 1.1 — Persistent Task Foundation](milestones/Phase1.1.md): proposed plan;
+  Step B approval pending.
 
 | Phase | Intended delivery | Dependencies / principal exit gate |
 | --- | --- | --- |
 | 0 | Initial architecture/organization review | Recorded requirements and single-parent ownership decisions. |
-| 0.1 | Desktop technology prototype | Existing implementation; finish isolated MariaDB, Windows and interactive checks. |
+| 0.1 (accepted) | Desktop technology prototype | Owner accepted; Linux/Windows build, GUI launch and MariaDB diagnostics reported successful. |
 | 0.2 (documentation delivered) | Requirements, interactions, command design, logical schema, roadmap and GPL license | Documentation consistency and licensing review; no production features. |
 | 1.1 | Persistent task foundation with undo from its first edits | Close 0.1 gates, review 0.2 policies, explicit authorization; restart/transaction/history tests. |
 | 1.2 | Organizational management | 1.1 command/storage core; legal ownership, nested navigation and undoable moves/archive. |
