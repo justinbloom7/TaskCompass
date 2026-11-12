@@ -1,11 +1,10 @@
 # Implementation roadmap
 
-Current work is **Phase 1.1 Step A: inspection and design**, awaiting owner approval
-for implementation. The owner has completed and accepted Phase 0.1, reporting
-successful Linux/Windows builds, GUI launches and MariaDB diagnostics. Phase 0.2
-documentation/licensing is delivered. Earlier dated pending results below are
-historical observations, superseded by this owner acceptance. No Phase 1.1
-production implementation or database changes have begun.
+Current work is **Phase 1.1 Step B implementation and pre-database review**.
+Owner approved source/migration/test/documentation work; live provisioning, grants
+and migrations remain behind explicit approval. Phase 0.1 is accepted on owner
+reported Linux/Windows builds, GUI launches and MariaDB diagnostics; earlier dated
+pending observations below remain historical. Phase 1.1 is not complete.
 The architecture stays C++20/Qt 6 Widgets/CMake with MariaDB, a shared UI-independent
 core, later mobile SQLite and Linux/Windows bidirectional synchronization service.
 
@@ -17,8 +16,8 @@ and approval gates, tests/completion criteria, and actual results/remaining work
 Create documents as milestones are planned; keep this roadmap as the cross-phase
 overview and requirements/architecture as the shared design baseline.
 
-- [Phase 1.1 — Persistent Task Foundation](milestones/Phase1.1.md): proposed plan;
-  Step B approval pending.
+- [Phase 1.1 — Persistent Task Foundation](milestones/Phase1.1.md): implementation report, validation evidence and
+  concrete database SQL/procedure approval checkpoint.
 
 | Phase | Intended delivery | Dependencies / principal exit gate |
 | --- | --- | --- |
@@ -321,8 +320,25 @@ authorized. Exit when selected features work offline and converge safely on devi
 Desktop parity and mobile drag-and-drop are not initial requirements; architecture
 does not forbid later mobile reorder gestures using the same commands.
 
-## Recommended next step
+## Recommended next step — historical Phase 0.2 recommendation
 
 Ordering defaults/drop policy/one primary context are approved. Review remaining
 Phase 0.2 recommendations and finish outstanding Phase 0.1 validation checks.
 Then explicitly authorize a small Phase 1.1 persistence/command slice. Do not begin Phase 1 or deploy the whole proposed schema from this document.
+
+This recommendation predates owner acceptance of Phase 0.1 and authorization of
+Phase 1.1 Step B. The current next checkpoint is the explicit live integration
+approval recorded in [Phase 1.1](milestones/Phase1.1.md); source approval does not
+authorize live provisioning or migrations.
+
+
+## Phase 1.1 source implementation checkpoint — 2026-11-12
+
+TaskCore, Qt SQL storage, migration 001/explicit CLI and a separate TaskCompass
+persistent desktop are implemented in source. The accepted fixture prototype is
+unchanged. Ordinary tests do not contact MariaDB. Live tests are explicit opt-in,
+restricted to taskcompass_integration and its dedicated account; no taskcompass_dev
+reset is supported. Phase 1.1 stays incomplete pending approved provisioning,
+migration/live integration checks on MariaDB 10.5/13, Windows validation of the new
+code, and manual restart/backup/usability checks. Full file inventory, actual test
+results, limitations and proposed SQL are in [the milestone](milestones/Phase1.1.md).

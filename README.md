@@ -5,14 +5,17 @@
 A traditional desktop task manager organized around responsibilities, objectives,
 projects, and guided planning at quarterly, sprint, weekly, and daily horizons.
 
-**Status: Phase 0.1 accepted; Phase 1.1 plan awaiting implementation approval.** The C++20/Qt 6
-Widgets desktop runs with disposable in-memory samples and an optional, separate
-MariaDB connectivity diagnostic. No TaskCompass domain system, task persistence,
-schema, migrations or synchronization service has been implemented. The owner
-reports successful Linux/Windows builds, GUI launches and MariaDB diagnostics.
-The [Phase 1.1 milestone plan](docs/milestones/Phase1.1.md) records the proposed
-persistent foundation and approval gates. Milestone plans and results live under
-`docs/milestones/`.
+**Status: Phase 0.1 accepted; Phase 1.1 source implemented, live validation pending.**
+The original `TaskCompassPrototype` remains a disposable in-memory demonstration.
+The new `TaskCompass` desktop and `TaskCompassMigrate` tool implement the persistent
+foundation but have not yet been validated against a live migrated database.
+Account provisioning and migration execution require owner approval. See the
+[Phase 1.1 milestone report](docs/milestones/Phase1.1.md) for implementation,
+test evidence, exact proposed SQL, recovery procedures and approval requests.
+Milestone plans and results live under `docs/milestones/`.
+
+[AGENTS.md](AGENTS.md) contains the permanent Codex development, safety and
+milestone-reporting instructions for this repository.
 
 Start with [Installation.md](docs/Installation.md) for Windows/UCRT64 and CentOS
 Stream 9 prerequisites, MariaDB Server installation and service startup. See
@@ -48,7 +51,9 @@ preferences, and remaining implementation decisions.
 Production designs now distinguish Worked Today, Done for Today and Completed;
 include undo/redo from the first persistence milestone; and specify numeric
 priorities, user-defined context order and persistent drag/drop behavior. These
-capabilities are **not implemented by the sample prototype**. See the interaction
+capabilities are **not implemented by the sample prototype**. Phase 1.1 adds only
+independent task capture/edit/completion/reopen and transactional session undo/redo
+in the separate persistent executable; later task/planning capabilities remain deferred. See the interaction
 specification for confirmed requirements and recommended policies needing review.
 
 TaskCompass project-owned code and documentation are free software: you may

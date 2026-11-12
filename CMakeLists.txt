@@ -55,3 +55,62 @@ if(BUILD_TESTING)
                         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
                         TIMEOUT 30)
 endif()
+
+# Phase 1.1: standard-C++ core, Qt SQL adapter and separate persistent desktop.
+add_library(TaskCore STATIC src/domain/Task.cpp src/application/TaskService.cpp)
+set_target_properties(TaskCore PROPERTIES AUTOMOC OFF)
+target_include_directories(TaskCore PUBLIC src)
+
+set(CMAKE_AUTORCC ON)
+add_library(TaskStorage STATIC
+            src/infrastructure/storage/DatabaseConnection.cpp
+            src/infrastructure/storage/DatabaseConfig.cpp
+            src/infrastructure/storage/MigrationRunner.cpp
+            src/infrastructure/storage/MariaDbTaskRepository.cpp
+            src/infrastructure/storage/Migrations.qrc)
+target_link_libraries(TaskStorage PUBLIC TaskCore Qt6::Sql)
+add_executable(TaskCompassMigrate src/infrastructure/storage/MigrateMain.cpp)
+target_link_libraries(TaskCompassMigrate PRIVATE TaskStorage)
+
+if(BUILD_TESTING)
+   add_executable(TaskCoreTests tests/TaskCoreTests.cpp)
+   set_target_properties(TaskCoreTests PROPERTIES AUTOMOC OFF)
+   target_link_libraries(TaskCoreTests PRIVATE TaskCore)
+   add_test(NAME TaskCoreTests COMMAND TaskCoreTests)
+   add_test(NAME MigrationSqlPreview COMMAND TaskCompassMigrate)
+endif()
+
+add_library(PersistentDesktop STATIC
+            src/desktop/persistent/PersistentTaskController.cpp
+            src/desktop/persistent/PersistentTaskModel.cpp
+            src/desktop/persistent/PersistentTaskFilter.cpp
+            src/desktop/persistent/PersistentTaskWindow.cpp)
+target_link_libraries(PersistentDesktop PUBLIC TaskCore Qt6::Widgets)
+add_executable(TaskCompass src/desktop/persistent/PersistentMain.cpp)
+target_link_libraries(TaskCompass PRIVATE PersistentDesktop TaskStorage)
+
+if(BUILD_TESTING)
+   add_executable(PersistentDesktopTests tests/PersistentDesktopTests.cpp)
+   target_link_libraries(PersistentDesktopTests PRIVATE PersistentDesktop Qt6::Test)
+   add_test(NAME PersistentDesktopTests COMMAND PersistentDesktopTests)
+   set_tests_properties(PersistentDesktopTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 30)
+endif()
+
+if(BUILD_TESTING)
+   add_executable(MariaDbIntegrationTests tests/MariaDbIntegrationTests.cpp)
+   target_link_libraries(MariaDbIntegrationTests PRIVATE TaskStorage)
+   option(TASKCOMPASS_ENABLE_DB_TESTS "Enable explicitly approved destructive tests on taskcompass_integration only" OFF)
+   if(TASKCOMPASS_ENABLE_DB_TESTS)
+      add_test(NAME MariaDbIntegrationTests COMMAND MariaDbIntegrationTests --run --allow-reset)
+   else()
+      add_test(NAME MariaDbIntegrationTests COMMAND MariaDbIntegrationTests)
+   endif()
+   set_tests_properties(MariaDbIntegrationTests PROPERTIES SKIP_RETURN_CODE 77 LABELS integration TIMEOUT 120)
+endif()
+
+if(BUILD_TESTING)
+   add_executable(StorageSafetyTests tests/StorageSafetyTests.cpp)
+   target_link_libraries(StorageSafetyTests PRIVATE TaskStorage)
+   add_test(NAME StorageSafetyTests COMMAND StorageSafetyTests "${CMAKE_CURRENT_SOURCE_DIR}/migrations/mariadb/001_PersistentTaskFoundation.sql")
+   set_tests_properties(MigrationSqlPreview PROPERTIES PASS_REGULAR_EXPRESSION "CREATE TABLE Task")
+endif()

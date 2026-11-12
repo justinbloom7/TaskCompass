@@ -1,6 +1,9 @@
 # Preliminary relational model
 
-**Logical schema only; no executable DDL.** Organizational cardinalities are
+**Future logical model; Phase 1.1 now has proposed executable DDL for its subset.**
+See [migration 001](../migrations/mariadb/001_PersistentTaskFoundation.sql) and the
+[Phase 1.1 report](milestones/Phase1.1.md). DDL has not been executed against a live
+database; owner approval is required. Organizational cardinalities are
 confirmed; physical representation and other proposed columns/states remain for
 review. This is not an instruction to create tables or migrations. Table names use
 PascalCase and column names camelCase; no SQL snake_case exception is assumed.
@@ -394,3 +397,28 @@ that Linux/Windows service over HTTPS; no extra cloud database is required.
 Start with the Phase 1.1 subset described in Roadmap.md; work/contexts/order arrive
 in 1.3, allocations in 1.4, full period management in 3 and custom fields in 3.1. No SQL file, migration,
 or database has been created in this iteration.
+
+
+## Phase 1.1 physical subset — source implemented, live validation pending
+
+Only Dataset, Task, CommandRecord, LocalChange and SchemaMigration are included.
+TaskCore uses standard strings, optional notes, typed active/completed status and
+signed 64-bit UTC epoch milliseconds. Title/notes must be valid UTF-8 with no NUL;
+title is ASCII-whitespace-trimmed, limited to 1024 UTF-8 bytes; notes to 65535 bytes.
+These are explicit storage/validation limits, not priority or custom-field limits.
+Task IDs/dataset IDs are canonical lowercase UUID strings. No ownership, context,
+priority, dates, recurrence or planning columns are deployed prematurely.
+
+Task.localRevision starts at 1 and advances on every mutation/compensation. createdAt
+is preserved; updatedAt is monotonic, including when the wall clock moves backward.
+Completion timestamps are restored exactly by undo/redo; explicit reopening clears
+the current timestamp. Tombstones are separate from lifecycle and serve undo-create.
+CommandRecord retains completion history; WorkEntry is deferred.
+
+SchemaMigration adds schemaFingerprint to version/checksum/appliedAt for conservative
+schema drift checks. Command snapshots/change payloads use version 1 JSON; 64-bit
+integers are decimal strings to avoid JSON-number precision loss. LocalChange is a
+dormant complete task snapshot with operation/revision/tombstone identity; no
+replication contract or server metadata is implemented. Audit/change tables have
+no physical deletion or runtime update path. Concrete constraints, privileges,
+migration failure recovery and unverified aspects are in the milestone document.

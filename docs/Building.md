@@ -1,4 +1,63 @@
-# Phase 0.1 development guide
+# Development guide
+
+The Phase 0.1 prototype is accepted (owner-reported Linux/Windows builds, launches
+and CLI/Qt connectivity). Historical observations below remain dated evidence.
+Phase 1.1 adds separate executables; live database validation is awaiting approval.
+The authoritative [Phase 1.1 report](milestones/Phase1.1.md) contains SQL, privilege
+separation, backup/recovery, commands, test results and pending approvals.
+
+## Phase 1.1 executables and safety
+
+Existing configure/build commands build the new targets too. `TaskCompassPrototype`
+and `TaskCompassDbDiagnostic` retain their original behavior. `TaskCompass` requires
+an explicitly migrated taskcompass_dev database and taskcompass_app runtime account.
+It never creates a schema or changes grants. `TaskCompassMigrate` without arguments
+prints the embedded DDL without connecting; `--verify` is read-only. **Do not use
+--apply or enable live integration tests until the milestone SQL/procedures are
+approved.** Integration tests only accept taskcompass_integration/taskcompass_test.
+
+```bash
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build build --parallel 2
+ctest --test-dir build --output-on-failure
+./build/TaskCompassMigrate
+```
+
+Ordinary CTest covers prototype, core, desktop, configuration and SQL-resource
+checks; MariaDbIntegrationTests is reported skipped by default (no networking).
+Core tests use an in-memory repository and do not prove MariaDB SQL compatibility.
+The old dev-database.sh test intentionally still requires an empty SELECT-only
+validation schema: after an approved migration it will reject taskcompass_dev as
+nonempty. Do not weaken that safety check; use the new schema verifier and separate
+integration tests for Phase 1.1. dev-environment.sh still selects the diagnostic
+account; override USER explicitly for the runtime/migrator after approval.
+
+After runtime provisioning/migration approval and execution, Linux launch is:
+
+```bash
+source scripts/dev-environment.sh --password
+export TASKCOMPASS_DB_USER=taskcompass_app
+./build/TaskCompass
+clearTaskCompassDatabasePassword
+```
+
+Enter the runtime account's password, not the diagnostic password. Only this shell
+and child processes receive it. Never use tracing or literal passwords in commands.
+Windows/UCRT64 uses the same commands with build-ucrt64 and `.exe`. Migration and
+test account commands, grants and reset scope are documented in the milestone.
+A stopped server is not a password failure: check `systemctl status mariadb` and
+TCP 3306 before repeating password entry. The application reports connection and
+schema failures and provides View → Reload; it does not start services or repair
+permissions. Runtime errors omit connector text that might disclose secrets.
+
+The persistent window supports independent task capture/edit, lifecycle checkboxes,
+explicit reopen, Show Completed and session Undo/Redo. Commits run on a worker;
+closing waits until a mutation completes. Session history clears on restart;
+audit/task records persist. No organization/date/priority/context editors are
+implemented. New platform/live results must be recorded in the milestone before
+claiming Phase 1.1 completion.
+
+## Historical Phase 0.1 guide and results
 
 Start with [Installation.md](Installation.md) for the complete Windows/UCRT64 and
 CentOS Stream 9 prerequisite checklist, MariaDB Server installation/service setup,
