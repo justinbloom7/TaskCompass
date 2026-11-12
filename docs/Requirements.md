@@ -29,9 +29,10 @@ influence the design; they need not ship in the first usable release.
 | Daily use | Combined task categories; separate Worked Today and Completed quick actions; Done for Today/Resume as distinct daily-intent actions; user-defined contexts, numeric priority, drag insertion lines, moves and alternate views. |
 | Progress/completion | Work against current local calendar date without completing; undo with history preserved; additional work on later days. Completion updates lifecycle/completedAt, hides by default, supports show filters, undo and explicit reopen; recurring operations target instances. No unrelated Task booleans. |
 | Undo/redo | Shared typed commands, transactional inverse/redo receipts and persistent history from Phase 1.1. Desktop session history across views; failures do not move history index; sync compensation is a new revisioned operation. |
-| Contexts | Entirely user-defined, optional; create/rename/archive/delete/assign/remove/reorder/group/filter. Persistent context sort positions; context groups precede the final No context group regardless of task priority. |
-| Numeric priority | Positive integers, 1 highest; editable default on capture; no arbitrary product maximum. Independent of context order, objective sprint rank, due dates and lifecycle. |
-| Drag/drop | Persistent within/between-context insertion with visible between-row line and destination context, no mutation on cancel, atomic assignment/order/priority change with undo. No context drop removes assignment. |
+| Contexts | Entirely user-defined, optional; create/rename/archive/delete/assign/remove/reorder/group/filter. Persistent user-defined context sort positions; one optional primary TaskContext assignment initially, extensible to secondary contexts later. Context groups precede the final No context group regardless of task priority. |
+| Numeric priority | Positive integers, 1 highest; every capture defaults to 5; explicitly editable; no arbitrary product maximum. Independent of context order, objective sprint rank, due dates and lifecycle. |
+| Hidden manual order | Approved default daily order: context position, ascending numeric priority, hidden manual-order token within the context/priority group, stable task UUID. No visible subpriority field. |
+| Drag/drop | Persistent within/between-context insertion with visible between-row line and destination context, no mutation on cancel, atomic assignment/order/priority change with undo. Within-priority drops change hidden order only; cross-priority drops adopt insertion-anchor priority shown in preview. Unrelated priorities and relative order remain unchanged. No context drop removes assignment. |
 | Dates/presentation | Configurable theme-aware due-date text rules for overdue/today/tomorrow/later/completed with non-color labels and explicit precedence; due and planned dates are different. |
 | Filters | Overdue, today/by today, tomorrow/by tomorrow, end-of-week, sprint/quarter due ranges, active/completed, no due date, context, numeric priority and organizational scope. Calendar-zone/week-start aware; completed hidden by default. |
 | Periods | UUID/label/horizon/start/end for quarters and sprints; half-open stored bounds, calendar quarters/month sprints by default, custom sprint dates; disambiguate overlapping current periods. Objective selection never schedules tasks automatically. |
@@ -40,7 +41,7 @@ influence the design; they need not ship in the first usable release.
 | Separation | Lifecycle, allocation, horizon, period priority, actual work, and completion are distinct. Unallocated is not inherently a lifecycle state. |
 | Capture | Fast inbox entry; future mobile voice capture independent of speech provider. |
 | Long term | Someday/long-term work stays available without cluttering daily planning. |
-| Current iteration | Phase 0.2 documentation/design and license only. Phase 0.1 remains an in-memory prototype with pending validation; no production features, schema/migrations, sync, mobile work, dependency installation, or Git commit. |
+| Current iteration | Phase 0.1 connectivity validation plus approved-ordering documentation after Phase 0.2. Dedicated empty development database and SELECT-only account permitted; no application tables, migrations, persistent task/ordering implementation, sync, mobile work or Git commit. |
 
 ## Proposed behavior needing review
 
@@ -55,8 +56,6 @@ influence the design; they need not ship in the first usable release.
 | Scheduling granularity | Dates only; timed appointments | Date and period allocations first; distinguish due date from planned date. Time-of-day sessions deferred. |
 | Current sprint/quarter | Reject overlap; allow overlap with explicit selection | Recommend permit overlapping custom periods, require explicit current choice when ambiguous, and show bounds. Defaults are calendar month/quarter. Range edits keep IDs and flag commitments for review without moving dated work. |
 | Period relationships | Strict quarter→sprint→week→day tree; independent intervals | Independent date intervals because weeks/sprints cross quarter boundaries. Associations derived by overlap; no forced parent. |
-| Priority/order | Renumber all priorities; manual-only; combination | Recommend default 5; context first, numeric priority then fractional manual key/UUID. Drops adopt successor priority (predecessor at end) and change only moved priority/key; equal-priority drops change key only. Preview changes; no unrelated priority renumbering. |
-| Initial context cardinality | One primary; multiple contexts | Recommend one optional primary TaskContext row initially, preserving the link-table shape for future secondary assignments. No change to organizational parents. |
 | Session undo | QUndoStack as domain engine; receipt adapter; custom controller | Recommend shared CommandService + commit-gated desktop history adapter; evaluate QUndoStack bookkeeping only. Session stack default 100 commands, durable audit retained separately. |
 | Archive/move with children | Mutate every descendant; inherited effective archive | Recommend parent-reference moves and effective descendant archive; preserve descendant explicit flags/history. Restore never silently unarchives ancestors/children. |
 | Inbox/someday | Lifecycle statuses; organizational attributes | Inbox as triage attribute; someday as planning visibility. Both independent of active/completed status and allocation. |
@@ -76,8 +75,9 @@ influence the design; they need not ship in the first usable release.
    Flat objectives and single-parent membership are settled, not open alternatives.
 3. Approve the proposed CommandService/desktop history failure policy before
    Phase 1.1; introduce it with the first persistent edits, not retroactively.
-4. Review default priority 5, cross-priority drop policy, one primary context and
-   configured-calendar-zone behavior in Interactions.md before their milestones.
+4. Context/priority/hidden-order behavior is approved. Specify/test the canonical
+   fractional-token format and bounded normalization before Phase 1.3. Calendar-zone
+   behavior and remaining interaction recommendations still need review.
 5. Resolve MariaDB physical naming/collation and migration portability before
    persistence implementation. Desktop/service MariaDB, mobile SQLite, and Windows
    builds on Windows remain the storage/platform direction. Mobile UI scope, toolkit
@@ -113,3 +113,19 @@ distinguish confirmed capabilities from recommended policies awaiting review.
 [Licensing.md](Licensing.md) records the license grant, dependency evidence and
 unresolved native-iOS release concerns. No Phase 0.2 behavior is implied to exist
 in the Phase 0.1 prototype.
+
+## Approved ordering behavior — 2026-11-11
+
+Context position takes precedence over numeric priority; No context is always last.
+New tasks default to 5; 1 is highest. Manual positions are hidden and persistent
+within context/priority bands. Same-priority drags never change numeric priority;
+cross-priority drags adopt the existing successor/predecessor anchor policy with
+an explicit resulting-priority preview. Cross-context moves update assignment and
+destination order together, including removal of assignment for No context, as one
+undoable transaction. Never renumber unrelated priorities or reorder unrelated work.
+
+Variable-length fractional tokens remain the recommended physical rank family,
+with binary deterministic comparison. Token alphabet/encoding, length threshold,
+normalization window/algorithm, and physical indexes remain implementation choices;
+the user-visible behavior is settled. See Interactions.md and DataModel.md. This
+approval does not authorize implementing ordering or starting Phase 1.1.

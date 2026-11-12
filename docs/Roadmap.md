@@ -1,6 +1,7 @@
 # Implementation roadmap
 
-Current work is **Phase 0.2: documentation, design and license**. The existing
+Current work is **Phase 0.1 connectivity validation and approved ordering documentation**,
+following completed Phase 0.2 documentation/licensing. The existing
 Phase 0.1 prototype remains implemented but validation-incomplete. All production
 phases below require explicit authorization; this plan does not start Phase 1.
 The architecture stays C++20/Qt 6 Widgets/CMake with MariaDB, a shared UI-independent
@@ -10,7 +11,7 @@ core, later mobile SQLite and Linux/Windows bidirectional synchronization servic
 | --- | --- | --- |
 | 0 | Initial architecture/organization review | Recorded requirements and single-parent ownership decisions. |
 | 0.1 | Desktop technology prototype | Existing implementation; finish isolated MariaDB, Windows and interactive checks. |
-| 0.2 (current) | Requirements, interactions, command design, logical schema, roadmap and GPL license | Documentation consistency and licensing review; no production features. |
+| 0.2 (documentation delivered) | Requirements, interactions, command design, logical schema, roadmap and GPL license | Documentation consistency and licensing review; no production features. |
 | 1.1 | Persistent task foundation with undo from its first edits | Close 0.1 gates, review 0.2 policies, explicit authorization; restart/transaction/history tests. |
 | 1.2 | Organizational management | 1.1 command/storage core; legal ownership, nested navigation and undoable moves/archive. |
 | 1.3 | Everyday progress, contexts, numeric priority and drag ordering | 1.1/1.2; context order first, then grouped insertion/atomic moves and undo. |
@@ -41,7 +42,7 @@ The desktop prototype does not link SQL or connect to a server.
 | Actual display startup | Passed: `./build/TaskCompassPrototype --smoke-test` showed/closed on DISPLAY=:1 with exit 0. Interactive visual/keyboard usability review remains pending. |
 | Qt SQL/MariaDB library compatibility | QMYSQL available and loadable; plugin resolves installed libmariadb.so.3 with no missing libraries. |
 | Diagnostic with no connection | Passed: `./build/TaskCompassDbDiagnostic` lists drivers and skips connection with exit 0; automated incomplete-configuration case returns exit 3 without networking. |
-| Successful isolated database connection/version query | Pending: no dedicated database connection configuration supplied; no server connection attempted. |
+| Successful isolated database connection/version query | Pending as of 2026-11-11: target taskcompass_dev@127.0.0.1:3306 specified, but service initially inactive and sudo needs interactive authentication. Dedicated setup/CLI/Qt live checks await administrator action; do not infer existing resource names or emptiness. |
 | Windows build/runtime/plugin deployment | Pending: no Windows environment available; instructions supplied, no Windows success claimed. |
 
 **Phase 0.1 is not complete.** Finish the live isolated MariaDB check, Windows
@@ -50,6 +51,48 @@ The observed Linux results support Widgets as a suitable starting point; they do
 not validate the full task manager, synchronization or mobile architecture.
 See [Building.md](Building.md) for exact commands and limitations. No schema,
 migration, persistent task data, sync or mobile implementation was introduced.
+
+### Connectivity/ordering follow-up — 2026-11-11
+
+Context order, optional single primary assignment, priority 5 default, ascending
+numeric priority and hidden manual position/UUID ties are now approved. Same-band
+drags leave priority unchanged; crossing bands uses the displayed insertion-anchor
+priority and updates only moved task values. Cross-context assignment/order changes
+are one undoable command; unrelated priorities and relative order stay intact.
+Fractional-token encoding and normalization details are implementation choices,
+not unresolved user-visible ordering policy. No ordering source code was added.
+
+Executed `cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug`,
+`cmake --build build --parallel 2`, `ctest --test-dir build --output-on-failure`,
+and `./build/TaskCompassDbDiagnostic`: configure/build passed, both CTest targets
+passed, QMYSQL available/loadable, optional connection skipped with exit 0.
+Installed MariaDB server/client packages are 10.5.29; both mysql/mariadb commands
+exist. Initial privileged service inspection reports inactive/no TCP listener;
+admin socket queries and sudo authentication could not proceed. No new package,
+database/account or application table creation is claimed. A reviewed temporary
+provisioner and read-only validator are prepared outside the repository; live CLI/
+Qt results remain pending operator authentication. See Building.md for exact
+commands and privilege/credential policies. Windows and interactive review remain
+pending; Phase 0.1 stays incomplete and Phase 1.1 is not authorized.
+
+### Reusable development scripts
+
+Added repository Bash environment, isolated setup/inspection and read-only testing
+helpers for Linux and Windows/UCRT64. Passwords are prompted, kept in memory/child
+environments, never written to files by these helpers. Setup stops on any existing
+target resource and never upgrades credentials/privileges, starts services or
+creates application tables. Tests use only the restricted development account and
+the existing Qt diagnostic. Prior temporary credential files are not read/deleted
+by the repository helpers.
+
+Configured/built with CMake and ran CTest: all three targets passed, including
+six mock-client/environment test groups. Bash syntax checks passed. A live Linux
+read-only helper invocation failed with ERROR 2002 before authentication while
+connecting to 127.0.0.1:3306; no writes were attempted. Successful live database
+validation and Windows execution remain pending. The user reported Windows QMYSQL
+available/loadable, which closes neither the Windows build/runtime review nor live
+server validation. See Building.md for the short scripted workflows. These are
+Phase 0.1 development tools, not production persistence or Phase 1.1 work.
 
 ### Organizational refinement validation
 
@@ -80,7 +123,7 @@ Complete only when those pending checks have evidence. Defer all actual domain,
 persistence, schema, sync and mobile features. Existing Linux results below are
 historical evidence, not new claims that the remaining checks passed.
 
-### Phase 0.2 — requirements and architecture refinement (current)
+### Phase 0.2 — requirements and architecture refinement (documentation delivered)
 
 Prerequisite: repository/prototype review and owner decisions. Deliver updated
 requirements/architecture/model, Interactions.md, Licensing.md, GPL LICENSE and
@@ -127,7 +170,8 @@ recurrence, advanced planning and organizational destructive subtree deletion.
 
 ### Phase 1.3 — everyday task management
 
-Prerequisite: 1.1/1.2; review priority/drop/cardinality/rank policies. First deliver
+Prerequisite: 1.1/1.2; ordering/priority/primary-context behavior is approved.
+Specify/test canonical fractional-token encoding and bounded normalization first. First deliver
 context CRUD/assignment and persistent context order, then numeric priorities and
 rank storage, then grouped drag-and-drop. Also deliver Worked Today, Done for Today,
 Resume Today, consistent completion/reopen and undo/redo for all these operations.
@@ -241,6 +285,6 @@ does not forbid later mobile reorder gestures using the same commands.
 
 ## Recommended next step
 
-Review Phase 0.2 policy recommendations and finish the three outstanding Phase 0.1
-validation checks. Then explicitly authorize a small Phase 1.1 persistence/command
-slice. Do not begin Phase 1 or deploy the whole proposed schema from this document.
+Ordering defaults/drop policy/one primary context are approved. Review remaining
+Phase 0.2 recommendations and finish outstanding Phase 0.1 validation checks.
+Then explicitly authorize a small Phase 1.1 persistence/command slice. Do not begin Phase 1 or deploy the whole proposed schema from this document.

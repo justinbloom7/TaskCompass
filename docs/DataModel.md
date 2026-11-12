@@ -74,9 +74,9 @@ Shared columns above are omitted from this table.
 | Pillar | parentPillarId?, name, description, archivedAt? | Self FK; reject self-parenting and cycles; no arbitrary depth cap. |
 | Objective | pillarId?, projectId?, title, description, lifecycleStatus, targetStartDate?, targetEndDate?, completedAt?, archivedAt? | Proposed active/onHold/completed/cancelled; date range valid when provided. Exactly one of pillarId/projectId; flat, with no parent-objective reference. No period ownership. |
 | Project | pillarId?, parentProjectId?, title, description, lifecycleStatus, archivedAt? | Exactly one of pillarId/parentProjectId; acyclic parent chain terminating at a pillar; may be long-running. Project completion rules independent of child completion pending review. |
-| Task | objectiveId?, directProjectId?, title, notes, taskKind, lifecycleStatus, triageStatus, planningVisibility, dueDate?, estimatedMinutes?, priority, manualOrderKey, completedAt?, archivedAt?, captureSource?, captureReference? | kind oneTime/continuing/recurring; proposed lifecycle active/onHold/completed/cancelled; triage inbox/organized; visibility normal/someday; estimate nonnegative; priority positive integer (proposed default 5); manual key independent of due date. At most one of objectiveId/directProjectId; both null allowed. No stored pillarId or derived projectId. Source metadata optional, provider-neutral. |
+| Task | objectiveId?, directProjectId?, title, notes, taskKind, lifecycleStatus, triageStatus, planningVisibility, dueDate?, estimatedMinutes?, priority, manualOrderKey, completedAt?, archivedAt?, captureSource?, captureReference? | kind oneTime/continuing/recurring; proposed lifecycle active/onHold/completed/cancelled; triage inbox/organized; visibility normal/someday; estimate nonnegative; priority positive integer with approved default 5; hidden manual key independent of due date. At most one of objectiveId/directProjectId; both null allowed. No stored pillarId or derived projectId. Source metadata optional, provider-neutral. |
 | Context | name, description, sortKey, archivedAt? | Entirely user-defined; persistent fractional order, stable UUID ties. Name case/uniqueness policy remains to be reviewed. |
-| TaskContext | taskId, contextId, isPrimary | Recommended initial at most one live row per task, isPrimary=true; optional assignment. Unique live pair; future multiple live rows must retain exactly one primary. No organizational ownership meaning. |
+| TaskContext | taskId, contextId, isPrimary | Approved initial at most one live row per task, isPrimary=true; optional assignment. Unique live pair; future multiple live rows must retain exactly one primary. No organizational ownership meaning. |
 | TaskDependency | predecessorTaskId, successorTaskId, dependencyKind | Unique live directed pair/kind; proposed kind finishToStart; reject self-links and directed cycles. |
 | TaskRelation | firstTaskId, secondTaskId, relationKind | Non-blocking related links; canonical endpoint order for symmetric kinds; no self-links. |
 
@@ -196,12 +196,24 @@ as effectively unassigned. Deleting a context tombstones its links and leaves ta
 
 The synthetic No context group has no row/UUID and always comes last. The default
 daily tuple is assigned/unassigned, context sortKey/UUID, numeric priority, manual
-key, stable work-target identity. Recommend default priority 5, positive signed
-64-bit storage with its technical range documented; no arbitrary UI cap. Manual
-keys are canonical variable-length fractional tokens with binary comparison,
-not floating point. Exact token format and bounded rebalance algorithm are a
-Phase 1.3 design gate. Cross-priority dragging may change only the moved task's
-numeric priority plus key; equal-priority dragging changes only its key. See
+key, stable task UUID (occurrence UUID finally breaks ties for its instances).
+Manual keys are not visible subpriority fields. Default priority 5 is approved;
+positive signed 64-bit storage remains proposed with its technical range documented
+and no arbitrary UI cap. Manual
+keys retain the recommendation for canonical ASCII variable-length fractional
+tokens with unsigned bytewise lexicographic comparison, not floating point.
+MariaDB should use a binary-safe type/comparison and SQLite BINARY/blob comparison;
+C++ must match, without locale/case/whitespace conversion. Exact token format,
+maximum practical length threshold and bounded normalization algorithm are a
+Phase 1.3 implementation gate. Insertion between/before/after uses destination
+anchors after removing the moved row; empty bands get an initial canonical key.
+Normalize only the affected local window/band if keys grow too long or collide,
+retaining all unrelated numeric priorities and relative order. Approved cross-
+priority dragging changes only the moved task's numeric priority plus hidden key;
+equal-priority dragging changes only its key. Context moves include assignment
+in the same transaction. Receipts capture old/new tuple, anchors/revisions and any
+normalization participants for exact safe undo/redo. Stable IDs break ties after
+reloads; future sync validates atomic moves and anchors, never client timestamps. See
 [Interactions.md](Interactions.md) for successor/predecessor policy and drop modes.
 
 Allocation.priorityLabel/manualOrder and PeriodObjective.priorityLabel/manualOrder

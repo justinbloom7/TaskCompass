@@ -247,6 +247,32 @@ PeriodObjective ranking are distinct state. Custom-field definitions/typed value
 use repositories, not schema-per-field generation; details are in DataModel.md.
 No command engine, undo stack or custom-field code is added in Phase 0.2.
 
+## Approved daily ordering contract — 2026-11-11
+
+User-defined context position is the primary grouping; unassigned tasks always
+follow assigned contexts. One optional primary TaskContext assignment is approved
+initially, with the logical link table retained for future secondary contexts.
+Every new task defaults to numeric priority 5 (1 highest). Within each context,
+compare ascending priority, hidden manual token, then stable task UUID. The hidden
+manual value is never a visible subpriority editor and is independent of due dates,
+planning-objective ranks and lifecycle.
+
+Within a priority band, a drag changes only the hidden token. A cross-priority drop
+adopts successor priority (predecessor at end, retain own priority for an empty
+destination), previews it, and sets a destination token. A cross-context move also
+sets/removes its context assignment. All touched values commit as one undoable
+command; unrelated priorities and relative order are preserved, including during
+any necessary local rank normalization. Cancellation writes nothing.
+
+Variable-length fractional token representation remains recommended; comparison
+is canonical case-sensitive unsigned-byte lexicographic across C++ and databases.
+The exact encoding/generator, length threshold, normalization window and indexes
+are implementation gates before Phase 1.3, not new user-interaction decisions.
+Receipts include prior tuples and affected normalization keys for safe inverse/redo;
+sync uses stable IDs/revisions/anchor checks rather than client clocks. Details:
+[Interactions.md](Interactions.md) and [DataModel.md](DataModel.md). No production
+ordering code is authorized by this validation task.
+
 ## Platform build and compatibility gates
 
 - **Linux:** develop on CentOS Stream 9 using VIM, CMake and command-line tools.

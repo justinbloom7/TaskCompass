@@ -85,7 +85,7 @@ Phase 2; all commands reserve the target shape from the first persistence design
 
 ## Contexts and ordering
 
-Users define contexts; do not seed required Morning/Computer/etc. groups. Recommend
+Users define contexts; do not seed required Morning/Computer/etc. groups. **Approved:**
 at most one live TaskContext assignment per task initially, always primary. Keep
 the link-table shape for future secondary contexts, but do not expose multiple
 assignment now. Context is optional and independent of organizational ownership.
@@ -101,7 +101,7 @@ group is synthetic, cannot be renamed/reordered/deleted, and always sorts last,
 regardless of its tasks' numeric priorities. Empty groups may be hidden; drag mode
 can reveal empty context targets. Restore resolves ordering collisions by stable ID.
 
-**Recommended numeric priority:** default **5**, leaving 1–4 for more urgent work
+**Approved numeric priority:** every new task defaults to **5**, leaving 1–4 for more urgent work
 without labeling every capture highest priority. Only positive integers; no
 arbitrary product maximum. A proposed signed 64-bit representation has a documented
 technical range (1..9223372036854775807), matching SQLite/MariaDB integer and
@@ -109,20 +109,22 @@ cross-platform serialization capabilities, with no silent clamping. Priority is 
 Task property, independent of context order, due date, lifecycle and PeriodObjective
 ranking. Recurring instances may override priority/order once Phase 2 exists.
 
-Default context-grouped daily sort tuple:
+Approved default context-grouped daily sort tuple (manual keys are hidden, never
+a visible subpriority field):
 
 1. Context assignment visibility: assigned groups first, No context last.
 2. User-defined context sort key, then context UUID for equal keys.
 3. Numeric task/occurrence priority ascending (1 highest).
 4. Manual fractional ordering key **within that context/priority band**.
-5. Stable work-target identity (task UUID; occurrence nominal date/key and UUID).
+5. Stable task UUID; occurrence UUID is an additional final tie-break when several
+   instances of the same task are displayed.
 
 Context order wins even when Evening has priority 1 and Morning has priority 5.
 The same base task order is used across dates/views, not an undocumented per-day
 order override. An instance inherits the template's priority/key unless explicitly
 overridden; several inherited instances are ordered deterministically by identity.
 
-**Drag policy: combination of priority and separate manual position.** Choose the
+**Approved drag policy: numeric priority plus a separate hidden manual position.** Choose the
 immediate successor at the insertion line: adopt its numeric priority and insert
 before it within that band. At the end use the predecessor's priority and insert
 after it. At an empty destination retain the dragged task's priority. Remove the
@@ -131,16 +133,44 @@ position; crossing priority bands **may change the dragged task's numeric priori
 Never renumber unrelated priorities. Preview the exact context, resulting priority
 and before/after neighbor; commit only on drop. Initially support single-row moves.
 
-Use variable-length fractional rank tokens compared bytewise, not floating-point
-numbers or client timestamps. Allocate a token between anchor keys, or before/after
-an end. Freeze and test a canonical token-generation/comparison format before Phase
-1.3 persistence; no library is added now. On collisions/token exhaustion, rebalance
-only the affected tied/local band as needed, with all changed keys in the command
-receipt. Global renumbering is a last resort, not routine. UUID ties give stable
-convergence but are not a conflict-resolution substitute: server revision checks
-must validate anchor/order assumptions. Cross-context drops update TaskContext,
-priority and manual key together; undo/redo restores them as one logical operation.
-Direct numeric-priority editing inserts at the end of the new priority band.
+Keep the recommendation for variable-length fractional rank tokens, not floating
+point or timestamps. Tokens are not shown/editable as subpriority. Comparison must
+be unsigned bytewise lexicographic on a canonical ASCII token encoding, case-
+sensitive, with no locale collation, case folding, whitespace trimming or numeric
+conversion. The token generator must admit valid keys between its canonical keys;
+do not assume arbitrary string midpoints form a correct fractional-index algorithm.
+C++, MariaDB and SQLite must use the same byte order; stable canonical UUID order
+breaks equal-key ties after reloads. Context tokens use the same comparison contract.
+
+For a drop, remove the moved target before resolving anchors. In its destination
+context/priority band, generate between immediate predecessor/successor keys, before
+the first key at the beginning, or after the last at the end. An empty band gets
+an initial canonical key. Cross-band/context moves generate a *destination* key,
+not a reused source key. Preserve all unrelated priorities and relative ordering.
+Only the moved row normally changes; normalization may change nearby tokens but
+must preserve their relative order.
+
+Freeze/test the token alphabet, canonical format and end/between generators before
+Phase 1.3. Choose a documented length threshold and bounded local normalization
+window then; no specific encoding, threshold or ordering implementation is added
+now. When tokens grow too long or collided keys leave no insertion space, normalize
+the affected local window/band transactionally, expand within that band only if
+necessary, or reject/retry rather than silently reorder unrelated tasks. Do not
+routinely renumber a whole dataset or change unrelated numeric priorities.
+
+A move receipt captures source/destination context, numeric priority, old/new key,
+anchor IDs/revisions, and before/after keys for every normalization participant.
+Undo/redo restores those previous positions as one logical operation when revision
+preconditions still hold. If anchors or participants changed, revalidate and report
+a conflict rather than overwrite them; immediate undo with unchanged data restores
+the prior tuple exactly. Direct numeric-priority editing inserts at the end of the
+new priority band. No user-visible subpriority editor is introduced.
+
+Future synchronization carries stable IDs, rank tokens and atomic move/normalization
+receipts under the existing revisioned command protocol. Concurrent insertions can
+produce equal tokens: UUID ties make reloads deterministic, but do not resolve
+conflicting moves. Validate anchors/revisions on the server; apply the existing
+conflict policy and normalize deliberately if needed. Never use client clock order.
 
 Context/priority assignment is task-level initially. A recurring-instance reorder
 uses its priority/order override; changing its context affects the template and

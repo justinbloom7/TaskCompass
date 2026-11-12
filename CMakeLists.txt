@@ -43,6 +43,14 @@ if(BUILD_TESTING)
    add_test(NAME PrototypeTests
             COMMAND PrototypeTests $<TARGET_FILE:TaskCompassDbDiagnostic>)
    add_test(NAME GuiStartup COMMAND TaskCompassPrototype --smoke-test)
+   find_program(TASKCOMPASS_BASH_EXECUTABLE NAMES bash)
+   if(TASKCOMPASS_BASH_EXECUTABLE)
+      add_test(NAME DevDatabaseScripts
+               COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/DevDatabaseScripts.test.sh")
+      set_tests_properties(DevDatabaseScripts PROPERTIES TIMEOUT 30)
+   else()
+      message(STATUS "Bash unavailable: skipping database helper mock tests")
+   endif()
    set_tests_properties(PrototypeTests GuiStartup PROPERTIES
                         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
                         TIMEOUT 30)
