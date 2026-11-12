@@ -18,9 +18,14 @@ buildDirectory=''
 adminSocket=false
 adminUser=root
 adminPassword=''
+warningDirectory=''
 devPassword=${TASKCOMPASS_DB_PASSWORD:-}
 
 cleanup() {
+   if [[ -n "$warningDirectory" ]]; then
+      rmdir -- "$warningDirectory/tls-warning" 2>/dev/null || true
+      rmdir -- "$warningDirectory" 2>/dev/null || true
+   fi
    unset adminPassword devPassword TASKCOMPASS_DB_PASSWORD MYSQL_PWD
 }
 trap cleanup EXIT
@@ -83,6 +88,10 @@ fi
 [[ -n "$clientPath" ]] || fail 'MariaDB client not found. Specify --client with its executable path.'
 [[ -x "$clientPath" ]] || fail 'MariaDB client is not executable; use its full path with --client.'
 
+# Only non-secret warning-state directories are created; never password files.
+warningDirectory=$(mktemp -d)
+source "$scriptDirectory/validate-grants.sh"
+
 promptPassword() {
    local prompt=$1
    local variableName=$2
@@ -100,7 +109,15 @@ redactClientDiagnostics() {
       [[ -z "$escapedDev" ]] || line=${line//"$escapedDev"/<redacted>}
       [[ -z "$adminPassword" ]] || line=${line//"$adminPassword"/<redacted>}
       [[ -z "$devPassword" ]] || line=${line//"$devPassword"/<redacted>}
-      printf '%s\n' "${line//$'\r'/}" >&2
+      line=${line//$'\r'/}
+      if [[ "$line" == 'WARNING: option --ssl-verify-server-cert is disabled, because of an insecure passwordless login.' ]]; then
+         if mkdir -- "$warningDirectory/tls-warning" 2>/dev/null; then
+            printf '%s\n' "$line" >&2
+            printf '%s\n' 'MariaDB client TLS notice: this client checks its explicit password option before MYSQL_PWD. This warning alone does not prove the account has no password. TLS settings are unchanged; identical repeats are omitted for this run.' >&2
+         fi
+      else
+         printf '%s\n' "$line" >&2
+      fi
    done
 }
 
@@ -182,24 +199,16 @@ validateDatabase() {
    local objectPrivileges=''
    globalPrivileges=$(runClient dev "SELECT PRIVILEGE_TYPE,IS_GRANTABLE FROM information_schema.USER_PRIVILEGES WHERE GRANTEE=$GRANTEE_SQL;")
    schemaPrivileges=$(runClient dev "SELECT TABLE_SCHEMA,PRIVILEGE_TYPE,IS_GRANTABLE FROM information_schema.SCHEMA_PRIVILEGES WHERE GRANTEE=$GRANTEE_SQL;")
-   [[ -z "$globalPrivileges" || "$globalPrivileges" == $'USAGE\tNO' ]] || fail 'Unexpected global privileges; no changes made.'
-   [[ "$schemaPrivileges" == $'taskcompass\\_dev\tSELECT\tNO' ]] || fail 'Expected an exact, escaped-database SELECT-only grant; ask the administrator to inspect privileges.'
+   [[ -z "$globalPrivileges" || "$globalPrivileges" == $'USAGE\tNO' ]] || fail 'Unexpected direct-account global privileges; Qt probe not run.'
+   [[ "$schemaPrivileges" == $'taskcompass\\_dev\tSELECT\tNO' ]] || fail 'Expected an exact, escaped-database direct-account SELECT-only grant; ask the administrator to inspect privileges. Qt probe not run.'
    for table in TABLE_PRIVILEGES COLUMN_PRIVILEGES; do
       objectPrivileges=$(runClient dev "SELECT PRIVILEGE_TYPE FROM information_schema.$table WHERE GRANTEE=$GRANTEE_SQL;")
-      [[ -z "$objectPrivileges" ]] || fail 'Unexpected table/column privileges; no changes made.'
+      [[ -z "$objectPrivileges" ]] || fail 'Unexpected direct-account table/column privileges; Qt probe not run.'
    done
    local grants=''
-   local grant=''
    grants=$(runClient dev 'SHOW GRANTS;')
-   while IFS= read -r grant; do
-      case "$grant" in
-         'GRANT USAGE ON *.* TO '*|'GRANT SELECT ON '*) ;;
-         *) fail 'Additional direct grants/roles reported; administrator review required. Grant text is not displayed.' ;;
-      esac
-   done <<< "$grants"
-   unset grants grant
-   printf 'Reported privileges: SELECT only on the exact development database, no CREATE or GRANT OPTION.\n'
-   printf 'No CREATE/DROP permission test was attempted. Existing accounts may also need administrator role inspection.\n'
+   validateGrantSources "$grants"
+   unset grants
 
    if [[ -z "$buildDirectory" ]]; then
       if [[ "${MSYSTEM:-}" == UCRT64 ]]; then

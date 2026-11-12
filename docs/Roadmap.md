@@ -105,6 +105,20 @@ warnings, retained secret redaction and existing-resource rejection. This is a
 Phase 0.1 helper correction, not production persistence or a new live connection
 validation result. Windows live setup still needs a rerun of the corrected script.
 
+### Grant-source and MariaDB 13 client handling follow-up
+
+The Phase 0.1 helper now distinguishes direct-account, role and inherited PUBLIC
+grants. Unrelated PUBLIC grants on test/test_% are accepted; exact/global/wildcard
+write or DDL authority covering taskcompass_dev remains rejected. Applicable,
+enabled and nested roles are inspected, including inactive roles the account can
+activate. Unknown syntax or unreadable role grants fail closed before Qt runs.
+The exact repeated passwordless-login TLS warning is shown and explained once per
+invocation; TLS verification is not disabled and other diagnostics remain visible.
+Mock regressions exercise safe/unsafe sources and assert the Qt validation gate.
+This changes no account privileges or passwords and performs no live provisioning.
+Windows/MariaDB 13 live helper validation, Windows build/runtime verification and
+interactive desktop review remain pending; Phase 1.1 has not started.
+
 ### Organizational refinement validation
 
 The current hierarchy decisions supersede the earlier many-to-many organizational

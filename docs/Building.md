@@ -249,7 +249,35 @@ account. The escaped underscore makes the grant exact rather than a database-nam
 pattern ([MariaDB GRANT](https://mariadb.com/docs/server/reference/sql-statements/account-management-sql-statements/grant)).
 There is no GRANT OPTION, table creation or automatic privilege repair. Validation
 inspects grants without displaying authentication hashes and makes no destructive
-CREATE/DROP permission test. For preexisting accounts, administrator `inspect` also
+CREATE/DROP permission test.
+
+Validation distinguishes these grant sources before running Qt:
+
+- Direct-account metadata must retain the exact SELECT-only development-schema
+  grant, without global, table, column or grant privileges.
+- Account `SHOW GRANTS` includes inherited PUBLIC grants on MariaDB 10.11+.
+  Unrelated schema grants, including PUBLIC rights on `test` and `test\_%`, are
+  accepted because their scopes do not match taskcompass_dev. PUBLIC is not ignored:
+  global, exact-schema and wildcard scopes covering TaskCompass are checked.
+- Applicable and enabled roles are enumerated and their grants inspected recursively,
+  including nested and currently inactive but activatable roles. Safe read roles are
+  accepted; write/schema-change privileges covering TaskCompass and grant/admin
+  authority are rejected. This is deliberately stricter than testing only the
+  currently enabled role.
+
+Matching scopes permit only SELECT/USAGE. Database-scope matching respects `%`, `_`
+and backslash escapes, with conservative case-insensitive comparison for Windows.
+Unreadable role grants, unknown privilege syntax and unsupported routine/proxy/column
+grant forms stop validation for administrator review. No automatic privilege repair
+or blanket acceptance of PUBLIC grants occurs. The Qt diagnostic runs only after
+identity, database emptiness, direct metadata and all grant-source checks succeed.
+These are a scoped snapshot of declared grants, not a server-wide security audit or
+a guarantee against concurrent administrator changes.
+
+See MariaDB's [PUBLIC grant behavior](https://mariadb.org/grant-to-public-in-mariadb/),
+[SHOW GRANTS](https://mariadb.com/docs/server/reference/sql-statements/administrative-sql-statements/show/show-grants)
+and [applicable-role metadata](https://mariadb.com/docs/server/reference/system-tables/information-schema/information-schema-tables/information-schema-applicable_roles-table).
+ For preexisting accounts, administrator `inspect` also
 checks same-name host accounts and roles; do not infer complete server-wide security
 policy from restricted-user metadata alone.
 
@@ -304,15 +332,25 @@ Some MariaDB clients can issue the “insecure passwordless login” TLS warning
 a password is supplied through MYSQL_PWD; the TLS option check examines the client's
 explicit opt_password setting. The warning alone does not establish that the server
 account has an empty password. See the [MariaDB TLS-option check](https://github.com/MariaDB/server/blob/11.8/include/sslopt-vars.h).
-Warnings remain visible; this parsing fix does not disable SSL/certificate checking
-or change passwords. It also preserves rejection of genuinely existing resources.
+The exact repeated warning is displayed once per helper invocation, followed by an
+explanation; identical repeats are omitted. Other diagnostics remain visible and
+password-redacted. Only empty temporary directories track warning state and are
+removed on exit; they contain no credentials. The helper does not disable TLS or
+certificate verification, change passwords, or add insecure connection flags to
+silence the warning. This handling addresses the reported MariaDB 13.0 client
+message without asserting that Windows live validation has passed. A genuinely
+passwordless account or TLS configuration still requires administrator inspection.
 
 ### Helper validation status
 
-Shell syntax and seven mock-client test groups pass on Linux, including paths with
+Shell syntax and the mock-client regression suite pass on Linux, including paths with
 spaces, native-client CRLF output, exact grant SQL, quoting a password containing
-quote/backslash, rejection of existing resources/nonempty schemas/extra roles,
-redaction, successful-query stderr warnings and environment cleanup. CTest now includes DevDatabaseScripts when Bash
+quote/backslash, rejection of existing resources/nonempty schemas/unsafe grants,
+redaction, successful-query stderr warnings and environment cleanup. Grant cases
+cover unrelated PUBLIC test scopes, safe/multiple roles, nested and inactive write
+roles, unreadable role audits, global/schema/wildcard PUBLIC writes and DDL, and
+direct-account excess privileges. Rejection cases assert that Qt never runs. Exact
+TLS warnings appear once with an explanation; verification settings are unchanged. CTest now includes DevDatabaseScripts when Bash
 is available; these tests create no real databases. No extra test library is used.
 The normal C++ build and all three CTest targets passed. A live Linux helper run
 failed before authentication with ERROR 2002 (HY000), unable to reach
