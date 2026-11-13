@@ -5,13 +5,15 @@
 A traditional desktop task manager organized around responsibilities, objectives,
 projects, and guided planning at quarterly, sprint, weekly, and daily horizons.
 
-**Status: Phase 0.1 accepted; Phase 1.1 source implemented, live validation pending.**
+**Status: Phase 0.1 accepted; owner reports Phase 1.1 integration tests passed.**
 The original `TaskCompassPrototype` remains a disposable in-memory demonstration.
-The new `TaskCompass` desktop and `TaskCompassMigrate` tool implement the persistent
-foundation but have not yet been validated against a live migrated database.
-Account provisioning and migration execution require owner approval. See the
-[Phase 1.1 milestone report](docs/milestones/Phase1.1.md) for implementation,
-test evidence, exact proposed SQL, recovery procedures and approval requests.
+The new persistent `TaskCompass` desktop and `TaskCompassMigrate` tool are implemented.
+Development migration, real GUI/restart testing, backup/restore and independent
+Linux/Windows evidence still gate Phase 1.1 acceptance. Stage 2 requires separate
+owner approval; no Stage 2 SQL has been executed by the agent. See the
+[Phase 1.1 milestone report](docs/milestones/Phase1.1.md) for the owner-reported
+integration output, proposed Stage 2 SQL/procedures and approval checkpoints.
+
 Milestone plans and results live under `docs/milestones/`.
 
 [AGENTS.md](AGENTS.md) contains the permanent Codex development, safety and

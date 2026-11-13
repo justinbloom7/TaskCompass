@@ -2,9 +2,16 @@
 
 The Phase 0.1 prototype is accepted (owner-reported Linux/Windows builds, launches
 and CLI/Qt connectivity). Historical observations below remain dated evidence.
-Phase 1.1 adds separate executables; live database validation is awaiting approval.
+Phase 1.1 adds separate executables. The owner reports the isolated integration
+suite passed; Stage 2 development migration and persistent GUI/backup validation
+still await their separate approval and execution. Platform/version details for
+that reported integration run are pending confirmation.
 The authoritative [Phase 1.1 report](milestones/Phase1.1.md) contains SQL, privilege
 separation, backup/recovery, commands, test results and pending approvals.
+
+For a step-by-step operator walkthrough, see [Testing Phase 1.1](TestingPhase1.1.md):
+database-free tests, isolated integration database/account setup, live test commands
+and the separate approval needed before persistent GUI testing.
 
 ## Phase 1.1 executables and safety
 

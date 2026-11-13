@@ -2,11 +2,19 @@
 
 # Phase 1.1 — Persistent Task Foundation
 
-Status: Step B source implementation delivered; live validation pending approval.
+Status: owner reports Stage 1 integration passed; Stage 2A development setup is
+prepared for separate approval. Phase 1.1 is not finally accepted.
 
-Latest checkpoint: Stage 1 pre-approval safety review completed with source
-corrections; see the dated review and revised **Approval Requested** section at
-the end of this document. Live SQL/provisioning remains unexecuted and unauthorized.
+Latest checkpoint: owner supplied a successful guarded integration-test transcript
+(exit 0, test schema left empty). See the dated result and **Approval Requested —
+Stage 2A development foundation** below. The transcript does not identify platform/
+server version; that evidence is pending confirmation. No Stage 2 SQL has been run
+by the agent. Previous approval-pending observations are historical, not a claim
+that the owner's reported live test did not occur.
+
+Source/documentation approval remains provisional. The owner's manual test result
+is not authorization for Codex to provision accounts, migrate development or perform
+backup restoration. Those operations retain their separate approval checkpoints.
 Recorded: 2026-11-12. This document saves the proposed implementation plan;
 the original Step A plan below is preserved as design history. The subsequent owner
 approval authorizes source, migration, test and documentation work, but not live
@@ -26,11 +34,11 @@ explicit decisions recorded here.
 | Prerequisites and baseline | Phase 0.1 accepted; owner-reported Linux/Windows results in Baseline and evidence. |
 | Plan and architectural decisions | Step A plan preserved below; Step B implementation report records actual choices. |
 | Files created/modified | Step B File inventory and subsequent dated entries. |
-| Schema and migrations | Initial schema, exact migration DDL and staged provisioning SQL below; no live execution. |
+| Schema and migrations | Migration 001 exercised in the isolated integration run reported by the owner; development migration remains unexecuted by the agent and pending approval. |
 | Tests/commands/results | Executed verification and Final pre-approval verification below; later checks are appended. |
 | Issues/limitations/deferred work | Implementation report, exclusions and Outstanding work below; live/Windows Phase 1.1 checks remain unverified. |
-| Approvals and decisions | Step A reviewed; Step B source/migrations/tests/docs authorized under owner conditions. Existing Approval Requested section remains pending for live work. |
-| Remaining work/completion | Approve and validate isolated integration first; development provisioning/migration is a separate checkpoint, followed by platform/manual acceptance. |
+| Approvals and decisions | Source provisionally approved for validation; owner reports Stage 1 pass. Stage 2A and restore rehearsal require separate execution approval. |
+| Remaining work/completion | Confirm Stage 1 platform/server evidence; review Stage 2A development setup, then live GUI/restart/undo, backup/restore and Windows validation before final acceptance. |
 
 Source authorization does not approve provisioning, grants or migration execution.
 This repository-instruction update grants no new database authority or milestone
@@ -1210,3 +1218,691 @@ equality were checked with Python's standard library and passed. `git diff --che
 passed; `git diff -- migrations/mariadb/001_PersistentTaskFoundation.sql` is empty.
 No build/test failures were observed. Review is complete; await explicit Stage 1
 approval before any live preflight SQL, provisioning or integration execution.
+
+## Provisional source approval and validation sequence confirmed — 2026-11-12
+
+Owner provisionally approves Phase 1.1 source implementation and documentation as
+ready for validation. This is **not final milestone acceptance**, nor permission
+for live SQL, account provisioning or destructive integration tests. The owner
+reaffirmed the existing checkpoints and all remaining acceptance criteria.
+
+Re-inspected the current integration opt-in/reset policy, connection configuration
+and authenticated-identity checks, migration guards and test registration against
+the completed Stage 1 safety review. No additional corrections were identified.
+The earlier findings and fixes remain applicable: fresh empty schema at startup,
+current-process ownership before reset, exact database/account validation, qualified
+integration-only DROP, unexpected-object rejection, cooperative migration lease,
+constraint enforcement and six scoped test privileges (no DELETE/global authority).
+Actual server identity, metadata visibility and effective grants still require
+approved live preflight; source review does not establish those server facts.
+
+The migration file's current SHA-256 remains
+`bb901d7580398893b5c04ee263f813b9d05873eb4bae08e0daf377faf73b0ea0`,
+matching the reviewed DDL and diagram provenance. Current source review is complete
+and Stage 1 remains ready for approval. No live SQL, connection, provisioning or
+integration reset has occurred in this confirmation step.
+
+### Required sequence and completion gates
+
+| Gate | Current status / required next action |
+| --- | --- |
+| Source/documentation review | Provisionally approved for validation; no final acceptance. |
+| Stage 1 safety review | Complete with previously documented corrections; no new corrections in this confirmation. |
+| Stage 1 live preflight/provisioning/integration | Pending explicit approval of the exact operations in the preceding Stage 1 Approval Requested section. Stop if target/account already exists or preflight differs from expectations. |
+| Stage 1 results | Run only after approval; record actual Linux/MariaDB results, errors and any recovery request here. A failure does not authorize automatic cleanup/retry. |
+| Stage 2 development migration | Only after Stage 1 passes, finalize the development-specific SQL, privileges, backup/recovery procedure and commands for separate approval. Earlier Stage 2 text is a proposal, not execution authority. |
+| Linux and Windows foundation validation | Both required. Accepted Phase 0.1 prototype results do not validate the new persistent foundation or safety changes on Windows. |
+| Persistent GUI and undo/redo | Validate real capture/edit/complete/reopen, filtering/selection, all supported inverses/redos and failure handling against persisted data. Current fake-repository GUI tests are not sufficient. |
+| Restart persistence | Verify actual application close/restart preserves stable IDs, fields, timestamps and history; session undo remains intentionally nonpersistent. |
+| Backup/restore | Execute the reviewed, separately authorized backup/restore validation and retain evidence before relying on recovery. Not yet performed. |
+| Final acceptance | Phase 1.1 remains incomplete until required checks pass and results are reviewed. No Phase 1.2 work authorized. |
+
+Only `docs/milestones/Phase1.1.md` changed in this confirmation. No source/schema
+change or fresh application build/CTest result is claimed; those tests were not
+rerun because the source is unchanged. The preceding seven-pass/one-skipped results
+remain historical validation evidence. This step checked the migration SHA-256,
+Markdown references/fences and diff whitespace; commands/results follow:
+
+```bash
+sha256sum migrations/mariadb/001_PersistentTaskFoundation.sql
+python3 - <<'PY'
+from pathlib import Path
+import re
+path = Path('docs/milestones/Phase1.1.md')
+text = path.read_text()
+assert sum(line.startswith('```') for line in text.splitlines()) % 2 == 0
+for target in re.findall(r'\]\(([^)]+)\)', text):
+    if '://' not in target and not target.startswith('#'):
+        assert (path.parent / target.split('#')[0]).exists(), target
+assert '## Approval Requested — Stage 1 after safety review' in text
+assert Path('migrations/mariadb/001_PersistentTaskFoundation.sql').read_text() in text
+print('PASS: milestone references/fences, retained approval request and migration SQL.')
+PY
+git diff --check
+```
+
+Results: migration hash matched; document consistency and whitespace checks passed.
+No new validation failures or architecture conflicts were found. No live database
+state has been queried or inferred. No commit, merge, tag or push performed.
+
+### Approval Requested — execute the reviewed Stage 1 operations
+
+Await explicit owner authorization for the **exact Stage 1 SQL and command blocks
+in “Approval Requested — Stage 1 after safety review” above**: integration-only
+administrator preflight; conditional fresh taskcompass_integration database and
+`taskcompass_test@127.0.0.1` provisioning; SELECT/INSERT/UPDATE/CREATE/DROP/ALTER on
+that exact escaped schema; effective-privilege inspection; and the guarded Linux
+`./build/MariaDbIntegrationTests --run --allow-reset` invocation, including its
+reviewed migration/fault-injection DDL/DML and in-run qualified test-table resets.
+
+This request excludes development migration, existing-resource overwrite, failure
+cleanup, new/global privileges, unrelated databases and Stage 2. Provisional source
+approval does not authorize any of these live operations. Stop here until the
+owner explicitly approves the reviewed Stage 1 scope.
+
+## Operator testing walkthrough — 2026-11-12
+
+Owner requested instructions for testing, including database setup. Added
+[TestingPhase1.1.md](../TestingPhase1.1.md) and linked it from Building.md. The
+walkthrough includes Linux/UCRT64 build commands, explicit live-test registration
+OFF, service checks, administrator access, fresh-resource preflight, the reviewed
+integration-only CREATE/GRANT statements, optional TCP authentication, hidden test
+password entry, the exact opt-in executable command, exit-code capture and failure
+handling. It distinguishes test/administrator/diagnostic passwords and the later
+Stage 2 persistent GUI workflow. No setup or live test was executed.
+
+The guide uses the existing six-privilege proposal unchanged. It does not tell the
+operator to reuse the diagnostic setup script for integration, alter its account,
+manually migrate the test schema before the suite, or erase failure leftovers.
+Linux administrator client examples disable client history; Windows/native client
+examples use NUL. Password examples remain placeholders. The owner controls manual
+execution; requesting a guide is not authorization for Codex to execute live SQL.
+
+Files changed in this step: new `docs/TestingPhase1.1.md`, updated
+`docs/Building.md` and this milestone. The preceding provisional-approval record
+was already uncommitted and is preserved. No source, schema or application behavior
+changed; no accounts/databases were accessed or provisioned, no dependencies
+installed and no Git commit/push performed.
+
+Validation: compared commands/flags/TEST variables and expected exit behavior to
+DatabaseConfig, integration main and CMake; checked the fresh setup SQL against
+the latest Stage 1 approval section. Python standard-library relative-link/fence
+checks and `git diff --check` passed. Shell/SQL snippets were reviewed as text,
+not executed. No build/CTest rerun was needed for documentation-only instructions;
+the earlier seven-pass/one-skipped evidence is unchanged. No new validation result
+for a live database or Windows is claimed.
+
+Remaining gates are unchanged: Stage 1 exact operations require explicit approval;
+after integration passes, finalize Stage 2 for separate approval. Persistent GUI,
+undo/redo, restart persistence, Linux/Windows and backup/restore checks remain
+required before Phase 1.1 acceptance. Phase 1.2 remains unauthorized.
+
+## Integration setup/environment/test helpers — 2026-11-12
+
+Owner authorized creation of helper files under `temp/testdb`. This authorizes
+source/preparation only; it is **not** approval to execute live provisioning or
+integration tests. Created the helpers, reviewed their paths/secret handling and
+validated them with mocked executables. No live MariaDB client, SQL, account change,
+migration or destructive integration invocation was used.
+
+### Files and behavior
+
+Created in the requested repository-local temporary directory:
+
+- `temp/testdb/setup.template.sql`: reviewed CREATE DATABASE/CREATE USER/six-right
+  GRANT template with `{{TEST_PASSWORD_SQL_LITERAL}}`, never a saved actual password.
+  This is intentionally not directly executable SQL; do not SOURCE it or replace
+  its token on disk. The session-only NO_BACKSLASH_ESCAPES mode permits safe
+  single-quote doubling in the in-memory password literal.
+- `temp/testdb/setup.sh`: no-op/help by default; --print-plan displays placeholder
+  SQL without contacting a client. --apply requires explicit typed confirmation,
+  an authorized admin client and hidden passwords. It checks the server port and
+  absence of the exact target schema/any same-name test account before rendering
+  SQL in memory and piping it to the client. Uses --no-defaults, explicit socket
+  or loopback TCP, utf8mb4, stdin SQL and per-child MYSQL_PWD, never password arguments
+  or files. Successful stderr warnings stay out of query result parsing; errors
+  redact original/SQL-escaped passwords. Existing/ambiguous resources fail closed.
+  No IF NOT EXISTS, password replacement, migrations, tests or automatic recovery.
+- `temp/testdb/env.sh`: source-only optional hidden password prompt and non-secret
+  TASKCOMPASS_TEST_DB_* exports; no files/profiles written. Refuses shell tracing,
+  clears cancelled/empty password input, and provides clearTaskCompassTestPassword.
+- `temp/testdb/test.sh`: requires --run --allow-reset, rejects conflicting TEST
+  settings, selects the Linux/UCRT64 build or an explicit --build-dir, prompts only
+  if no test password is loaded, and calls the existing guarded executable. It
+  preserves 0/1/77 statuses and clears its process password on exit. A child cannot
+  clear the parent's environment: callers who source a password must clear it in
+  that shell afterward.
+- `temp/testdb/README.md`: full commands, approval boundaries, fresh-schema/partial
+  failure behavior, native Windows paths, password handling and test limitations.
+- `temp/testdb/.gitignore`: allowlists the six reviewed helper files and ignores
+  other local files/output. This is not permission to store passwords in ignored
+  files; no helper writes secret SQL/configuration or test logs.
+
+Also created `tests/IntegrationDatabaseScripts.test.sh` and registered its mock
+suite in CMake. Updated TestingPhase1.1.md to link the helpers and reflect the new
+non-live test count; updated this milestone. Earlier uncommitted Building.md and
+walkthrough changes remain preserved, not new behavior changes from this step.
+No production C++ or migration schema changes; diagrams need no schema update.
+
+### Exact proposed helper SQL and execution boundary
+
+Preflight issued only by an explicitly approved --apply invocation:
+
+```sql
+SELECT @@port,
+   (SELECT COUNT(*) FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='taskcompass_integration'),
+   (SELECT COUNT(*) FROM mysql.user WHERE User='taskcompass_test');
+```
+
+Only an exact `3306, 0, 0` result permits provisioning. The SQL template contains:
+
+```sql
+SET SESSION sql_mode='NO_BACKSLASH_ESCAPES';
+CREATE DATABASE taskcompass_integration
+   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'taskcompass_test'@'127.0.0.1'
+   IDENTIFIED BY {{TEST_PASSWORD_SQL_LITERAL}};
+GRANT SELECT, INSERT, UPDATE, CREATE, DROP, ALTER
+   ON `taskcompass\_integration`.*
+   TO 'taskcompass_test'@'127.0.0.1';
+```
+
+The token becomes a quoted, escaped literal only in memory/SQL stdin. The script
+writes no rendered copy. Separate statements can partially commit: a concurrent
+create or later error stops; inspect the result rather than retry or grant to an
+unknown account. This is the same isolated schema/account/privilege proposal; no
+additional database authority is requested. Full administrator role/PUBLIC checks
+from the safety review are still required before live testing. These helpers do
+not claim to automate or validate all inherited privileges.
+
+### Validation actually executed
+
+```bash
+bash -n temp/testdb/setup.sh temp/testdb/env.sh temp/testdb/test.sh tests/IntegrationDatabaseScripts.test.sh
+bash tests/IntegrationDatabaseScripts.test.sh
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DTASKCOMPASS_ENABLE_DB_TESTS=OFF
+cmake --build build --parallel 2
+ctest --test-dir build --output-on-failure
+git check-ignore temp/testdb/password.env temp/testdb/test-output.log
+git diff --check
+```
+
+Results: shell syntax and all five mock-test groups passed. Tests cover no-action
+and plan defaults; required opt-in/confirmation; fresh setup, CRLF/stdout/stderr;
+refusal of existing resources/failed inspections/cancelled confirmation/short or
+mismatched passwords; correct quote/backslash/ampersand SQL escaping; password
+redaction and no password arguments; conflicting-target refusal, paths with spaces,
+exit-status propagation and source-only/cancelled-input credential cleanup.
+Only fake credentials and fake client/test executables were used. Temporary test
+state is outside the repository and removed by the mock suite.
+
+Linux CMake configure/build passed. CTest now has **eight passed, one skipped
+(MariaDbIntegrationTests), zero failures**, including the new IntegrationDatabaseScripts
+suite. Subsequent focused mock reruns passed after utf8mb4/client and cancelled-input
+handling refinements. Git-ignore checks confirm unknown password/output paths are
+ignored while reviewed helper source paths are not. Markdown relative references,
+code fences and whitespace checks passed. No live Linux/Windows helper setup or
+real integration result is claimed; Windows execution remains pending.
+
+### Approval Requested — live helper use remains pending
+
+The helper files are ready for owner review. After explicit Stage 1 approval, the
+proposed Linux commands would be:
+
+```bash
+sudo bash temp/testdb/setup.sh --apply --admin-socket --client /usr/bin/mariadb
+# After the administrator grant/inherited-policy checks from the safety review:
+bash temp/testdb/test.sh --run --allow-reset --build-dir build
+```
+
+Without execution authority, safe inspection remains:
+
+```bash
+bash temp/testdb/setup.sh --print-plan
+```
+
+The environment helper can be sourced with --no-password without SQL; --password
+loads a secret only into the current shell, never a file. Stage 1 still requires
+explicit approval for provisioning and the destructive isolated suite. Stage 2,
+existing-resource recovery and development migration remain separate checkpoints.
+No credentials were read from existing applications, no dependency installed and
+no commit, merge, tag or push performed. Phase 1.1 remains incomplete.
+
+## Full testing sequence and print-plan clarification — 2026-11-13
+
+Owner asked whether --print-plan shows what will happen and requested all testing
+steps. Verified the current helper with:
+
+```bash
+bash temp/testdb/setup.sh --print-plan
+```
+
+Result: printed only the provisioning SQL template and password token; exit 0.
+The branch exits before discovering a client, checking resources or prompting for
+credentials. No SQL/session statement in the printed text was executed. It is not
+an assessment of the current server and does not show/run table migrations or tests.
+
+Updated `docs/TestingPhase1.1.md` with that distinction, the whole-milestone
+sequence and the exact administrator privilege-metadata checks already proposed
+in this milestone. Existing setup/test commands and approval boundaries are
+unchanged. The practical Linux sequence is build/non-live tests, review setup plan,
+confirm Stage 1 authority, service/admin preflight, fresh setup helper, review
+effective grants, then the explicit integration runner. Do not manually create
+integration tables before the suite. Failed evidence is preserved, not automatically
+reset. UCRT64 uses its existing documented platform paths/build directory.
+
+Stage 1 success must be reviewed before finalizing Stage 2 development migration,
+separate runtime/migration accounts and backup/recovery execution for approval.
+Real GUI capture/edit/completion/reopen, all supported undo/redo, restart persistence,
+Linux/Windows and backup/restore checks still precede final milestone acceptance.
+Only the accepted in-memory prototype can be demonstrated without that migration;
+it is not a substitute for persistent application validation.
+
+Files changed in this clarification: TestingPhase1.1.md and this milestone. Existing
+uncommitted helper/build/walkthrough changes are preserved. Markdown relative
+references/fences and `git diff --check` passed. Application builds/CTest were not
+rerun because source/test behavior is unchanged; earlier eight-pass/one-skipped
+results remain prior evidence. No live SQL, accounts, databases, package installs,
+commits, merges, tags or pushes. No new approval is inferred from the request for
+instructions; live Stage 1 operations remain explicitly approval-gated for Codex.
+
+
+## Owner-reported Stage 1 integration success — 2026-11-13
+
+Owner supplied this exact output (no credentials):
+
+```text
+$ temp/testdb/test.sh --run --allow-reset --build-dir build
+Integration database password:
+Running disposable integration tests on taskcompass_integration@127.0.0.1:3306.
+PASS: MariaDB migrations/version/checksum/fingerprint, persistence/restart, commands, constraints and atomic rollback. Test schema left empty.
+Integration test exit code: 0
+```
+
+Result: **owner-executed integration run passed**, exit 0; the executable reports
+its disposable schema was left empty. This covers the compiled suite's migration,
+version/checksum/fingerprint, lifecycle/commands, transactional failure and new-
+connection reload checks. It does not establish real GUI restart behavior or backup
+restoration. The agent did not execute the live run or independently inspect the
+server. Platform, exact server version and privilege-metadata results are not in
+the transcript; requested platform confirmation rather than claiming both Linux
+and Windows passed. The `build` directory name alone does not prove platform.
+
+Earlier Stage 1 pending entries remain historical. Do not rerun provisioning:
+this result implies a working configured test account/database, not that resources
+are absent. It does not authorize Stage 2 or retrospective agent database access.
+Phase 1.1 remains incomplete and source acceptance remains provisional.
+
+## Stage 2 preparation — 2026-11-13
+
+Reviewed the migration CLI, connection/identity guards, persistent main composition,
+actual migration SQL and existing privilege proposal. Prepared the concrete Stage 2A
+plan below without changing source or connecting to a server. Migration 001 remains
+SHA-256 `bb901d7580398893b5c04ee263f813b9d05873eb4bae08e0daf377faf73b0ea0`.
+Its exact DDL and prepared metadata transaction are already reproduced above and
+in `migrations/mariadb/001_PersistentTaskFoundation.sql`; no new migration is proposed.
+
+Checked the installed dump tool with `command -v mariadb-dump` and
+`mariadb-dump --no-defaults --help`: client 10.5.29 supports the flags below. Help
+only; no database connection or dump was attempted. Reviewed primary documentation
+for [GRANT](https://mariadb.com/docs/server/reference/sql-statements/account-management-sql-statements/grant)
+and [mariadb-dump](https://mariadb.com/docs/server/clients-and-utilities/backup-restore-and-import-clients/mariadb-dump).
+CREATE can be granted before tables exist; the proposed metadata table grants
+include it. Single-transaction backups require no concurrent DDL. Neither this
+review nor the Stage 1 transcript proves the new minimal-account grants or dump/
+restore procedures work live; those are Stage 2 acceptance checks.
+
+### Approval Requested — Stage 2A development foundation
+
+**Proposed, not executed.** Request approval for the exact preflight, private empty-
+baseline backup, two fresh scoped accounts, migration 001, runtime grants and
+migrator write-privilege removal below, followed by owner-operated persistent GUI
+checks. Initial execution target is the Linux development host/loopback TCP 3306.
+Confirm that Stage 1 passed on that host/version before using its result as a local
+compatibility prerequisite; otherwise first obtain the missing platform run.
+Windows commands are documented separately below but Windows success is not claimed.
+
+No DROP/ALTER or existing-account password/grant overwrite is requested. Preserve
+`taskcompass_dev@127.0.0.1` and all its existing SELECT-only diagnostic configuration.
+Stage 2B restore rehearsal, failure cleanup, any live development restoration and
+unrelated database access are excluded from Stage 2A execution authority.
+
+#### A. Read-only administrator preflight
+
+Use an explicitly authorized administrator for these setup/metadata operations,
+never for running TaskCompass or TaskCompassMigrate. Stop other TaskCompass writers.
+The database must already exist, be empty and have the expected character settings;
+if not, stop for review rather than recreating it or adopting existing contents.
+
+```sql
+SELECT VERSION(), @@port, @@lower_case_table_names;
+SELECT SCHEMA_NAME,DEFAULT_CHARACTER_SET_NAME,DEFAULT_COLLATION_NAME
+   FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='taskcompass_dev';
+SELECT TABLE_NAME,TABLE_TYPE,ENGINE FROM information_schema.TABLES
+   WHERE TABLE_SCHEMA='taskcompass_dev';
+SELECT ROUTINE_NAME FROM information_schema.ROUTINES
+   WHERE ROUTINE_SCHEMA='taskcompass_dev';
+SELECT TRIGGER_NAME FROM information_schema.TRIGGERS
+   WHERE TRIGGER_SCHEMA='taskcompass_dev';
+SELECT EVENT_NAME FROM information_schema.EVENTS
+   WHERE EVENT_SCHEMA='taskcompass_dev';
+SELECT User,Host FROM mysql.user
+   WHERE User IN ('taskcompass_dev','taskcompass_migrate','taskcompass_app');
+```
+
+Expected: intended MariaDB server on 3306; exactly taskcompass_dev with utf8mb4 /
+utf8mb4_unicode_ci; no tables/views, routines, triggers or events; the existing
+127.0.0.1 diagnostic account; **no** account of either new name on any host. If new
+accounts already exist, stop for explicit inspection/reuse approval, not CREATE
+USER IF NOT EXISTS or ALTER USER. Review current role/PUBLIC inheritance as in the
+Stage 1 policy; do not expose authentication hashes or modify PUBLIC to proceed.
+
+#### B. Preserve the confirmed empty baseline
+
+No application data should exist yet. Use the existing SELECT-only diagnostic
+account to take a private logical backup; do not change its privileges. Choose a
+new directory outside the repository, not temp/testdb. Proposed Linux commands:
+
+```bash
+taskCompassBackupDirectory="$HOME/TaskCompassBackups/Phase1.1-$(date +%Y%m%d-%H%M%S)"
+(
+   umask 077
+   mkdir -p -- "$HOME/TaskCompassBackups" &&
+   mkdir -- "$taskCompassBackupDirectory" &&
+   mariadb-dump --no-defaults --protocol=TCP --host=127.0.0.1 --port=3306 \
+      --user=taskcompass_dev --password --default-character-set=utf8mb4 \
+      --single-transaction --skip-lock-tables --no-tablespaces --skip-triggers \
+      --skip-add-drop-table --skip-add-locks --skip-disable-keys \
+      --no-create-db --hex-blob \
+      --result-file="$taskCompassBackupDirectory/before-migration.sql" taskcompass_dev
+)
+```
+
+The leaf directory is created exclusively; if it exists, the && chain stops rather
+than overwriting a previous dump. Enter the existing **diagnostic password** at its
+hidden prompt. Proceed only on
+exit 0, a nonempty dump file and inspection confirming the empty baseline. Record:
+
+```bash
+sha256sum "$taskCompassBackupDirectory/before-migration.sql"
+```
+
+Record preflight charset/collation separately. Do not use --databases or --all-
+databases: this proposal intentionally avoids source-database USE/CREATE statements
+and any unrelated schema/account data. Stop if inspection finds otherwise. Treat
+failed/partial dumps as unusable. Restrict access to the backup directory; the dump
+contains user data after later saves, but never account credentials by design.
+The initial empty backup is baseline evidence, **not** proof of full data restoration.
+A populated restore rehearsal remains required before final acceptance and before
+relying on this procedure to recover important data.
+
+#### C. Create the migration account with narrowly scoped rights
+
+Only after the preflight/backup gates, and with credentials supplied privately
+through the reviewed history-safe/stdin procedure (placeholders are not literal
+passwords):
+
+```sql
+CREATE USER 'taskcompass_migrate'@'127.0.0.1'
+   IDENTIFIED BY '<distinct-strong-migration-password>';
+GRANT CREATE, SELECT ON `taskcompass\_dev`.*
+   TO 'taskcompass_migrate'@'127.0.0.1';
+GRANT CREATE, INSERT ON taskcompass_dev.Dataset
+   TO 'taskcompass_migrate'@'127.0.0.1';
+GRANT CREATE, INSERT ON taskcompass_dev.SchemaMigration
+   TO 'taskcompass_migrate'@'127.0.0.1';
+```
+
+This carries forward the reviewed privilege design: schema-scoped CREATE/SELECT,
+INSERT only on the two metadata tables; table-level CREATE also permits the
+pre-creation grants. No ALTER, DROP, DELETE, UPDATE, global privileges, GRANT OPTION
+or migration use of root. Inline indexes are covered by CREATE. Read-only schema
+verification needs SELECT/SHOW CREATE on all five tables. Check these grants live;
+a refusal is a stop/inspect condition, not permission to broaden them.
+
+#### D. Apply migration 001 using the normal-user CLI
+
+Use a new terminal/subshell if earlier DB environment is loaded. The migration
+user/password are different from administrator, test and diagnostic credentials:
+
+```bash
+set +x
+export TASKCOMPASS_DB_HOST=127.0.0.1 TASKCOMPASS_DB_PORT=3306
+export TASKCOMPASS_DB_NAME=taskcompass_dev TASKCOMPASS_DB_USER=taskcompass_migrate
+export TASKCOMPASS_DB_ISOLATED=1
+read -r -s -p 'Migration account password: ' TASKCOMPASS_DB_PASSWORD
+printf '\n'
+export TASKCOMPASS_DB_PASSWORD
+migrationExitCode=0
+./build/TaskCompassMigrate --apply && ./build/TaskCompassMigrate --verify || migrationExitCode=$?
+unset TASKCOMPASS_DB_PASSWORD
+printf 'Migration/verification exit code: %s\n' "$migrationExitCode"
+```
+
+Do not run the CLI with sudo/admin credentials, manually pipe the DDL file to the
+client, or use --integration here. Its identity guard enforces the dedicated role,
+versions/checksums/fingerprint and selected database. Expected: schema 1 verified,
+one dataset UUID, five tables and no tasks. Record UUID/checksum/output without
+credentials. Capture each exit status; stop and clear the password on any failure.
+
+#### E. Create the runtime account after verified migration
+
+```sql
+CREATE USER 'taskcompass_app'@'127.0.0.1'
+   IDENTIFIED BY '<distinct-strong-runtime-password>';
+GRANT SELECT, INSERT, UPDATE ON taskcompass_dev.Task
+   TO 'taskcompass_app'@'127.0.0.1';
+GRANT SELECT, INSERT ON taskcompass_dev.CommandRecord
+   TO 'taskcompass_app'@'127.0.0.1';
+GRANT SELECT, INSERT ON taskcompass_dev.LocalChange
+   TO 'taskcompass_app'@'127.0.0.1';
+GRANT SELECT ON taskcompass_dev.Dataset
+   TO 'taskcompass_app'@'127.0.0.1';
+GRANT SELECT ON taskcompass_dev.SchemaMigration
+   TO 'taskcompass_app'@'127.0.0.1';
+```
+
+Runtime can update Task/tombstones and append audit/change rows. It cannot update/
+delete history, edit schema/dataset metadata, physically delete tasks or execute DDL.
+Validate effective privileges before testing. Do not reuse the migration account
+for the GUI or add runtime CREATE to fix schema initialization errors.
+
+Once migration is verified, remove the migrator's initial write rights explicitly:
+
+```sql
+REVOKE CREATE ON `taskcompass\_dev`.* FROM 'taskcompass_migrate'@'127.0.0.1';
+REVOKE CREATE, INSERT ON taskcompass_dev.Dataset FROM 'taskcompass_migrate'@'127.0.0.1';
+REVOKE CREATE, INSERT ON taskcompass_dev.SchemaMigration FROM 'taskcompass_migrate'@'127.0.0.1';
+```
+
+Migrator retains SELECT for verification only. Future migrations need their own
+reviewed grants; do not automatically restore write privileges. Disconnect/reconnect
+when checking the final permission state.
+
+#### F. Verify direct and inherited privileges
+
+Administrator metadata queries (read-only apart from session variables):
+
+```sql
+SET @migrateGrantee = CONCAT(CHAR(39),'taskcompass_migrate',CHAR(39),'@',CHAR(39),'127.0.0.1',CHAR(39));
+SET @runtimeGrantee = CONCAT(CHAR(39),'taskcompass_app',CHAR(39),'@',CHAR(39),'127.0.0.1',CHAR(39));
+SET @diagnosticGrantee = CONCAT(CHAR(39),'taskcompass_dev',CHAR(39),'@',CHAR(39),'127.0.0.1',CHAR(39));
+SELECT GRANTEE,PRIVILEGE_TYPE,IS_GRANTABLE FROM information_schema.USER_PRIVILEGES
+   WHERE GRANTEE IN (@migrateGrantee,@runtimeGrantee,@diagnosticGrantee);
+SELECT GRANTEE,TABLE_SCHEMA,PRIVILEGE_TYPE,IS_GRANTABLE FROM information_schema.SCHEMA_PRIVILEGES
+   WHERE GRANTEE IN (@migrateGrantee,@runtimeGrantee,@diagnosticGrantee);
+SELECT GRANTEE,TABLE_SCHEMA,TABLE_NAME,PRIVILEGE_TYPE,IS_GRANTABLE FROM information_schema.TABLE_PRIVILEGES
+   WHERE GRANTEE IN (@migrateGrantee,@runtimeGrantee,@diagnosticGrantee);
+SELECT GRANTEE,TABLE_SCHEMA,TABLE_NAME,COLUMN_NAME,PRIVILEGE_TYPE,IS_GRANTABLE FROM information_schema.COLUMN_PRIVILEGES
+   WHERE GRANTEE IN (@migrateGrantee,@runtimeGrantee,@diagnosticGrantee);
+SELECT Host,User,Role FROM mysql.roles_mapping
+   WHERE User IN ('taskcompass_dev','taskcompass_migrate','taskcompass_app');
+```
+
+Expect no global privileges other than possible USAGE, no grant options/extra
+explicit roles, diagnostic SELECT unchanged, runtime's nine table-privilege rows
+(3 Task, 2 CommandRecord, 2 LocalChange, 1 Dataset, 1 SchemaMigration), and migrator
+read-only after revocation. Respect actual server table-name case; do not silently
+change physical schema names. On 10.11+ additionally review `SHOW GRANTS FOR PUBLIC;`
+and transitive roles without exposing account authentication hashes; skip PUBLIC
+on 10.5. Unknown/unreadable effective policy is a stop condition.
+
+#### G. Run the persistent desktop as the runtime user
+
+```bash
+set +x
+export TASKCOMPASS_DB_HOST=127.0.0.1 TASKCOMPASS_DB_PORT=3306
+export TASKCOMPASS_DB_NAME=taskcompass_dev TASKCOMPASS_DB_USER=taskcompass_app
+export TASKCOMPASS_DB_ISOLATED=1
+read -r -s -p 'Runtime account password: ' TASKCOMPASS_DB_PASSWORD
+printf '\n'
+export TASKCOMPASS_DB_PASSWORD
+runtimeExitCode=0
+./build/TaskCompassMigrate --verify && ./build/TaskCompass || runtimeExitCode=$?
+unset TASKCOMPASS_DB_PASSWORD
+printf 'Runtime verification/launch exit code: %s\n' "$runtimeExitCode"
+```
+
+No separate integration env script is needed here; TEST variables do not configure
+the GUI. The old dev-environment.sh defaults to the diagnostic account, so avoid
+that password/user ambiguity by using the explicit runtime settings above. The
+old dev-database.sh test intentionally rejects the now-nonempty schema; use schema
+verification rather than weakening its empty-database check.
+
+### Stage 2A persistent GUI acceptance checklist
+
+Use clearly labeled disposable validation tasks, wait for each commit to finish,
+and record actual results. Do not mistake fixture prototype behavior for these
+checks; launch TaskCompass, not TaskCompassPrototype.
+
+| Check | Expected behavior/evidence |
+| --- | --- |
+| Initial load/capture | Empty real task list initially; create two tasks with title and notes, including UTF-8/quotes. Reload shows committed records, no fixtures. |
+| Edit/sort/selection | Edit title and notes on a selected/sorted row; the same UUID remains selected when visible. Header sorts/filter changes do not mutate records. |
+| Completion/filter/reopen | Completion removes task from default active view; Show Completed reveals it. Explicit Reopen restores active and clears completedAt. |
+| Undo/redo creation | Undo hides the task through a tombstone; redo restores its original UUID and fields. |
+| Undo/redo edit | Restore exact prior title/notes; redo reapplies. |
+| Undo/redo complete/reopen | Lifecycle and prior completedAt restored consistently; updatedAt/revision advance, createdAt stays unchanged. |
+| History branching/cancel | A new committed edit after undo discards redo; a cancelled edit does not. |
+| Reload/restart | Close/relaunch preserves UUIDs, fields, completion timestamps and durable receipts. Session undo intentionally clears on restart; completed tasks still hide by default. |
+| Error handling | Invalid title cannot commit. Incorrect runtime credentials produce a clear connection error rather than fixtures or uncommitted rows; do not stop the shared MariaDB service or change unrelated users to simulate failure. |
+| Runtime privilege boundary | Metadata matches the approved grants; no destructive CREATE/DROP permission probe is required. CLI --apply with runtime credentials must reject before connecting/writing. |
+
+Read-only verification can use the unchanged diagnostic account:
+
+```sql
+SELECT id,title,lifecycleStatus,createdAt,updatedAt,completedAt,deletedAt,localRevision
+   FROM taskcompass_dev.Task ORDER BY id;
+SELECT COUNT(*) FROM taskcompass_dev.CommandRecord;
+SELECT COUNT(*) FROM taskcompass_dev.LocalChange;
+```
+
+Record IDs/timestamps/counts needed for review; avoid publishing private task notes.
+Receipts/change counts should advance together for committed mutations, including
+compensations. Do not physically delete validation records/history as test cleanup.
+
+### Stage 2A failure/backup strategy and exclusions
+
+Preflight must establish no existing application tables/data before migration.
+CREATE DDL can partially commit; neither the CLI nor this plan automatically rolls
+it back. A failure retains accounts/objects/evidence, stops the workflow and requires
+inspection plus a new concrete recovery approval. Do not rerun account creation,
+insert successful migration metadata manually, alter fingerprints or grant broader
+rights to force success. No DROP taskcompass_dev statement is authorized here.
+The protected empty-baseline dump and recorded charset/collation establish the
+original state; any development restore or partial-table removal needs separate
+target-specific approval. Real data loss recovery must not rely solely on an empty
+baseline test; complete Stage 2B below before considering the milestone accepted.
+
+Stage 2A approval excludes scratch restoration, any development restore, account
+password replacement, unexpected-resource reuse, cleanup/purge and Phase 1.2.
+It does not include Windows success by inference. On Windows/UCRT64 later validate
+with matching Qt/compiler/connector, build-ucrt64 executables and MariaDB 13.0.2;
+store dumps using --result-file and a private Windows directory/ACL, not an assumed
+Unix umask. Record server/Qt/compiler versions, runtime/plugin deployment, live
+integration, GUI, restart and recovery results independently. Linux evidence alone
+cannot close the Windows gate.
+
+### Stage 2B restore rehearsal — prepared procedure, later exact-file approval
+
+After successful GUI checks, close TaskCompass and stop all TaskCompass writers.
+Take another private dump with the same reviewed options, naming it
+`after-gui.sql` instead of `before-migration.sql`. Capture exit status/SHA-256,
+pre-backup schema verification and one dataset UUID. Preserve all five tables and
+history. Inspect the exact dump before requesting restore approval: no account
+statements, source USE/CREATE DATABASE, DROP statements, unrelated schema references
+or stored code. Logical dumps may contain session FK/SQL-mode save/restore commands;
+review those explicitly, never disable checks globally. A dump is executable SQL.
+
+Request separate approval identifying that file's hash, the fresh empty
+**taskcompass_integration** restore target, account taskcompass_test and exact
+command below. Recheck identity, emptiness and current grants first. Do not reset
+an existing target or restore development in place. If the scratch schema is no
+longer empty, stop and request specific recovery/reuse approval. No automatic reuse
+is inferred from the earlier successful suite.
+
+Proposed later command (not part of Stage 2A approval, do not execute now):
+
+```bash
+mariadb --no-defaults --protocol=TCP --host=127.0.0.1 --port=3306 \
+   --user=taskcompass_test --password --default-character-set=utf8mb4 \
+   taskcompass_integration < "$taskCompassBackupDirectory/after-gui.sql"
+```
+
+Use a matching MariaDB client and stop on import error; no --force. A partial
+restore leaves evidence and does not authorize cleanup/retry. The current test
+account's CREATE/INSERT/SELECT privileges should suffice for the selected dump
+options; verify instead of adding rights. This minimal restore path is not yet
+validated. Server-version-specific dump syntax/fingerprint changes can require
+review; do not silently rewrite metadata. Cross-version restore is not promised.
+
+After an approved import, run `TaskCompassMigrate --verify --integration` with the
+explicit TEST account settings/password and compare its dataset UUID to development.
+Read/compare **all five tables**, ordered by their primary keys, between the closed
+source snapshot and restored target (including tombstones, receipt snapshots and
+change payloads); record equal row counts and deterministic exported-data hashes,
+not private notes. `SELECT * FROM Dataset ORDER BY id`, Task/CommandRecord/LocalChange
+ordered by id, and SchemaMigration ordered by version cover the full schema. Client
+batch escaping/UTF-8 settings must match on both exports. Zero exit statuses and
+matching rows/IDs/timestamps/history plus schema verification are the acceptance
+criteria, not merely successful SQL import.
+
+Do not run MariaDbIntegrationTests on the restored scratch dataset: it intentionally
+refuses any pre-existing tables. Preserve the restored evidence; any subsequent
+integration-table cleanup requires an explicit separate approval with concrete
+qualified SQL. Do not modify the restored dataset via the production GUI (which
+correctly only accepts the development runtime account). Record Stage 2B results
+and Windows evidence before final owner acceptance of Phase 1.1.
+
+### Validation of this preparation and current outstanding work
+
+Only documentation changed: `docs/milestones/Phase1.1.md`, `README.md`,
+`docs/Building.md` and `docs/TestingPhase1.1.md`. Existing uncommitted helper/build/walkthrough changes remain preserved.
+No new source, SQL migration, live server query, dump, provisioning, privileges or
+GUI mutation was executed by the agent. No dependency install, staging, commit, merge, tag or push.
+Current checks are documentation/source agreement, CLI help, migration SHA-256,
+Markdown links/fences and diff whitespace. Application build/CTest were not rerun
+because source/test behavior is unchanged. Earlier database-free results remain
+eight passed/one skipped; the new Stage 1 result is separately owner-reported.
+
+Pending before live Stage 2A: explicit approval of the exact actions above, target
+platform/server confirmation, authoritative preflight/grant evidence and empty-
+baseline backup. Pending final acceptance: real GUI/undo/restart, populated restore
+rehearsal and Linux/Windows validation with actual evidence. No Phase 1.2, commit,
+merge, tag or push is authorized.
+
+Stage 2 preparation checks executed (database-free):
+
+```bash
+command -v mariadb-dump
+mariadb-dump --no-defaults --help
+python3 docs/diagrams/GenerateDatabaseSchema.py --check
+sha256sum migrations/mariadb/001_PersistentTaskFoundation.sql
+git diff --check
+```
+
+Results: dump executable/help available (10.5.29 client); diagram/schema checks
+passed; migration hash matched; Markdown local-reference/fence checks and diff
+whitespace passed. No fresh application CTest run, GUI run or live SQL result is
+claimed in this preparation. All Stage 2 SQL/backup/restore commands above remain
+proposals; the owner-reported Stage 1 exit-0 transcript is the new live evidence.

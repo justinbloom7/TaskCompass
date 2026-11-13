@@ -1,0 +1,8 @@
+# Only reviewed helper files belong in Git. Never save credentials here.
+*
+!/.gitignore
+!/README.md
+!/setup.sh
+!/setup.template.sql
+!/env.sh
+!/test.sh
