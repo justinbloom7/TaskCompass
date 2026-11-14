@@ -2,16 +2,15 @@
 
 # Phase 1.1 — Persistent Task Foundation
 
-Status: owner reports Stage 1 integration passed and Stage 2A migration apply/verify
-succeeded. Owner reports step G and the persistent GUI acceptance checklist passed;
-final direct grants match Stage 2A. Stage 2B import, restored schema verification
-and all-five-table comparison passed according to the owner. Phase 1.1 is not finally accepted.
+Status: **Accepted by the owner on 2026-11-14.** Phase 1.1 implementation and required
+Linux/Windows validation are accepted. The owner explicitly confirms that the
+Windows GUI reopened after restart with persisted data intact.
 
-Latest checkpoint: see **Owner-reported Windows stage 11 comparison success** below.
-Windows restored schema/dataset and all five tables/counts match both the backup
-snapshot and current development source. Linux recovery evidence is preserved in
-the earlier owner reports. Final checklist/evidence review and owner milestone
-acceptance remain pending. No Stage 2 SQL has been run
+Latest checkpoint: see **Final owner acceptance — 2026-11-14** below. Linux and
+Windows build/test, persistence, GUI, undo/redo and backup/restore evidence remains
+in the dated reports, including failures and subsequent corrections. Windows
+restored data matches both the backup snapshot and current development source.
+No Stage 2 SQL has been run
 by the agent. Previous approval-pending observations are historical, not a claim
 that the owner's reported live operations did not occur.
 
@@ -28,10 +27,11 @@ success with Windows dataset 457bb52b-fea4-4347-9c47-675c6b035c90. Script diagno
 errors were corrected and regression-tested; later backup/restore outputs have no
 such errors. No database cleanup or Phase 1.2 implementation is authorized.
 
-Source/documentation approval remains provisional. The owner's manual test result
-is not authorization for Codex to provision accounts, migrate development or perform
-backup restoration. Those operations retain their separate approval checkpoints.
-Recorded: 2026-11-12. This document saves the proposed implementation plan;
+Final acceptance covers the delivered Phase 1.1 scope; it does not authorize further
+live SQL, provisioning, migrations, cleanup/reset or Phase 1.2. Preserve all backup
+artifacts, exports and restored integration databases on both platforms. Future
+operations retain their separate approval checkpoints.
+Original planning record (2026-11-12): this document saves the proposed implementation plan;
 the original Step A plan below is preserved as design history. The subsequent owner
 approval authorizes source, migration, test and documentation work, but not live
 account/grant changes or migration execution.
@@ -46,15 +46,15 @@ explicit decisions recorded here.
 
 | Required reporting area | Record / current state |
 | --- | --- |
-| Status and scope | Step B source delivered; Phase 1.1 incomplete. Deliverable and exclusions below define the boundary. |
+| Status and scope | Phase 1.1 accepted by owner on 2026-11-14. Deliverable and exclusions below define the boundary. |
 | Prerequisites and baseline | Phase 0.1 accepted; owner-reported Linux/Windows results in Baseline and evidence. |
 | Plan and architectural decisions | Step A plan preserved below; Step B implementation report records actual choices. |
 | Files created/modified | Step B File inventory and subsequent dated entries. |
 | Schema and migrations | Owner reports migration 001 apply and verification succeeded in Stage 2A; no agent live execution. |
 | Tests/commands/results | Executed verification and Final pre-approval verification below; later checks are appended. |
-| Issues/limitations/deferred work | Linux and Windows recovery comparisons passed per owner evidence; consolidate manual GUI/restart and platform evidence during final review. Session undo remains nonpersistent by design. |
-| Approvals and decisions | Source provisionally approved; separate Linux/Windows provisioning, migration and exact-file imports recorded. No blanket agent live-operation or cleanup authority. |
-| Remaining work/completion | Final checklist/evidence review and explicit owner milestone acceptance. Preserve restored test data and backups until separate cleanup approval. |
+| Issues/limitations/deferred work | Linux/Windows validation and Windows GUI restart accepted. Session undo remains nonpersistent by design; later features remain deferred. |
+| Approvals and decisions | Final owner acceptance recorded 2026-11-14; prior scoped live approvals preserved. No blanket agent live-operation or cleanup authority. |
+| Remaining work/completion | No remaining Phase 1.1 acceptance work. Preserve backups/exports/restored databases. Phase 1.2 is not authorized. |
 
 Source authorization does not approve provisioning, grants or migration execution.
 This repository-instruction update grants no new database authority or milestone
@@ -3585,3 +3585,62 @@ cleanup/reset needs a new concrete approval.
 Documentation validation: local references, balanced fences and git diff --check
 passed. No application build/CTest rerun for documentation-only owner-evidence
 updates. No agent live SQL, restore, account changes, commit, merge, tag or push.
+
+## Final owner acceptance — 2026-11-14
+
+**Phase 1.1 — Persistent Task Foundation is accepted by the owner on 2026-11-14.**
+The owner explicitly instructed recording final acceptance and confirmed that the
+Windows GUI successfully reopened after restart with persisted data intact. This
+closes the final Windows GUI/restart confirmation and milestone acceptance items.
+No further Phase 1.1 acceptance work remains. Session undo/redo remains intentionally
+session-only; durable receipts and persisted task state survive restart as designed.
+
+Acceptance preserves and relies on the preceding Linux and Windows evidence,
+including initial failures, corrections, scoped approvals and owner-executed results:
+
+- Linux: successful domain/application/storage/GUI automated checks and reported
+  isolated integration, persistent GUI/undo/restart and populated restore comparison.
+  Dataset 21be9da7-b767-4578-b972-cc9a35122ddb; matching full-data exports recorded.
+- Windows UCRT64: successful build with CMake 4.4.5, GCC 16.2.0 Rev6 and Qt 6.12.0;
+  ordinary CTest 9 passed/1 intentionally skipped, followed by explicit live
+  integration exit 0 against MariaDB 13.0.2 on feldria-w10. Migration, final grants,
+  runtime CLI boundary and interactive workflow results remain recorded above.
+- Windows restart: owner now explicitly confirms GUI reopening and persisted data
+  intact, supplementing the earlier manual-check reports. This is owner verification,
+  not a new agent-observed GUI run.
+- Windows restore: approved populated backup import, schema 1/dataset
+  457bb52b-fea4-4347-9c47-675c6b035c90, and identical backup-source/restored/current
+  source exports across all five tables. Matching data hash:
+  19c97d32eb7ea6c757fc7d0e11daa3539105bcd6c4d82573110cb0e8fdd2c906.
+
+Final acceptance supersedes earlier provisional/pending statements; those historical
+entries and original design/approval decisions remain preserved. It does not
+retroactively convert owner evidence into agent-executed validation or authorize
+additional database operations. Deferred organizational/planning/context/recurrence/
+custom-field/mobile/synchronization features remain outside this accepted scope.
+
+### Preservation and scope
+
+Preserve all Linux and Windows baseline/populated backups, source/restored/current
+exports, checksum manifests and restored integration databases. No artifact was
+opened, rewritten, removed or reset during this acceptance update. Do not rerun
+disposable integration tests on restored nonempty schemas or clean up either
+platform without separate concrete authorization. **Phase 1.2 is not authorized
+and has not begun.** No application source, migrations or validation scripts changed.
+No SQL, provisioning, migration, service operation, cleanup or reset was executed.
+No commit, merge, tag or push.
+
+### Documentation changes and checks
+
+Updated current acceptance summaries in README.md, docs/milestones/Phase1.1.md and
+docs/Roadmap.md (including its phase table). Aligned current summaries in
+Building.md, WindowsPhase1.1.md and TestingPhase1.1.md to avoid leaving contradictory
+pending-acceptance guidance. Historical chronological reports remain unchanged.
+These six Markdown files are the only files modified in this step.
+
+Validation: local Markdown references, balanced fences, consistent acceptance date/
+status and explicit Phase 1.2 boundary; unchanged historical milestone body from
+Baseline and evidence through the prior last report; documentation-only Git diff;
+git diff --check. All passed. Application build/CTest not rerun because no executable,
+schema, script or test behavior changed; previous results above remain the evidence.
+No new runtime/database result is claimed by these documentation checks.

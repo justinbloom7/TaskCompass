@@ -6,8 +6,9 @@ Phase 1.1 adds separate executables. The owner reports the isolated integration
 suite, development migration, persistent GUI/restart and backup/restore checks
 passed on the current host. Windows build/CTest, live integration, migration/grants
 and populated backup/restore comparison also passed per owner transcripts on
-MariaDB 13.0.2 / UCRT64, Qt 6.12.0 and GCC 16.2.0. Final manual checklist/evidence
-review and owner milestone acceptance remain pending.
+MariaDB 13.0.2 / UCRT64, Qt 6.12.0 and GCC 16.2.0. The owner accepted Phase 1.1 on
+2026-11-14 and confirmed Windows GUI restart with persisted data intact. Preserve
+all backup/export artifacts and restored integration databases; Phase 1.2 is not authorized.
 The authoritative [Phase 1.1 report](milestones/Phase1.1.md) contains SQL, privilege
 separation, backup/recovery, commands, test results and pending approvals.
 

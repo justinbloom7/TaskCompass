@@ -2,6 +2,11 @@
 
 # Testing Phase 1.1
 
+**Accepted by the owner on 2026-11-14**, including Windows GUI restart with persisted
+data intact. Dated pending statements below are historical; see the final acceptance
+entry in the milestone. Preserve backups, exports and restored integration databases.
+This walkthrough does not authorize rerunning setup/reset/import or starting Phase 1.2.
+
 For Windows, prefer the [scripted one-step-at-a-time guide](WindowsPhase1.1.md).
 The detailed manual procedure below remains available for inspection and Linux.
 

@@ -1,13 +1,13 @@
 # Implementation roadmap
 
-Current work is **Phase 1.1 validation**. The owner reports development GUI,
-restart and populated backup/restore checks passed on the current host. Windows
-build, live integration, migrations and populated restore/data checks now have
-successful owner-reported evidence; final acceptance review remains. See the
+**Phase 1.1 was accepted by the owner on 2026-11-14.** Linux and Windows validation
+evidence is preserved in the milestone, including confirmed Windows GUI restart
+with persisted data intact. Preserve backups, exports and restored integration
+databases. **Phase 1.2 is not authorized and has not begun.** See the
 [scripted Windows sequence](WindowsPhase1.1.md). Live provisioning, grants and
 migrations remain behind their specific approval checkpoints. Phase 0.1 is accepted on owner
 reported Linux/Windows builds, GUI launches and MariaDB diagnostics; earlier dated
-pending observations below remain historical. Phase 1.1 is not complete.
+pending observations below remain historical and are superseded by final acceptance.
 The architecture stays C++20/Qt 6 Widgets/CMake with MariaDB, a shared UI-independent
 core, later mobile SQLite and Linux/Windows bidirectional synchronization service.
 
@@ -27,7 +27,7 @@ overview and requirements/architecture as the shared design baseline.
 | 0 | Initial architecture/organization review | Recorded requirements and single-parent ownership decisions. |
 | 0.1 (accepted) | Desktop technology prototype | Owner accepted; Linux/Windows build, GUI launch and MariaDB diagnostics reported successful. |
 | 0.2 (documentation delivered) | Requirements, interactions, command design, logical schema, roadmap and GPL license | Documentation consistency and licensing review; no production features. |
-| 1.1 | Persistent task foundation with undo from its first edits | Close 0.1 gates, review 0.2 policies, explicit authorization; restart/transaction/history tests. |
+| 1.1 (accepted 2026-11-14) | Persistent task foundation with undo from its first edits | Owner accepted Linux/Windows validation, GUI restart/persistence, transaction/history and backup/restore evidence. |
 | 1.2 | Organizational management | 1.1 command/storage core; legal ownership, nested navigation and undoable moves/archive. |
 | 1.3 | Everyday progress, contexts, numeric priority and drag ordering | 1.1/1.2; context order first, then grouped insertion/atomic moves and undo. |
 | 1.4 | Due/scheduled dates, presentation and basic filters | 1.3; shared calendar logic, minimal persisted day allocations; due/allocation separation. |

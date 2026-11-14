@@ -13,7 +13,9 @@ Keep the Windows MariaDB service running on TCP 127.0.0.1:3306.
 
 Windows execution now has owner-reported successful build/CTest, live integration,
 migration/grants, populated restore and full comparison results (2026-11-14).
-Final GUI/checklist evidence review and owner milestone acceptance remain pending.
+The owner accepted Phase 1.1 on 2026-11-14, explicitly confirming successful Windows
+GUI reopening after restart with persisted data intact. Preserve all backup/export
+artifacts and restored integration databases. Phase 1.2 is not authorized.
 The steps below are the reusable procedure, not instructions to repeat completed
 provisioning/imports. The authoritative approval/result record
 is [Phase1.1.md](milestones/Phase1.1.md). The script supports Linux TCP administration
@@ -271,7 +273,8 @@ restored schema. Cleanup is a separate approval, not part of this walkthrough.
 Send nonsecret PASS/failure output, CTest totals, server/compiler/Qt versions,
 dataset UUID, backup/export hashes and the GUI checklist results. The milestone
 records actual evidence and remaining work; scripts do not edit that document or
-mark the milestone complete. Windows validation remains pending until run there.
+mark the milestone complete. The owner accepted the recorded Windows validation
+and Phase 1.1 on 2026-11-14; later reruns still need their own actual evidence.
 
 No credentials are written to SQL/config/log files or passed in arguments. Native
 clients receive a per-child MYSQL_PWD environment value and the Qt executables use
@@ -284,8 +287,9 @@ this loopback development workflow.
 
 This runner conservatively rejects nonstandard grants, explicit account roles and
 PUBLIC role inheritance for manual review. It does not silently weaken policy.
-Backups/exports rely on Windows PowerShell ACL operations, whose actual behavior
-still requires Windows validation. MariaDB DDL has no automatic transactional
+Backups/exports rely on Windows PowerShell ACL operations exercised by the accepted
+owner-reported Windows workflow; the agent did not inspect native ACLs independently.
+MariaDB DDL has no automatic transactional
 rollback; failed provisioning/import/migration retains evidence. No database
 cleanup, service management, dependency installation or later-phase work occurs.
 
