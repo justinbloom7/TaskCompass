@@ -2,15 +2,15 @@
 
 # Phase 1.1 — Persistent Task Foundation
 
-Status: owner reports Stage 1 integration passed; Stage 2A development setup is
-prepared for separate approval. Phase 1.1 is not finally accepted.
+Status: owner reports Stage 1 integration passed and Stage 2A migration apply/verify
+succeeded. Owner reports step G and the persistent GUI acceptance checklist passed;
+final direct grants match Stage 2A. Phase 1.1 is not finally accepted.
 
-Latest checkpoint: owner supplied a successful guarded integration-test transcript
-(exit 0, test schema left empty). See the dated result and **Approval Requested —
-Stage 2A development foundation** below. The transcript does not identify platform/
-server version; that evidence is pending confirmation. No Stage 2 SQL has been run
+Latest checkpoint: see **Owner-reported Stage 2A GUI acceptance** below. Step G
+and its checklist passed according to the owner; exact platform/server evidence,
+backup verification and Stage 2B restore validation remain outstanding. No Stage 2 SQL has been run
 by the agent. Previous approval-pending observations are historical, not a claim
-that the owner's reported live test did not occur.
+that the owner's reported live operations did not occur.
 
 Source/documentation approval remains provisional. The owner's manual test result
 is not authorization for Codex to provision accounts, migrate development or perform
@@ -34,11 +34,11 @@ explicit decisions recorded here.
 | Prerequisites and baseline | Phase 0.1 accepted; owner-reported Linux/Windows results in Baseline and evidence. |
 | Plan and architectural decisions | Step A plan preserved below; Step B implementation report records actual choices. |
 | Files created/modified | Step B File inventory and subsequent dated entries. |
-| Schema and migrations | Migration 001 exercised in the isolated integration run reported by the owner; development migration remains unexecuted by the agent and pending approval. |
+| Schema and migrations | Owner reports migration 001 apply and verification succeeded in Stage 2A; no agent live execution. |
 | Tests/commands/results | Executed verification and Final pre-approval verification below; later checks are appended. |
-| Issues/limitations/deferred work | Implementation report, exclusions and Outstanding work below; live/Windows Phase 1.1 checks remain unverified. |
-| Approvals and decisions | Source provisionally approved for validation; owner reports Stage 1 pass. Stage 2A and restore rehearsal require separate execution approval. |
-| Remaining work/completion | Confirm Stage 1 platform/server evidence; review Stage 2A development setup, then live GUI/restart/undo, backup/restore and Windows validation before final acceptance. |
+| Issues/limitations/deferred work | Owner reports Stage 2A GUI checklist passed; Stage 2B restore and independent Windows Phase 1.1 validation remain outstanding. |
+| Approvals and decisions | Source provisionally approved; owner reports Stage 1 and development migration success. No blanket agent live-operation authority; restore rehearsal remains separately gated. |
+| Remaining work/completion | Record platform/server and backup evidence; complete separately approved Stage 2B restore and independent Windows validation before final acceptance. |
 
 Source authorization does not approve provisioning, grants or migration execution.
 This repository-instruction update grants no new database authority or milestone
@@ -1604,10 +1604,10 @@ account to take a private logical backup; do not change its privileges. Choose a
 new directory outside the repository, not temp/testdb. Proposed Linux commands:
 
 ```bash
-taskCompassBackupDirectory="$HOME/TaskCompassBackups/Phase1.1-$(date +%Y%m%d-%H%M%S)"
+taskCompassBackupDirectory="$HOME/temp/TaskCompassBackups/Phase1.1-$(date +%Y%m%d-%H%M%S)"
 (
    umask 077
-   mkdir -p -- "$HOME/TaskCompassBackups" &&
+   mkdir -p -- "$(dirname "$taskCompassBackupDirectory")" &&
    mkdir -- "$taskCompassBackupDirectory" &&
    mariadb-dump --no-defaults --protocol=TCP --host=127.0.0.1 --port=3306 \
       --user=taskcompass_dev --password --default-character-set=utf8mb4 \
@@ -1616,6 +1616,8 @@ taskCompassBackupDirectory="$HOME/TaskCompassBackups/Phase1.1-$(date +%Y%m%d-%H%
       --no-create-db --hex-blob \
       --result-file="$taskCompassBackupDirectory/before-migration.sql" taskcompass_dev
 )
+backupExitCode=$?
+printf 'Backup exit code: %s\n' "$backupExitCode"
 ```
 
 The leaf directory is created exclusively; if it exists, the && chain stops rather
@@ -1624,8 +1626,16 @@ hidden prompt. Proceed only on
 exit 0, a nonempty dump file and inspection confirming the empty baseline. Record:
 
 ```bash
+test -s "$taskCompassBackupDirectory/before-migration.sql"
 sha256sum "$taskCompassBackupDirectory/before-migration.sql"
+less "$taskCompassBackupDirectory/before-migration.sql"
 ```
+
+No terminal output after the password prompt is normal: --result-file writes the
+dump to disk. A successful test -s also prints nothing. Require both exit codes
+to be zero and review the dump before proceeding; a checksum alone does not prove
+a successful backup. Press q to leave less. Use a private, nonsynchronized backup
+location; this owner-selected path remains outside the repository.
 
 Record preflight charset/collation separately. Do not use --databases or --all-
 databases: this proposal intentionally avoids source-database USE/CREATE statements
@@ -1906,3 +1916,192 @@ passed; migration hash matched; Markdown local-reference/fence checks and diff
 whitespace passed. No fresh application CTest run, GUI run or live SQL result is
 claimed in this preparation. All Stage 2 SQL/backup/restore commands above remain
 proposals; the owner-reported Stage 1 exit-0 transcript is the new live evidence.
+
+## External review safeguards — 2026-11-13
+
+The owner supplied ChatGPT's recommendation for conditional Stage 2A approval.
+All five safeguards match the proposed procedure above: confirm the platform and
+live server version; verify the development schema has no unexpected contents;
+create and verify a private baseline backup before migration; execute only the
+documented scope and stop on unexpected results; record actual commands, results
+and failures here. A backup must have a successful exit status, nonempty reviewed
+output and a recorded checksum; this does not replace the later restore rehearsal.
+
+This supplied recommendation is recorded as review feedback, not explicit owner
+execution authorization. No live SQL, backup, provisioning or migration was run.
+No source or SQL changes are needed for these safeguards. Reviewed the Stage 2A
+preflight, backup, approval and outstanding-work sections for consistency; this
+documentation-only update does not require a new application build or CTest run.
+
+### Approval Requested — confirm Stage 2A execution
+
+Approve the exact Stage 2A operations documented above on the Linux development
+host, subject to these safeguards. Preflight must establish the actual server
+version and empty schema; the Stage 1 platform/server evidence must also be
+confirmed before migration. Existing-account conflicts, unexpected privileges or
+contents, backup failure and migration failure require stopping for review.
+Stage 2B restore operations and failure cleanup remain separately gated.
+
+## Owner-operated Stage 2A testing instructions — 2026-11-13
+
+The owner requested testing instructions. Stage 2A is ready for controlled
+execution of the proposed procedure, not yet live-validated. No agent execution
+approval is inferred from this request. Follow the Stage 2A subsections A–G in
+order: confirm Linux/server and Stage 1 evidence; read-only preflight; private
+baseline backup; fresh migration account/grants; apply and verify migration;
+runtime provisioning and migrator write revocation; effective privilege review;
+runtime verification and persistent GUI launch. Stop on any unexpected result.
+
+Before database setup, configure/build and run database-free CTest using section 1
+of docs/TestingPhase1.1.md, with TASKCOMPASS_ENABLE_DB_TESTS=OFF. The earlier Stage 1
+integration helpers do not provision Stage 2A runtime or migration accounts.
+After setup, execute the persistent GUI acceptance checklist above, including all
+undo/redo operations and close/restart. Relaunch with the runtime environment and
+password still configured, or repeat subsection G (which clears the password
+after the process exits). Report platform/server, commands, exit codes and each
+check's actual result without credentials. Stage 2B remains separate.
+
+Documentation validation: reviewed the operator guide and Stage 2A commands for
+agreement; git diff --check passed. No live SQL, backup, build, CTest or GUI checks
+were executed during this documentation-only clarification.
+
+## Owner-selected backup path — 2026-11-13
+
+Updated subsection B's current command to use
+$HOME/temp/TaskCompassBackups/Phase1.1-<timestamp> and derive the parent directory
+with dirname, as requested by the owner. The earlier proposed location was
+$HOME/TaskCompassBackups/Phase1.1-<timestamp>. Exclusive leaf creation and private
+umask remain unchanged. Added immediate exit-status capture, nonempty-file check,
+checksum and inspection commands, and explained normal silent output.
+
+Owner-reported evidence: the revised dump command prompted for a password and
+returned to the shell without a displayed error. Its exit status, file contents
+and checksum have not been supplied; backup verification remains pending. No
+agent database access, dump or migration was performed. Only this milestone file
+changed in this step. Validation: subsection B Bash blocks passed bash -n via
+stdin without execution; git diff --check passed. Application tests were not rerun
+because this is a documentation-only command clarification.
+
+## Owner-reported Stage 2A connection failure — 2026-11-13
+
+The owner ran TaskCompassMigrate --apply and received:
+`Cannot open MariaDB. Check service/TCP availability, QMYSQL, account, password and grants.`
+The owner also reports a successful root connection. That does not establish TCP
+access or migration-account authentication: root may use a Unix socket. The
+reported error is emitted when QSqlDatabase::open fails, before this connection
+executes migration SQL; verification after && was not reached. This is not a
+successful migration result. No agent live SQL or account changes were performed.
+
+Next owner diagnostic (read-only, no password in arguments):
+
+```bash
+mariadb --no-defaults --protocol=TCP --host=127.0.0.1 --port=3306 \
+   --user=taskcompass_migrate --password taskcompass_dev
+```
+
+Use the new migration-account password. If connected, run
+`SELECT VERSION(), DATABASE(), CURRENT_USER();` and quit. Record any client error
+number/message without credentials; distinguish TCP/service (2002/2003),
+authentication/host matching (1045), database access (1044) and missing database
+(1049) before proposing a correction. If this succeeds but Qt fails, inspect the
+explicit subsection D environment/password setup and QMYSQL loading next. Do not
+change grants, passwords or retry live migration as an automatic repair.
+
+Validation: reviewed subsection D and the connection-open error path; documentation
+whitespace check passed. Application tests not rerun for this documentation-only
+failure record. Root cause and live migration/verification remain unresolved.
+
+## Owner-reported Stage 2A migration success — 2026-11-13
+
+After the connection-open failure, the owner successfully authenticated over TCP
+as taskcompass_migrate using the manual client. The owner suspected a mistyped
+environment-variable password and re-entered it; the exact original cause is not
+independently proven. The subsequent owner-executed command was:
+
+```bash
+build/TaskCompassMigrate --apply && ./build/TaskCompassMigrate --verify || migrationExitCode=$?
+```
+
+Reported output:
+
+```text
+Schema 1 verified; dataset 21be9da7-b767-4578-b972-cc9a35122ddb
+Schema 1 verified; dataset 21be9da7-b767-4578-b972-cc9a35122ddb
+```
+
+Both apply and the chained verification report success with the same dataset UUID.
+This is owner-reported evidence, not agent execution. A separate numeric exit-code
+transcript was not supplied. Backup exit status/checksum, actual server version,
+platform evidence and final account privileges remain to be recorded; do not infer
+those checks passed from migration output. Earlier failure evidence is retained.
+
+Next: subsection E runtime-account provisioning and migrator write revocation,
+then F effective privilege checks and G runtime verification/GUI launch. Do not
+repeat account creation if already performed; inspect unexpected existing accounts.
+No GUI persistence, undo/redo, restart or restore success is claimed yet. Agent
+live SQL, account changes, builds and tests were not executed for this report.
+Only this milestone document changed; git diff --check passed. Phase 1.1 remains
+incomplete, and Stage 2B restoration remains separately gated.
+
+## Owner-reported Stage 2A final privilege checks — 2026-11-13
+
+The owner supplied results of subsection F's five metadata queries after step E:
+
+| Query | Owner-reported result | Assessment |
+| --- | --- | --- |
+| USER_PRIVILEGES filtered to the three accounts | USAGE only, IS_GRANTABLE=NO for app, diagnostic and migrator | Matches; no direct global privileges. |
+| SCHEMA_PRIVILEGES filtered to the three accounts | Diagnostic and migrator each SELECT on taskcompass\\_dev, IS_GRANTABLE=NO; runtime absent | Matches; schema wildcard underscore is escaped intentionally. |
+| TABLE_PRIVILEGES filtered to the three accounts | Runtime: Task SELECT/INSERT/UPDATE; CommandRecord SELECT/INSERT; LocalChange SELECT/INSERT; Dataset SELECT; SchemaMigration SELECT; nine rows, all IS_GRANTABLE=NO | Matches the exact runtime grant set; migrator CREATE/INSERT grants are absent. |
+| COLUMN_PRIVILEGES filtered to the three accounts | Empty | Matches. |
+| mysql.roles_mapping filtered to the three accounts | Empty | Matches; no explicit role assignments reported. |
+
+These are owner-executed query results, not agent live queries. They establish the
+expected direct privilege separation and migration write revocation. PUBLIC
+inspection remains version-dependent: skip on MariaDB 10.5; on 10.11+ review
+SHOW GRANTS FOR PUBLIC and any inherited roles before declaring effective grants
+fully validated. This transcript does not itself identify the current server
+version. No new account/grant changes or destructive permission probes are needed
+based on these results.
+
+The owner earlier reported a printed migrationExitCode of 1 after the successful
+retry. That variable may retain the prior failure because the retry only assigns
+it on failure. Both schema verification messages remain successful output; an
+independently captured fresh verification exit code was suggested but not supplied.
+Do not reinterpret the stale shell variable as a proven new migration failure.
+
+Next: subsection G runtime-account schema verification and GUI acceptance checks,
+after any applicable PUBLIC review. Preserve remaining platform/server, backup,
+restart/undo, Windows and Stage 2B restore evidence requirements. Only this
+milestone document changed; git diff --check passed. Application tests were not
+rerun for this documentation-only evidence update; no agent live SQL was executed.
+
+## Owner-reported Stage 2A GUI acceptance — 2026-11-13
+
+Owner report: “G checked out, including the persistent GUI acceptance checklist.”
+Recorded as owner-executed success for subsection G runtime verification/launch
+and the complete Stage 2A checklist: task capture and editing; sorting/selection;
+completion, completed filtering and reopening; undo/redo for creation, editing,
+completion and reopening; redo branching/cancel behavior; reload/restart
+persistence with session-only undo; validation/error handling and the runtime
+privilege boundary. The earlier supplied step F metadata independently documents
+the expected direct grants. No additional detailed per-action logs or fresh exit
+code transcript were supplied; this is an owner acceptance report, not an
+agent-observed GUI run or new automated test result.
+
+The reported validation is associated with dataset
+21be9da7-b767-4578-b972-cc9a35122ddb from the preceding development migration.
+Do not infer independent Windows success from this report. Record exact current
+platform/server metadata, Stage 1 platform and baseline-backup verification when
+available; apply the version-dependent PUBLIC review if relevant.
+
+Remaining milestone work: separately approved Stage 2B populated backup/restore
+rehearsal, independently evidenced Linux/Windows Phase 1.1 validation, and final
+owner acceptance. The existing Stage 2B proposal is not execution authorization;
+review the exact populated backup artifact and fresh isolated destination before
+requesting live restore approval. No cleanup of development tasks/history or
+integration contents is authorized by the GUI acceptance report. No Phase 1.2.
+
+Files changed in this step: docs/milestones/Phase1.1.md only. Validation:
+git diff --check passed. Builds/CTest were not rerun for this documentation-only
+owner-result update. No agent live SQL, backup, restore, GUI run or account change
+was performed; no commit, merge, tag or push.
