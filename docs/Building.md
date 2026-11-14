@@ -4,9 +4,10 @@ The Phase 0.1 prototype is accepted (owner-reported Linux/Windows builds, launch
 and CLI/Qt connectivity). Historical observations below remain dated evidence.
 Phase 1.1 adds separate executables. The owner reports the isolated integration
 suite, development migration, persistent GUI/restart and backup/restore checks
-passed on the current host. Independent Windows Phase 1.1 checks remain pending.
-Platform/version details for
-that reported integration run are pending confirmation.
+passed on the current host. Windows build/CTest, live integration, migration/grants
+and populated backup/restore comparison also passed per owner transcripts on
+MariaDB 13.0.2 / UCRT64, Qt 6.12.0 and GCC 16.2.0. Final manual checklist/evidence
+review and owner milestone acceptance remain pending.
 The authoritative [Phase 1.1 report](milestones/Phase1.1.md) contains SQL, privilege
 separation, backup/recovery, commands, test results and pending approvals.
 

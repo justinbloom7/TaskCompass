@@ -1,8 +1,9 @@
 # Implementation roadmap
 
 Current work is **Phase 1.1 validation**. The owner reports development GUI,
-restart and populated backup/restore checks passed on the current host. Independent
-Windows Phase 1.1 checks remain pending; use the
+restart and populated backup/restore checks passed on the current host. Windows
+build, live integration, migrations and populated restore/data checks now have
+successful owner-reported evidence; final acceptance review remains. See the
 [scripted Windows sequence](WindowsPhase1.1.md). Live provisioning, grants and
 migrations remain behind their specific approval checkpoints. Phase 0.1 is accepted on owner
 reported Linux/Windows builds, GUI launches and MariaDB diagnostics; earlier dated

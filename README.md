@@ -8,9 +8,9 @@ projects, and guided planning at quarterly, sprint, weekly, and daily horizons.
 **Status: Phase 0.1 accepted; owner reports Phase 1.1 integration tests passed.**
 The original `TaskCompassPrototype` remains a disposable in-memory demonstration.
 The new persistent `TaskCompass` desktop and `TaskCompassMigrate` tool are implemented.
-The owner reports development migration, GUI/restart and backup/restore checks
-passed on the current host; independent Windows Phase 1.1 validation and final
-acceptance remain pending. Live operations require their specific owner approval;
+The owner reports development migration and backup/restore checks passed on Linux
+and Windows; GUI reports and remaining final acceptance review are recorded in
+the milestone. Live operations require their specific owner approval;
 no Stage 2 SQL has been executed by the agent. See the
 [Phase 1.1 milestone report](docs/milestones/Phase1.1.md) for the owner-reported
 integration output, proposed Stage 2 SQL/procedures and approval checkpoints.

@@ -11,8 +11,11 @@ stage; none automatically advances to the next. All share the same runner and
 safety checks. It does not install software or start services.
 Keep the Windows MariaDB service running on TCP 127.0.0.1:3306.
 
-This is a new Windows validation run, not a repeat of Linux validation. Windows
-execution of the new runner is pending. The authoritative approval/result record
+Windows execution now has owner-reported successful build/CTest, live integration,
+migration/grants, populated restore and full comparison results (2026-11-14).
+Final GUI/checklist evidence review and owner milestone acceptance remain pending.
+The steps below are the reusable procedure, not instructions to repeat completed
+provisioning/imports. The authoritative approval/result record
 is [Phase1.1.md](milestones/Phase1.1.md). The script supports Linux TCP administration
 too, but does not replace the existing Linux socket-admin instructions.
 
@@ -177,6 +180,40 @@ errors. Confirm sorting/filtering keeps selection stable. Close the GUI and run
 the same command again: tasks/history persist and session undo clears. Record
 each checklist result; the script cannot certify your interactive review. The
 full checklist is in the milestone's **Stage 2A persistent GUI acceptance checklist**.
+
+For title validation, clear the title or enter only spaces: OK must be disabled,
+so no invalid task is saved. Ordinary punctuation and non-English text are valid.
+The shared validator also rejects titles longer than 1024 UTF-8 bytes, invalid
+UTF-8 or NUL characters; the latter two are not normal keyboard-entry tests.
+Leading/trailing ordinary whitespace is trimmed. An overlong title should report
+a validation error without saving; an empty-title test alone can be checked by
+the disabled OK button and cancelling the dialog.
+
+Stage 07 and each stage 08 launch check the final runtime/diagnostic/migrator grants.
+For the additional CLI runtime boundary, run this in UCRT64. It deliberately uses
+a fake password: the account guard must reject before opening a connection.
+These per-command settings do not replace your shell's real credentials:
+
+```bash
+env TASKCOMPASS_DB_HOST=127.0.0.1 TASKCOMPASS_DB_PORT=3306 \
+   TASKCOMPASS_DB_NAME=taskcompass_dev TASKCOMPASS_DB_USER=taskcompass_app \
+   TASKCOMPASS_DB_ISOLATED=1 TASKCOMPASS_DB_PASSWORD=runtime-guard-placeholder \
+   ./build-ucrt64/TaskCompassMigrate.exe --apply
+runtimeGuardExitCode=$?
+printf 'Runtime guard exit code: %s\n' "$runtimeGuardExitCode"
+```
+
+Require exit **1** and exactly the dedicated migration/test account rejection.
+A connection/authentication error is not a pass for this check. Do not change
+the username to a migrator/root account or retry with real credentials:
+that would test a different path. No CREATE/DROP permission probe is needed.
+
+The milestone's optional read-only Task/CommandRecord/LocalChange queries are run
+through the diagnostic taskcompass_dev login against taskcompass_dev, not root.
+They inspect stored lifecycle/timestamps/revision and history counts. Every committed
+task mutation, including undo/redo, adds one receipt and one LocalChange, so these
+two counts should match and advance together. Cancelled/failed edits add neither.
+Do not share private titles/notes or physically delete validation records.
 
 ## 09. Close GUI and make a populated backup
 

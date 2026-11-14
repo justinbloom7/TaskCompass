@@ -7,26 +7,26 @@ succeeded. Owner reports step G and the persistent GUI acceptance checklist pass
 final direct grants match Stage 2A. Stage 2B import, restored schema verification
 and all-five-table comparison passed according to the owner. Phase 1.1 is not finally accepted.
 
-Latest checkpoint: see **Owner-reported Stage 2B data comparison success** below.
-Populated backup, approved import, matching restored dataset/schema and identical
-full-data exports are recorded. Exact platform/server evidence and independent
-Windows Phase 1.1 validation remain outstanding. No Stage 2 SQL has been run
+Latest checkpoint: see **Owner-reported Windows stage 11 comparison success** below.
+Windows restored schema/dataset and all five tables/counts match both the backup
+snapshot and current development source. Linux recovery evidence is preserved in
+the earlier owner reports. Final checklist/evidence review and owner milestone
+acceptance remain pending. No Stage 2 SQL has been run
 by the agent. Previous approval-pending observations are historical, not a claim
 that the owner's reported live operations did not occur.
 
 Windows validation tooling: the source-only scripted sequence is now in
 [WindowsPhase1.1.md](../WindowsPhase1.1.md). See **Scripted Windows validation
 preparation — 2026-11-14** below for files, mock coverage, build/CTest evidence and
-the separate Windows approval checkpoints. Owner now reports Windows stages 01–04
-passed, including live integration testing; development/GUI/restore stages remain pending.
+the separate Windows approval checkpoints. Windows build/ordinary tests, live
+integration, migration/grants, CLI boundary, populated import and full comparison
+are owner-reported passes; see dated entries for GUI reports and initial failures.
 Owner reports Windows stage 01 passed after the tooling corrections: CMake 4.4.5,
 GCC 16.2.0, Qt 6.12.0; 9 tests passed, 1 live test skipped, QMYSQL loadable.
-Windows stages 05–07 were separately approved. Stage 05 now reports successful
-baseline/provisioning/grant checks with a diagnostic-handler bug corrected below;
-stage 06 migration/verification now passed with Windows dataset
-457bb52b-fea4-4347-9c47-675c6b035c90. Stage 07 final grant checks now passed per
-owner output, with repeated old diagnostic-handler errors; update the Windows
-runner before stage 08 GUI/restart validation, which remains pending.
+Windows stages 05–07 and exact-file stage 10 were separately approved and report
+success with Windows dataset 457bb52b-fea4-4347-9c47-675c6b035c90. Script diagnostic
+errors were corrected and regression-tested; later backup/restore outputs have no
+such errors. No database cleanup or Phase 1.2 implementation is authorized.
 
 Source/documentation approval remains provisional. The owner's manual test result
 is not authorization for Codex to provision accounts, migrate development or perform
@@ -52,9 +52,9 @@ explicit decisions recorded here.
 | Files created/modified | Step B File inventory and subsequent dated entries. |
 | Schema and migrations | Owner reports migration 001 apply and verification succeeded in Stage 2A; no agent live execution. |
 | Tests/commands/results | Executed verification and Final pre-approval verification below; later checks are appended. |
-| Issues/limitations/deferred work | Owner reports Stage 2A GUI and Stage 2B restore/data checks passed; independent Windows Phase 1.1 validation and exact platform/server evidence remain outstanding. |
-| Approvals and decisions | Source provisionally approved; owner approved the exact Stage 2B import and reports success. No blanket agent live-operation or cleanup authority. |
-| Remaining work/completion | Record exact platform/server and any outstanding preflight evidence; independently validate Windows and obtain final owner acceptance. Preserve restored test data until separate cleanup approval. |
+| Issues/limitations/deferred work | Linux and Windows recovery comparisons passed per owner evidence; consolidate manual GUI/restart and platform evidence during final review. Session undo remains nonpersistent by design. |
+| Approvals and decisions | Source provisionally approved; separate Linux/Windows provisioning, migration and exact-file imports recorded. No blanket agent live-operation or cleanup authority. |
+| Remaining work/completion | Final checklist/evidence review and explicit owner milestone acceptance. Preserve restored test data and backups until separate cleanup approval. |
 
 Source authorization does not approve provisioning, grants or migration execution.
 This repository-instruction update grants no new database authority or milestone
@@ -3300,3 +3300,288 @@ root for read-only final grant checks, then taskcompass_app runtime password.
 Perform the GUI checklist and close/relaunch via the same stage for persistence.
 Windows stages 08 onward are not yet validated; stage 10 restore retains its
 separate exact-file approval. Phase 1.1 remains incomplete.
+
+## Windows GUI title-validation clarification — 2026-11-14
+
+Owner asks what constitutes an invalid title while doing stage 08 GUI checks.
+Reviewed src/domain/Task.cpp normalizeTitle and persistent dialog validation in
+src/desktop/persistent/PersistentTaskWindow.cpp. Empty/whitespace-only GUI titles
+keep OK disabled. Shared validation requires nonempty trimmed UTF-8, at most 1024
+bytes, no NUL; ordinary punctuation/non-English text are valid. Leading/trailing
+ordinary whitespace is normalized. Recommended manual check: clear title, try
+only spaces, confirm OK remains disabled, then cancel without saving. This is
+expected validation feedback, not a requirement to force a database error.
+
+Added examples to docs/WindowsPhase1.1.md stage 08. No application behavior changed.
+Owner previously reported successful checks up to reload/restart and was told to
+relaunch the same stage 08 script; restart/invalid-title results have not yet been
+reported. Do not mark the complete Windows GUI checklist passed from this question.
+Validation: source/document agreement and git diff --check passed. No application
+build/tests rerun for documentation-only clarification; no agent live SQL or GUI
+run, commit or push.
+
+## Runtime privilege boundary and history-query clarification — 2026-11-14
+
+Owner asked how to satisfy the GUI checklist's runtime privilege boundary and
+read-only verification SQL. Windows stage 07 already reports exact final grants;
+stage 08 repeats the grant/PUBLIC checks before launching. No CREATE/DROP probe
+is needed. Reviewed src/infrastructure/storage/MigrateMain.cpp: --apply rejects
+runtime account configuration before constructing DatabaseConnection.
+
+Added a copy-and-paste UCRT64 boundary check to docs/WindowsPhase1.1.md stage 08:
+fixed runtime username with a deliberate nonsecret placeholder password, per-child
+env only, TaskCompassMigrate.exe --apply. Require exit 1 and the exact migration/
+test-account rejection, not a connection error. The real password is unnecessary
+because this path rejects before authentication; do not retry as a privileged user.
+
+Agent executed the same guard check using Linux build/TaskCompassMigrate:
+
+```bash
+env TASKCOMPASS_DB_HOST=127.0.0.1 TASKCOMPASS_DB_PORT=3306 TASKCOMPASS_DB_NAME=taskcompass_dev TASKCOMPASS_DB_USER=taskcompass_app TASKCOMPASS_DB_ISOLATED=1 TASKCOMPASS_DB_PASSWORD=runtime-guard-placeholder ./build/TaskCompassMigrate --apply
+runtimeGuardExitCode=$?
+printf 'Runtime guard exit code: %s\n' "$runtimeGuardExitCode"
+```
+
+Actual output:
+
+```text
+Migration --apply requires the dedicated migration/test account, never runtime/admin credentials.
+Runtime guard exit code: 1
+```
+
+This is an agent-executed pre-connection rejection with a fake password, not live
+SQL/migration or a Windows check. Windows boundary result remains owner-pending.
+The optional read-only milestone queries use diagnostic taskcompass_dev against
+taskcompass_dev; task rows expose lifecycle/time/revision and CommandRecord /
+LocalChange counts should match, increasing once per committed mutation (including
+undo/redo), not cancellations/failures. Later script exports also include all
+these fields and counts; no need for a destructive permission test or cleanup.
+
+Files changed: Windows guide and milestone. Bash block syntax, local references,
+fences and git diff --check passed. No C++ source change or fresh full build/CTest
+run; targeted CLI behavior checked as above. No agent database connection, live
+SQL, account change, commit or push. Full Windows GUI checklist remains pending
+explicit owner report.
+
+## Owner-reported Windows runtime migration boundary passed — 2026-11-14
+
+Owner ran the documented UCRT64 env-scoped TaskCompassMigrate.exe --apply check
+with taskcompass_app and the deliberately fake runtime-guard-placeholder password.
+Reported output:
+
+```text
+Migration --apply requires the dedicated migration/test account, never runtime/admin credentials.
+Exit code: 1
+```
+
+This is the expected pre-connection account guard, not a failed database login;
+mark the Windows CLI runtime privilege-boundary check owner-verified passed.
+No real credential was required, and the source-reviewed path rejects before
+DatabaseConnection construction or SQL. Stage 07's direct grant checks remain
+recorded separately. No destructive CREATE/DROP probe is required.
+
+Full Windows GUI/restart checklist completion has not yet been explicitly
+reported; do not infer all GUI checks passed from this CLI result. Next is stage
+09 populated backup once the owner confirms stage 08 complete and closes all
+writers. Stage 10 restore remains separately gated by exact backup path/hash.
+Only this milestone changed; git diff --check passed. No agent build/test rerun
+for documentation-only owner evidence, live SQL, account changes, commit or push.
+
+## Owner-reported Windows stage 09 backup success — 2026-11-14
+
+After indicating stage 08 GUI work had already been done, the owner ran:
+
+```bash
+snapshotDirectory="$HOME/TaskCompassBackups/windows-populated-$(date +%Y%m%d-%H%M%S)"
+scripts/phase11/09-backup.sh --backup-dir "$snapshotDirectory"
+```
+
+Owner confirmed ALL TASKCOMPASS WRITERS CLOSED. Runtime verification reported
+schema 1/dataset 457bb52b-fea4-4347-9c47-675c6b035c90. Diagnostic login succeeded.
+Output reported backup exit 0, nonempty/hash recorded, and consistent source
+exports around the populated dump. Windows artifact:
+/c/Users/justin/TaskCompassBackups/windows-populated-20261114-152509/after-gui.sql.
+The script's mandatory private-directory ACL step did not report an error; this
+is owner-executed workflow evidence, not independent agent ACL inspection.
+No unbound-variable errors appeared in this run's diagnostic output.
+
+The actual SHA-256 and private content inspection have not yet been supplied.
+Next owner read-only commands:
+
+```bash
+sha256sum "$snapshotDirectory/after-gui.sql"
+less "$snapshotDirectory/after-gui.sql"
+```
+
+Confirm the five expected tables/data; no DROP, account changes, USE/CREATE
+DATABASE, unrelated schema objects or stored code. Share hash/path and inspection
+result, not private contents. Preserve the snapshot directory/source exports,
+keep writers closed, and obtain separate exact-file Windows stage 10 approval.
+Do not run restore or integration tests against it as an automatic next action.
+Windows stage 11 comparison and final milestone acceptance remain pending.
+
+Only this milestone changed. git diff --check passed; no application tests/build
+rerun for documentation-only owner evidence. No agent live SQL, backup, restore,
+provisioning, migration, commit or push.
+
+## Windows populated backup inspection and exact-file approval request — 2026-11-14
+
+Owner reports manual after-gui.sql content checks passed and supplied:
+
+- Artifact: /c/Users/justin/TaskCompassBackups/windows-populated-20261114-152509/after-gui.sql.
+- SHA-256: e8b49ca837092162770fcb1482f8b7984cb951bf028d7358d4e80afbda36b3b3.
+- less opened for private review; no private dump contents were shared.
+
+The sha256sum output's asterisk is its binary-mode filename marker, not part of
+the filename or hash. Earlier stage 09 reports backup exit 0, nonempty output,
+matching before/after source exports and Windows dataset
+457bb52b-fea4-4347-9c47-675c6b035c90. Inspection is owner-reported, not agent reading.
+
+### Approval Requested — Windows stage 10 exact-file import
+
+Approve importing only this artifact/hash into taskcompass_integration on
+feldria-w10 / 127.0.0.1:3306 using taskcompass_test@127.0.0.1. Owner command:
+
+```bash
+scripts/phase11/10-restore.sh --approved --backup-dir "$snapshotDirectory"
+```
+
+snapshotDirectory must remain
+/c/Users/justin/TaskCompassBackups/windows-populated-20261114-152509. The runner
+validates saved dump/source hashes, requires exact hash-specific target confirmation
+and DUMP REVIEWED; WRITERS CLOSED, verifies empty target catalogs/charset, exact
+test grants/PUBLIC and matching server identity, and checks the authenticated test
+account before importing. Effective import command (password provided only in the
+child environment by the runner, never written into this document/argv):
+
+```bash
+mariadb --no-defaults --protocol=TCP --host=127.0.0.1 --port=3306 \
+   --user=taskcompass_test --default-character-set=utf8mb4 taskcompass_integration \
+   < /c/Users/justin/TaskCompassBackups/windows-populated-20261114-152509/after-gui.sql
+```
+
+Scope: create/populate five tables in the empty integration database only; preserve
+development and both private backup/source files. Keep all TaskCompass writers
+closed through stage 11 comparison. No account/grant changes, DROP/reset, --force,
+retry after failure, cleanup or development restore is included. Partial DDL/data
+may commit: stop on any import error and preserve state for separately reviewed
+recovery. Stage 11's read-only schema/dataset/data comparison is required afterward;
+import exit 0 alone is not final recovery acceptance.
+
+Exact-file execution approval and Windows import/comparison results remain pending.
+Only this milestone changed. git diff --check passed; no application build/tests
+rerun for this documentation-only owner evidence/approval request. No agent live
+SQL, import, backup, migration, account change, commit or push.
+
+## Owner approval — Windows stage 10 exact-file restore — 2026-11-14
+
+Owner explicitly answered “yes, I approve” to the immediately preceding Windows
+exact-file restore request. Approved artifact:
+/c/Users/justin/TaskCompassBackups/windows-populated-20261114-152509/after-gui.sql,
+SHA-256 e8b49ca837092162770fcb1482f8b7984cb951bf028d7358d4e80afbda36b3b3.
+Target only taskcompass_integration on feldria-w10 / 127.0.0.1:3306 using
+existing taskcompass_test@127.0.0.1, with all preflight/hash/identity/grant checks
+and stop-on-error restrictions of the preceding approval request. Development,
+accounts and grants remain unchanged. No cleanup/reset, force/retry, broader
+privileges or development restore is authorized. Keep writers closed.
+
+Next owner command:
+
+```bash
+scripts/phase11/10-restore.sh --approved --backup-dir "$snapshotDirectory"
+```
+
+Exact typed confirmations:
+
+```text
+RESTORE taskcompass_integration e8b49ca837092162770fcb1482f8b7984cb951bf028d7358d4e80afbda36b3b3
+DUMP REVIEWED; WRITERS CLOSED
+```
+
+Password order: administrator root for preflight, then taskcompass_test for import.
+Stop and report any unexpected state/error without rerunning. Import success and
+stage 11 data comparison remain pending; approval is not evidence of execution.
+Only this milestone changed; git diff --check passed. No new agent build/tests
+for documentation-only approval recording; no agent live SQL, restore, account
+changes, commit or push.
+
+## Owner-reported Windows stage 10 import success — 2026-11-14
+
+Owner ran the approved scripts/phase11/10-restore.sh --approved with the selected
+snapshot directory. after-gui.sql and source.tsv checksum checks returned OK.
+Both exact-file/closed-writer confirmations matched. Reported server feldria-w10,
+13.0.2-MariaDB, port 3306, UCRT64 on MINGW64_NT-10.0-19045. Administrator
+preflight, exact test-account direct grants/no roles and PUBLIC checks passed;
+then test-account authentication/import reported:
+
+```text
+PASS: import exit 0. Next: compare, not integration-test.
+```
+
+Record owner-verified successful Windows import of the approved artifact hash
+e8b49ca837092162770fcb1482f8b7984cb951bf028d7358d4e80afbda36b3b3 into
+only taskcompass_integration. No unbound-variable errors appeared. This is not yet
+full recovery acceptance: stage 11 schema/dataset/all-five-table comparison remains
+pending. Do not reimport or rerun the disposable integration suite on restored data.
+
+Next owner command, read-only database verification/comparison:
+
+```bash
+scripts/phase11/11-compare.sh --backup-dir "$snapshotDirectory"
+```
+
+Confirm ALL TASKCOMPASS WRITERS CLOSED. Password order: taskcompass_test, then
+diagnostic taskcompass_dev. Require Windows dataset
+457bb52b-fea4-4347-9c47-675c6b035c90, three equal export hashes and final PASS.
+Keep writers stopped, preserve backups/restored data, and stop on errors without
+cleanup/retry. This step requires no further database-change approval.
+
+Only this milestone changed; git diff --check passed. No agent live SQL, import,
+account change, backup, migration or build/test rerun for documentation-only
+owner-evidence recording. No commit, merge, tag or push.
+
+## Owner-reported Windows stage 11 comparison success — 2026-11-14
+
+Owner executed scripts/phase11/11-compare.sh --backup-dir "$snapshotDirectory"
+and confirmed writers closed. Backup after-gui.sql and saved source.tsv checksums
+returned OK. Restored schema verification reported schema 1 and Windows dataset
+457bb52b-fea4-4347-9c47-675c6b035c90. Test/diagnostic authentication and all exports
+succeeded. Owner output:
+
+```text
+19c97d32eb7ea6c757fc7d0e11daa3539105bcd6c4d82573110cb0e8fdd2c906 */c/Users/justin/TaskCompassBackups/windows-populated-20261114-152509/source.tsv
+19c97d32eb7ea6c757fc7d0e11daa3539105bcd6c4d82573110cb0e8fdd2c906 */c/Users/justin/TaskCompassBackups/windows-populated-20261114-152509/restored.tsv
+19c97d32eb7ea6c757fc7d0e11daa3539105bcd6c4d82573110cb0e8fdd2c906 */c/Users/justin/TaskCompassBackups/windows-populated-20261114-152509/current-source.tsv
+PASS: schema/dataset and all five tables/counts match backup snapshot and current source.
+```
+
+Record Windows populated backup/import/schema/data comparison as owner-verified
+passed. The three exports match completely, covering every column/count of Dataset,
+Task, CommandRecord, LocalChange and SchemaMigration, including task/history IDs,
+timestamps, tombstones, receipt snapshots and change payloads. Asterisk is the
+Windows sha256sum binary marker. No raw private task data was shared. No numeric
+stage 11 status was supplied separately; final PASS is gated on all comparisons.
+
+Both Linux and Windows restore evidence is now recorded. Windows platform evidence:
+feldria-w10 / MariaDB 13.0.2 / UCRT64 on Windows 10 build 19045; CMake 4.4.5,
+GCC 16.2.0 Rev6, Qt 6.12.0. Ordinary CTest 9 passed/1 live skipped and explicit
+live integration exit 0 are recorded above. Runtime migration guard correctly
+rejected before connection (exit 1). Owner described GUI work as successful up to
+restart, then indicated that relaunch had been done; final review should confirm
+that the full checklist/restart expectations were satisfied rather than infer it
+from this database comparison. Prior Linux GUI/full restore reports are preserved.
+
+Updated current summaries in README.md, docs/Building.md, docs/Roadmap.md,
+docs/WindowsPhase1.1.md and this milestone so they no longer claim all Windows
+execution is pending. Historical pending/failure entries remain unchanged. No
+schema/source/script changes, database reset or new approval request in this step.
+
+Remaining: final checklist/evidence review and explicit owner acceptance of Phase
+1.1; do not mark it complete or begin Phase 1.2 automatically. Preserve both hosts'
+backups/exports/restored integration schemas. Running disposable integration tests
+on these restored schemas is not authorized (they require empty startup). Any
+cleanup/reset needs a new concrete approval.
+
+Documentation validation: local references, balanced fences and git diff --check
+passed. No application build/CTest rerun for documentation-only owner-evidence
+updates. No agent live SQL, restore, account changes, commit, merge, tag or push.
