@@ -18,6 +18,9 @@ Windows validation tooling: the source-only scripted sequence is now in
 [WindowsPhase1.1.md](../WindowsPhase1.1.md). See **Scripted Windows validation
 preparation — 2026-11-14** below for files, mock coverage, build/CTest evidence and
 the separate Windows approval checkpoints. Windows live execution remains pending.
+Owner now reports a successful Windows compilation (CMake 4.4.5, GCC 16.2.0,
+Qt 6.12.0) with two shell-suite failures. See **Windows stage 01 tooling failures
+and corrections — 2026-11-14** below; stage 01 rerun is pending, not passed.
 
 Source/documentation approval remains provisional. The owner's manual test result
 is not authorization for Codex to provision accounts, migrate development or perform
@@ -2706,3 +2709,81 @@ CTest: 9 passed, 1 live integration skipped, 0 failed in 3.62 seconds. No fresh 
 build needed because only scripts/docs changed and existing compiled test targets
 are unchanged. Native Windows execution remains pending. No live SQL, provisioning,
 migration, restore, commit, merge, tag or push executed by the agent.
+
+## Windows stage 01 tooling failures and corrections — 2026-11-14
+
+### Owner-executed evidence
+
+Owner ran scripts/phase11/01-build.sh in UCRT64 on Windows. Reported tools:
+CMake 4.4.5, MSYS2 GCC 16.2.0 Rev6, Qt 6.12.0. CMake configured and all 45 build
+steps completed, including linking StorageSafetyTests.exe. This establishes
+owner-reported successful Windows compilation, not final runtime acceptance.
+
+CTest reported 10 tests: 7 passed, 2 failed, 1 live integration skipped:
+
+- DevDatabaseScripts hit its 30.03-second timeout after multiple PASS messages,
+  including unrelated PUBLIC grants and a safe read role. Remaining checks were
+  not completed; do not claim that suite passed.
+- Phase11ValidationScripts failed after 40.65 seconds with runner line 419:
+  `cmp: command not found`, followed by the misleading
+  `STOP: Source changed during backup; preserve files and take a fresh quiescent backup.`
+  This was a mock-only tooling failure, not evidence of live source changes.
+- PrototypeTests, GuiStartup, IntegrationDatabaseScripts, TaskCoreTests,
+  MigrationSqlPreview, PersistentDesktopTests and StorageSafetyTests passed.
+  GuiStartup is an automated prototype smoke test, not persistent interactive review.
+
+### Corrections and files
+
+- scripts/phase11-validate.sh: remove cmp/diffutils dependency from backup/compare.
+  Use SHA-256 equality, already used by the approved comparison procedure. Hash/read
+  failures stop with a tooling error, distinct from differing contents. Check
+  sha256sum and sort availability before client discovery/password prompts/live SQL.
+  No package installation is needed to fix missing cmp.
+- CMakeLists.txt: Windows-only 180-second limits for all three Bash mock suites.
+  Linux retains 30 seconds for existing suites and 60 seconds for Phase11ValidationScripts.
+  MSYS2 process startup overhead is a plausible explanation for the observed timeout;
+  raising a finite limit does not waive any assertions or prove remaining checks pass.
+- tests/Phase11ValidationScripts.test.sh: regressions for unavailable hash tool
+  before any client call; an intentionally unusable cmp that is never invoked;
+  hashing failure reported as hashing failure rather than source changes; existing
+  positive equality and true mismatch tests retained. Limited-PATH fixtures use
+  small wrappers instead of symlinks, avoiding a Windows symlink permission dependency.
+- docs/WindowsPhase1.1.md: explain unchanged coreutils requirement, absence of a
+  diffutils requirement, Windows timeout limits and why stage 01 must regenerate.
+- docs/milestones/Phase1.1.md: this result/failure/correction record and status pointer.
+
+No production code, task schema, migration SQL, database accounts/grants or live
+contents were changed. No new dependencies or architecture exceptions introduced.
+No installation or Windows command execution was performed by the agent.
+
+### Agent validation on Linux
+
+```bash
+bash -n scripts/phase11-validate.sh tests/Phase11ValidationScripts.test.sh
+bash tests/Phase11ValidationScripts.test.sh
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DTASKCOMPASS_ENABLE_DB_TESTS=OFF
+cmake --build build --parallel 2
+ctest --test-dir build --output-on-failure
+git diff --check
+```
+
+Syntax and mock checks passed. Configure/build passed; final CTest: **9 passed,
+1 skipped, 0 failed**, 8.10 seconds. The skipped live suite performed no SQL.
+Windows guide local references, balanced fences and Bash command syntax passed.
+No live database operation, restore, migration or account change was executed.
+No commit, merge, tag or push.
+
+### Next owner step and limitations
+
+Transfer these updated files to Windows and rerun:
+
+```bash
+bash scripts/phase11/01-build.sh
+```
+
+This regenerates the CMake timeout settings before CTest. No installation of cmp
+or diffutils is requested. Share the new test output, including any actual failures
+or further timeouts. Do not mark Windows stage 01 or full Phase 1.1 passed until
+that rerun succeeds. Live Windows provisioning/migration/restore still require
+previously documented distinct approval checkpoints; no new live approval is
+requested merely for this database-free rerun.

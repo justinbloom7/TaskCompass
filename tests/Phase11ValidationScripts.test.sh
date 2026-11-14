@@ -9,6 +9,13 @@ trap 'rm -rf -- "$temporaryDirectory"' EXIT
 export MOCK_PHASE11_DIRECTORY="$temporaryDirectory"
 unset MSYSTEM MYSQL_PWD TASKCOMPASS_DB_PASSWORD TASKCOMPASS_TEST_DB_PASSWORD
 mkdir -p "$temporaryDirectory/tools with spaces" "$temporaryDirectory/build with spaces"
+cat > "$temporaryDirectory/tools with spaces/cmp" <<'CMP'
+#!/usr/bin/env bash
+touch "$MOCK_PHASE11_DIRECTORY/cmp-was-invoked"
+exit 127
+CMP
+chmod +x "$temporaryDirectory/tools with spaces/cmp"
+export PATH="$temporaryDirectory/tools with spaces:$PATH"
 client="$temporaryDirectory/tools with spaces/mariadb"
 buildDirectory="$temporaryDirectory/build with spaces"
 cat > "$client" <<'CLIENT'
@@ -132,6 +139,14 @@ for action in integration-setup integration-test migration-setup migrate runtime
    reject run "$action"
 done
 [[ ! -e "$temporaryDirectory/calls" ]]
+mkdir "$temporaryDirectory/limited-tools"
+for helper in dirname grep; do
+   printf '#!/usr/bin/bash\nexec %q "$@"\n' "$(command -v "$helper")" > "$temporaryDirectory/limited-tools/$helper"
+   chmod +x "$temporaryDirectory/limited-tools/$helper"
+done
+PATH="$temporaryDirectory/limited-tools" reject /usr/bin/bash "$runner" inspect --client "$client"
+grep -q 'Required tool sha256sum is missing' "$temporaryDirectory/rejected.out"
+[[ ! -e "$temporaryDirectory/calls" ]]
 stageIndex=0
 for stage in build inspect integration-setup integration-test migration-setup migrate runtime-setup gui backup restore compare; do
    stageIndex=$((stageIndex + 1))
@@ -187,6 +202,16 @@ run backup --backup-dir "$snapshot" <<< "$(printf '%s\n' 'ALL TASKCOMPASS WRITER
 reject run backup --backup-dir "$snapshot" <<< "$(printf '%s\n' 'ALL TASKCOMPASS WRITERS CLOSED' "$PASSWORD")"
 MOCK_WRONG_IDENTITY=1 reject run backup --backup-dir "$temporaryDirectory/wrong-identity" <<< "$(printf '%s\n' 'ALL TASKCOMPASS WRITERS CLOSED' "$PASSWORD" "$PASSWORD")"
 MOCK_DUMP_FAIL=1 reject run backup --backup-dir "$temporaryDirectory/dump-failure" <<< "$(printf '%s\n' 'ALL TASKCOMPASS WRITERS CLOSED' "$PASSWORD" "$PASSWORD")"
+(
+   sha256sum() {
+      [[ $# != 0 ]] || return 1
+      command sha256sum "$@"
+   }
+   export -f sha256sum
+   reject run backup --backup-dir "$temporaryDirectory/hash-failure" <<< "$(printf '%s\n' 'ALL TASKCOMPASS WRITERS CLOSED' "$PASSWORD" "$PASSWORD")"
+   grep -q 'Cannot hash first comparison file' "$temporaryDirectory/rejected.out"
+   ! grep -q 'Source changed during backup' "$temporaryDirectory/rejected.out"
+)
 hash=$(sha256sum "$snapshot/after-gui.sql"); hash=${hash%% *}
 restoreInput=$(printf '%s\n' "RESTORE taskcompass_integration $hash" 'DUMP REVIEWED; WRITERS CLOSED' "$PASSWORD" "$PASSWORD")
 MOCK_NONEMPTY=1 reject run restore --approved --backup-dir "$snapshot" <<< "$restoreInput"
@@ -208,6 +233,8 @@ MOCK_MISMATCH=1 reject run compare --backup-dir "$secondSnapshot" <<< "$(printf 
 grep -q 'Restored data differs' "$temporaryDirectory/rejected.out"
 [[ -s "$secondSnapshot/restored.tsv" ]]
 printf 'PASS: mismatched restore data fails and preserves comparison evidence.\n'
+[[ ! -e "$temporaryDirectory/cmp-was-invoked" ]]
+printf 'PASS: comparisons need no cmp; missing tools/hash failures are not data mismatches.\n'
 
 # Exercise Windows dispatch/ACL refusal with fake built-in tools on Linux only.
 # This does not establish real PowerShell or Windows filesystem behavior.

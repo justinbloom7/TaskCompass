@@ -97,6 +97,9 @@ case "$action" in
    integration-setup|integration-test|migration-setup|migrate|runtime-setup|restore)
       "$approved" || fail 'Review --print-plan and obtain milestone approval, then use --approved.' ;;
 esac
+for requiredTool in sha256sum sort; do
+   command -v "$requiredTool" >/dev/null || fail "Required tool $requiredTool is missing. MSYS2 supplies it in coreutils; no installation attempted."
+done
 if [[ -n "${MSYSTEM:-}" ]]; then
    [[ "$MSYSTEM" == UCRT64 ]] || fail 'Use MSYS2 UCRT64, not MSYS/MINGW64.'
    export PATH="/ucrt64/bin:$PATH"
@@ -353,6 +356,15 @@ SELECT * FROM CommandRecord ORDER BY id;
 SELECT * FROM LocalChange ORDER BY id;
 SELECT * FROM SchemaMigration ORDER BY version;"
 
+# Use the already-required hashing tool rather than adding a diffutils/cmp
+# prerequisite. Report hash/read errors separately from different file contents.
+sameFileContents() {
+   local firstHash='' secondHash=''
+   firstHash=$(sha256sum < "$1") || fail 'Cannot hash first comparison file; comparison was not completed.'
+   secondHash=$(sha256sum < "$2") || fail 'Cannot hash second comparison file; comparison was not completed.'
+   [[ "${firstHash%% *}" == "${secondHash%% *}" ]]
+}
+
 case "$action" in
    inspect)
       adminLogin
@@ -416,7 +428,7 @@ case "$action" in
       client taskcompass_dev "$accountPassword" taskcompass_dev "$comparisonSql" > "$backupDirectory/source.tsv" || fail 'Source export failed.'
       dumpDatabase after-gui.sql
       client taskcompass_dev "$accountPassword" taskcompass_dev "$comparisonSql" > "$backupDirectory/source-after.tsv" || fail 'Post-backup source export failed.'
-      cmp -s "$backupDirectory/source.tsv" "$backupDirectory/source-after.tsv" || fail 'Source changed during backup; preserve files and take a fresh quiescent backup.'
+      sameFileContents "$backupDirectory/source.tsv" "$backupDirectory/source-after.tsv" || fail 'Source changed during backup; preserve files and take a fresh quiescent backup.'
       (cd -- "$backupDirectory" && sha256sum source.tsv > source.tsv.sha256)
       printf 'PASS: consistent source exports and populated backup. Privately inspect after-gui.sql before restore approval.\n' ;;
    restore)
@@ -445,7 +457,7 @@ case "$action" in
       identity taskcompass_dev "$accountPassword" taskcompass_dev
       client taskcompass_dev "$accountPassword" taskcompass_dev "$comparisonSql" > "$backupDirectory/current-source.tsv" || fail 'Current source export failed.'
       sha256sum "$backupDirectory/source.tsv" "$backupDirectory/restored.tsv" "$backupDirectory/current-source.tsv"
-      cmp -s "$backupDirectory/source.tsv" "$backupDirectory/restored.tsv" || fail 'Restored data differs; no automatic repair.'
-      cmp -s "$backupDirectory/source.tsv" "$backupDirectory/current-source.tsv" || fail 'Development changed after backup; investigate, do not reset.'
+      sameFileContents "$backupDirectory/source.tsv" "$backupDirectory/restored.tsv" || fail 'Restored data differs; no automatic repair.'
+      sameFileContents "$backupDirectory/source.tsv" "$backupDirectory/current-source.tsv" || fail 'Development changed after backup; investigate, do not reset.'
       printf 'PASS: schema/dataset and all five tables/counts match backup snapshot and current source.\n' ;;
 esac

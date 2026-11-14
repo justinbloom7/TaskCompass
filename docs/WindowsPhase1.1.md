@@ -64,6 +64,14 @@ It selects build-ucrt64, prints compiler/CMake versions, configures live CTest O
 builds, runs CTest and lists Qt SQL drivers. The live integration test should be
 skipped here. Record the CTest totals and driver output; no GUI review is claimed.
 
+The Bash mock suites have a 180-second timeout on Windows to accommodate MSYS2
+process startup overhead (Linux limits remain 30/60 seconds). The runner uses
+coreutils sha256sum for file equality, so cmp/diffutils is not required. Missing
+required tools or hashing errors are reported as tooling failures, not data
+mismatches. If updating from the first runner version, rerun 01-build.sh so CMake
+regenerates the Windows timeout settings; no new package installation is needed
+to resolve the reported missing-cmp failure.
+
 ## 02. Inspect this Windows server and review the SQL
 
 ```bash
