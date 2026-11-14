@@ -8,6 +8,16 @@ scriptDirectory=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 repositoryDirectory=$(cd -- "$scriptDirectory/.." && pwd)
 action=${1:-help}
 [[ $# == 0 ]] || shift
+readonly STAGE_ACTIONS=(build inspect integration-setup integration-test migration-setup migrate runtime-setup gui backup restore compare)
+stageNumber=''
+for stageIndex in "${!STAGE_ACTIONS[@]}"; do
+   printf -v candidateNumber '%02d' "$((stageIndex + 1))"
+   if [[ "$action" == "${STAGE_ACTIONS[stageIndex]}" || "$action" == "$candidateNumber-${STAGE_ACTIONS[stageIndex]}" || "$action" == "$candidateNumber" || "$action" == "$((stageIndex + 1))" ]]; then
+      action=${STAGE_ACTIONS[stageIndex]}
+      stageNumber=$candidateNumber
+      break
+   fi
+done
 clientPath=''
 dumpPath=''
 buildDirectory=''
@@ -26,17 +36,19 @@ usage() {
    cat <<'USAGE'
 Usage: bash scripts/phase11-validate.sh STEP [options]
 Steps (run one at a time; see docs/WindowsPhase1.1.md):
-  build               Configure, build, database-free CTest and driver listing.
-  inspect             Read-only administrator report, versions and scoped grants.
-  integration-setup   Existing guarded fresh test database/account provisioner.
-  integration-test    Validate empty target/grants, then approved disposable suite.
-  migration-setup     Empty-dev preflight, private baseline dump, fresh migrator.
-  migrate             Validate baseline/identity/grants, explicit migration/verify.
-  runtime-setup       Verify schema, fresh runtime grants and migrator revocations.
-  gui                 Verify as runtime account and launch persistent desktop.
-  backup              Private populated dump + source export + checksums.
-  restore             Empty-test/privilege preflight, exact-hash approval and import.
-  compare             Verify restored schema; compare all five tables/counts.
+  01-build               Configure, build, database-free CTest and driver listing.
+  02-inspect             Read-only administrator report, versions and scoped grants.
+  03-integration-setup   Existing guarded fresh test database/account provisioner.
+  04-integration-test    Validate empty target/grants, then approved disposable suite.
+  05-migration-setup     Empty-dev preflight, private baseline dump, fresh migrator.
+  06-migrate             Validate baseline/identity/grants, explicit migration/verify.
+  07-runtime-setup       Verify schema, fresh runtime grants and migrator revocations.
+  08-gui                 Verify as runtime account and launch persistent desktop.
+  09-backup              Private populated dump + source export + checksums.
+  10-restore             Empty-test/privilege preflight, exact-hash approval and import.
+  11-compare             Verify restored schema; compare all five tables/counts.
+Numbered scripts: bash scripts/phase11/01-build.sh (and so on, in order).
+The runner also accepts stage numbers (01..11) and original unnumbered names.
 Options:
   --client PATH       mariadb/mysql executable; auto-detect if omitted.
   --dump PATH         mariadb-dump executable; auto-detect beside client/PATH.
@@ -68,6 +80,7 @@ case "$action" in
    build|inspect|integration-setup|integration-test|migration-setup|migrate|runtime-setup|gui|backup|restore|compare) ;;
    *) usage; fail 'Unknown step.' ;;
 esac
+printf 'Stage %s/11: %s\n' "$stageNumber" "$action"
 if "$printPlan"; then
    printf 'Step: %s. Loopback TCP 127.0.0.1:3306 only. No operations executed.\n' "$action"
    case "$action" in

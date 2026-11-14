@@ -132,6 +132,21 @@ for action in integration-setup integration-test migration-setup migrate runtime
    reject run "$action"
 done
 [[ ! -e "$temporaryDirectory/calls" ]]
+stageIndex=0
+for stage in build inspect integration-setup integration-test migration-setup migrate runtime-setup gui backup restore compare; do
+   stageIndex=$((stageIndex + 1))
+   printf -v stageNumber '%02d' "$stageIndex"
+   expectedPlan=$(run "$stage" --print-plan)
+   [[ "$(run "$stageNumber" --print-plan)" == "$expectedPlan" ]]
+   [[ "$(run "$stageIndex" --print-plan)" == "$expectedPlan" ]]
+   [[ "$(bash "$repositoryDirectory/scripts/phase11/$stageNumber-$stage.sh" --print-plan)" == "$expectedPlan" ]]
+done
+[[ ! -e "$temporaryDirectory/calls" ]]
+for stage in 03-integration-setup 04-integration-test 05-migration-setup 06-migrate 07-runtime-setup 10-restore; do
+   reject bash "$repositoryDirectory/scripts/phase11/$stage.sh"
+done
+[[ ! -e "$temporaryDirectory/calls" ]]
+printf 'PASS: all numbered wrappers and numeric aliases preserve preview and approval gates.\n'
 reject run migration-setup --approved <<< 'wrong confirmation'
 [[ ! -e "$temporaryDirectory/calls" ]]
 printf 'PASS: no-op previews, explicit approvals and confirmation gates.\n'

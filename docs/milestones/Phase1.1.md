@@ -2656,3 +2656,53 @@ validation and linked the Windows route; historical evidence stays in this file.
 All changes remain uncommitted. Safe next owner Windows commands: run the guide's
 build and inspect steps, report actual results, then approve the appropriate fresh
 Stage 1/2A operations. Do not rerun fresh provisioning against existing resources.
+
+## Numbered validation stages and scripts — 2026-11-14
+
+Owner requested numbers so stages/scripts sort in execution order. Added thin
+executable entry scripts under scripts/phase11/; each delegates to the existing
+runner and executes only its own stage:
+
+```text
+01-build.sh
+02-inspect.sh
+03-integration-setup.sh
+04-integration-test.sh
+05-migration-setup.sh
+06-migrate.sh
+07-runtime-setup.sh
+08-gui.sh
+09-backup.sh
+10-restore.sh
+11-compare.sh
+```
+
+Updated docs/WindowsPhase1.1.md headings/commands to the same 01–11 numbering.
+The shared runner now accepts numbered names (01-build), zero-padded stage numbers
+(01) and ordinary numbers (1), retains all original names, and prints the stage
+number. All safety checks/approval flags/confirmations remain in one implementation;
+wrappers cannot skip them. Numbering does not automatically execute subsequent
+steps or authorize live writes. Existing Windows approvals remain pending.
+
+Files changed in this step: the eleven new wrapper files,
+scripts/phase11-validate.sh, tests/Phase11ValidationScripts.test.sh,
+docs/WindowsPhase1.1.md and this milestone. No schema, SQL templates or application
+behavior changes. No additional dependencies or architectural conflicts.
+
+Validation executed:
+
+```bash
+bash -n scripts/phase11-validate.sh scripts/phase11/*.sh
+bash tests/Phase11ValidationScripts.test.sh
+ctest --test-dir build --output-on-failure
+git diff --check
+```
+
+Results: syntax and mock tests passed. Added mock assertions that all eleven
+wrappers and numeric aliases produce identical nonconnecting previews, and every
+mutating wrapper rejects execution without --approved before a client is invoked.
+Guide heading/script/command order, local references and Bash block syntax passed.
+CTest: 9 passed, 1 live integration skipped, 0 failed in 3.62 seconds. No fresh C++
+build needed because only scripts/docs changed and existing compiled test targets
+are unchanged. Native Windows execution remains pending. No live SQL, provisioning,
+migration, restore, commit, merge, tag or push executed by the agent.

@@ -5,7 +5,10 @@
 Use **MSYS2 UCRT64** in the repository root. No hand-written SQL or environment
 password exports are needed for this route. The runner is
 [scripts/phase11-validate.sh](../scripts/phase11-validate.sh); no arguments prints
-help and does not connect. It does not install software or start services.
+help and does not connect. Numbered entry scripts in scripts/phase11/ match the
+01–11 stage headings below and sort in execution order. Each runs only its own
+stage; none automatically advances to the next. All share the same runner and
+safety checks. It does not install software or start services.
 Keep the Windows MariaDB service running on TCP 127.0.0.1:3306.
 
 This is a new Windows validation run, not a repeat of Linux validation. Windows
@@ -51,24 +54,24 @@ Adjust those paths if your installation directory differs. Arrays preserve space
 All following commands are **Bash terminal commands**, not MariaDB prompt commands.
 Do not run them as Windows Administrator merely to run TaskCompass.
 
-## 1. Build and run ordinary tests
+## 01. Build and run ordinary tests
 
 ```bash
-bash scripts/phase11-validate.sh build
+bash scripts/phase11/01-build.sh
 ```
 
 It selects build-ucrt64, prints compiler/CMake versions, configures live CTest OFF,
 builds, runs CTest and lists Qt SQL drivers. The live integration test should be
 skipped here. Record the CTest totals and driver output; no GUI review is claimed.
 
-## 2. Inspect this Windows server and review the SQL
+## 02. Inspect this Windows server and review the SQL
 
 ```bash
-bash scripts/phase11-validate.sh inspect "${dbOptions[@]}"
-bash scripts/phase11-validate.sh integration-setup --print-plan
-bash scripts/phase11-validate.sh migration-setup --print-plan
-bash scripts/phase11-validate.sh migrate --print-plan
-bash scripts/phase11-validate.sh runtime-setup --print-plan
+bash scripts/phase11/02-inspect.sh "${dbOptions[@]}"
+bash scripts/phase11/03-integration-setup.sh --print-plan
+bash scripts/phase11/05-migration-setup.sh --print-plan
+bash scripts/phase11/06-migrate.sh --print-plan
+bash scripts/phase11/07-runtime-setup.sh --print-plan
 ```
 
 Inspect prompts for root's database password. It reports only TaskCompass database
@@ -85,20 +88,20 @@ validate grants/empty contents and stop on any mismatch. Never drop data to make
 the sequence fit. Later steps enforce exact grants and reject inherited account
 roles; PUBLIC is checked separately on MariaDB 10.11+.
 
-## 3. Fresh isolated test setup, only if absent and approved
+## 03. Fresh isolated test setup, only if absent and approved
 
 ```bash
-bash scripts/phase11-validate.sh integration-setup --approved "${dbOptions[@]}"
+bash scripts/phase11/03-integration-setup.sh --approved "${dbOptions[@]}"
 ```
 
 Uses the existing guarded provisioning helper. Confirmation:
 `CREATE taskcompass_integration`. Prompts for root and a new test password twice.
 Stops if either resource already exists; creates no application tables.
 
-## 4. Approved integration test
+## 04. Approved integration test
 
 ```bash
-bash scripts/phase11-validate.sh integration-test --approved "${dbOptions[@]}"
+bash scripts/phase11/04-integration-test.sh --approved "${dbOptions[@]}"
 ```
 
 Confirmation: `TEST taskcompass_integration WITH DISPOSABLE RESET`.
@@ -107,14 +110,14 @@ PUBLIC policy, then the test-account password. The disposable suite creates and
 drops only its own integration tables. Require PASS/exit 0 and schema-left-empty
 output. Stop on any failure; no automatic cleanup/repair is provided.
 
-## 5. Back up empty development and provision its migration account
+## 05. Back up empty development and provision its migration account
 
 Choose a **new private directory outside the repository**, on a local Windows
 filesystem supporting ACLs. It must not already exist; preserve older backups.
 
 ```bash
 baselineDirectory="$HOME/TaskCompassBackups/windows-baseline-$(date +%Y%m%d-%H%M%S)"
-bash scripts/phase11-validate.sh migration-setup --approved \
+bash scripts/phase11/05-migration-setup.sh --approved \
    --backup-dir "$baselineDirectory" "${dbOptions[@]}"
 ```
 
@@ -125,10 +128,10 @@ the fresh narrowly scoped migrator. Windows backup ACL is restricted to the
 current user using PowerShell before any dump/export is written. If ACL/dump/
 provisioning fails, stop and preserve the directory/evidence; don't retry over it.
 
-## 6. Apply the approved migration
+## 06. Apply the approved migration
 
 ```bash
-bash scripts/phase11-validate.sh migrate --approved \
+bash scripts/phase11/06-migrate.sh --approved \
    --backup-dir "$baselineDirectory" "${dbOptions[@]}"
 ```
 
@@ -138,10 +141,10 @@ grants before calling TaskCompassMigrate --apply and --verify. Require both succ
 messages with one dataset UUID. DDL can partially commit: on error stop; don't
 rerun, reset, edit migration metadata, or broaden grants.
 
-## 7. Provision runtime and revoke migrator writes
+## 07. Provision runtime and revoke migrator writes
 
 ```bash
-bash scripts/phase11-validate.sh runtime-setup --approved "${dbOptions[@]}"
+bash scripts/phase11/07-runtime-setup.sh --approved "${dbOptions[@]}"
 ```
 
 Confirmation: `PROVISION taskcompass_app AND REVOKE migrator writes`. Prompts for
@@ -149,10 +152,10 @@ migrator verification, root and a new runtime password twice. Verifies exact
 runtime/diagnostic/migrator final grants automatically. Existing runtime account
 or partial provisioning stops the procedure rather than overwriting credentials.
 
-## 8. GUI checklist and restart
+## 08. GUI checklist and restart
 
 ```bash
-bash scripts/phase11-validate.sh gui "${dbOptions[@]}"
+bash scripts/phase11/08-gui.sh "${dbOptions[@]}"
 ```
 
 Enter root's password for final privilege checks, then taskcompass_app's runtime
@@ -164,11 +167,11 @@ the same command again: tasks/history persist and session undo clears. Record
 each checklist result; the script cannot certify your interactive review. The
 full checklist is in the milestone's **Stage 2A persistent GUI acceptance checklist**.
 
-## 9. Close GUI and make a populated backup
+## 09. Close GUI and make a populated backup
 
 ```bash
 snapshotDirectory="$HOME/TaskCompassBackups/windows-populated-$(date +%Y%m%d-%H%M%S)"
-bash scripts/phase11-validate.sh backup \
+bash scripts/phase11/09-backup.sh \
    --backup-dir "$snapshotDirectory" "${dbOptions[@]}"
 ```
 
@@ -186,7 +189,7 @@ Record the hash/path and obtain separate approval of that exact-file import.
 ## 10. Restore the approved file into the empty integration database
 
 ```bash
-bash scripts/phase11-validate.sh restore --approved \
+bash scripts/phase11/10-restore.sh --approved \
    --backup-dir "$snapshotDirectory" "${dbOptions[@]}"
 ```
 
@@ -201,7 +204,7 @@ leave partially committed DDL/data; stop for reviewed recovery.
 ## 11. Verify and compare automatically
 
 ```bash
-bash scripts/phase11-validate.sh compare \
+bash scripts/phase11/11-compare.sh \
    --backup-dir "$snapshotDirectory" "${dbOptions[@]}"
 ```
 
