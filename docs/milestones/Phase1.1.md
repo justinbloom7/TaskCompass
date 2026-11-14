@@ -4,13 +4,20 @@
 
 Status: owner reports Stage 1 integration passed and Stage 2A migration apply/verify
 succeeded. Owner reports step G and the persistent GUI acceptance checklist passed;
-final direct grants match Stage 2A. Phase 1.1 is not finally accepted.
+final direct grants match Stage 2A. Stage 2B import, restored schema verification
+and all-five-table comparison passed according to the owner. Phase 1.1 is not finally accepted.
 
-Latest checkpoint: see **Owner-reported Stage 2A GUI acceptance** below. Step G
-and its checklist passed according to the owner; exact platform/server evidence,
-backup verification and Stage 2B restore validation remain outstanding. No Stage 2 SQL has been run
+Latest checkpoint: see **Owner-reported Stage 2B data comparison success** below.
+Populated backup, approved import, matching restored dataset/schema and identical
+full-data exports are recorded. Exact platform/server evidence and independent
+Windows Phase 1.1 validation remain outstanding. No Stage 2 SQL has been run
 by the agent. Previous approval-pending observations are historical, not a claim
 that the owner's reported live operations did not occur.
+
+Windows validation tooling: the source-only scripted sequence is now in
+[WindowsPhase1.1.md](../WindowsPhase1.1.md). See **Scripted Windows validation
+preparation — 2026-11-14** below for files, mock coverage, build/CTest evidence and
+the separate Windows approval checkpoints. Windows live execution remains pending.
 
 Source/documentation approval remains provisional. The owner's manual test result
 is not authorization for Codex to provision accounts, migrate development or perform
@@ -36,9 +43,9 @@ explicit decisions recorded here.
 | Files created/modified | Step B File inventory and subsequent dated entries. |
 | Schema and migrations | Owner reports migration 001 apply and verification succeeded in Stage 2A; no agent live execution. |
 | Tests/commands/results | Executed verification and Final pre-approval verification below; later checks are appended. |
-| Issues/limitations/deferred work | Owner reports Stage 2A GUI checklist passed; Stage 2B restore and independent Windows Phase 1.1 validation remain outstanding. |
-| Approvals and decisions | Source provisionally approved; owner reports Stage 1 and development migration success. No blanket agent live-operation authority; restore rehearsal remains separately gated. |
-| Remaining work/completion | Record platform/server and backup evidence; complete separately approved Stage 2B restore and independent Windows validation before final acceptance. |
+| Issues/limitations/deferred work | Owner reports Stage 2A GUI and Stage 2B restore/data checks passed; independent Windows Phase 1.1 validation and exact platform/server evidence remain outstanding. |
+| Approvals and decisions | Source provisionally approved; owner approved the exact Stage 2B import and reports success. No blanket agent live-operation or cleanup authority. |
+| Remaining work/completion | Record exact platform/server and any outstanding preflight evidence; independently validate Windows and obtain final owner acceptance. Preserve restored test data until separate cleanup approval. |
 
 Source authorization does not approve provisioning, grants or migration execution.
 This repository-instruction update grants no new database authority or milestone
@@ -2105,3 +2112,547 @@ Files changed in this step: docs/milestones/Phase1.1.md only. Validation:
 git diff --check passed. Builds/CTest were not rerun for this documentation-only
 owner-result update. No agent live SQL, backup, restore, GUI run or account change
 was performed; no commit, merge, tag or push.
+
+## Stage 2B operator clarification — 2026-11-14
+
+Added section 10 to [TestingPhase1.1.md](../TestingPhase1.1.md) with six explicitly
+named steps: close writers/verify source, populated backup, destination checks and
+exact-file approval, approved import, schema/data comparison, and evidence
+preservation. Included a complete after-gui.sql backup command using the owner's
+preferred private path and unchanged reviewed dump options. A fresh timestamped
+directory avoids the exclusive mkdir failure when reusing an existing directory;
+explained that only changing the filename also works when omitting directory
+creation and ensuring the new output does not exist. Warned that result-file can
+overwrite an existing file. Preserved the original empty-baseline backup.
+
+This is clarification of the existing proposal, not restore authorization or
+executed recovery evidence. No live database, backup, migration, account or import
+commands were executed. Exact-file inspection, isolated-target preflight, restore
+approval and all Stage 2B results remain pending. Source comparison requires
+TaskCompass writers to remain stopped throughout the rehearsal.
+
+Files changed: docs/TestingPhase1.1.md and this milestone. Validation: new Bash
+blocks passed bash -n through stdin without execution; local guide/milestone links
+resolve; Markdown fences are balanced; git diff --check passed. No application
+build/CTest rerun because only operator documentation changed. No new dependencies,
+source/schema changes, commit or push.
+
+## Owner-reported Stage 2B empty-target checks — 2026-11-14
+
+The owner reports all four administrator catalog queries below returned Empty set:
+
+```sql
+SELECT TABLE_NAME,TABLE_TYPE FROM information_schema.TABLES
+   WHERE TABLE_SCHEMA='taskcompass_integration';
+SELECT ROUTINE_NAME FROM information_schema.ROUTINES
+   WHERE ROUTINE_SCHEMA='taskcompass_integration';
+SELECT TRIGGER_NAME FROM information_schema.TRIGGERS
+   WHERE TRIGGER_SCHEMA='taskcompass_integration';
+SELECT EVENT_NAME FROM information_schema.EVENTS
+   WHERE EVENT_SCHEMA='taskcompass_integration';
+```
+
+The preceding owner SHOW DATABASES transcript includes taskcompass_integration.
+Together these establish owner-reported existence and absence of tables/views,
+routines, triggers and events at the time checked. This does not establish the
+restore account's effective privileges, server identity/version or backup validity.
+taskcompass_migrate is an account, not the restore database; the restore source is
+taskcompass_dev and destination is taskcompass_integration using taskcompass_test.
+
+Remaining before exact-file restore approval: record populated backup path/hash,
+successful dump and source verification exit codes/dataset UUID, private dump
+inspection, current server identity/version and destination-account/grant checks.
+Keep writers closed and recheck target emptiness if other activity intervenes.
+No restore, cleanup, schema changes or agent database access occurred in this step.
+Only this milestone file changed; git diff --check passed. Application build/tests
+were not rerun for this documentation-only owner-evidence update.
+
+## Owner-reported populated backup artifact — 2026-11-14
+
+Owner supplied the following Stage 2B backup evidence:
+
+- Path: /home/justin/temp/TaskCompassBackups/Phase1.1-20261114-003228/after-gui.sql.
+- SHA-256: 5feb67bd973c094e68a07eeb6b02566da319a8746e31d53eba92abe605e450ae.
+- test -s returned exit status 0 (nonempty file).
+- less opened the file successfully (readable file).
+
+These are owner-reported results; the agent has not opened this private backup or
+queried a live database. Opening less is not evidence that the SQL contents were
+reviewed. Original dump exit status, confirmation of the required private content
+inspection and remaining server/account preflight evidence are still outstanding.
+Do not substitute the nonempty-file exit status for the original dump exit status.
+Do not rerun the dump over this artifact to recover a lost exit code; if needed,
+make a new uniquely named backup and record its own status/hash for review.
+
+No restore authorization is inferred. No source/schema change, live operation or
+test execution occurred. Only this milestone file changed; git diff --check passed.
+Build/CTest were not rerun because this update only records owner evidence.
+
+### Populated dump exit status unavailable — 2026-11-14
+
+The owner confirmed the original populated dump did not capture its exit status.
+Its transcript shows a password prompt and no displayed error, but that does not
+prove exit 0. Later commands have replaced the shell's original status. Preserve
+the existing artifact/hash as historical evidence. Recommended next action: repeat
+the same backup command with a freshly evaluated timestamp directory, immediately
+capture the subshell status, and stop on nonzero. Exclusive mkdir must remain in
+place to prevent overwrite. Record a new nonempty check and SHA-256 for the new
+artifact; privately review it and use that exact file for subsequent approval.
+Keep TaskCompass writers closed. No restore or agent live operation was performed.
+Only this milestone changed; git diff --check passed. No build/tests rerun for this
+documentation-only clarification.
+
+## Owner-reported replacement populated backup — 2026-11-14
+
+The owner repeated the reviewed dump command in a fresh timestamped directory,
+captured the subshell exit status immediately, and supplied:
+
+- Path: /home/justin/temp/TaskCompassBackups/Phase1.1-20261114-015008/after-gui.sql.
+- SHA-256: f7aa21d4404cc706701cc358e2c2309dddc6c1854a0a7c522c4527a74bb4799c.
+- Backup exit code: 0.
+- Nonempty-file check exit code: 0.
+
+This supersedes the earlier artifact as the proposed Stage 2B restore candidate;
+the prior artifact and unknown-status history remain preserved. Results are
+owner-reported, not agent-executed. Private SQL-content inspection, source
+verification/server/account evidence and exact-file restore approval remain
+pending; no restore success or authorization is inferred from a successful dump.
+Next inspect this new file privately for the five expected tables and data and
+absence of DROP, account changes, USE/CREATE DATABASE or unrelated schema content.
+Keep writers stopped and preserve the candidate unchanged after hashing.
+
+Only this milestone document changed. git diff --check passed; application
+build/tests were not rerun for a documentation-only evidence update. No agent
+backup, database access, migration, restore, account change, commit or push.
+
+## Owner-reported populated backup inspection — 2026-11-14
+
+The owner inspected the current candidate
+/home/justin/temp/TaskCompassBackups/Phase1.1-20261114-015008/after-gui.sql
+(SHA-256 f7aa21d4404cc706701cc358e2c2309dddc6c1854a0a7c522c4527a74bb4799c).
+Reported tables: CommandRecord, Dataset, LocalChange, SchemaMigration and Task;
+no DROP, account changes, USE/CREATE DATABASE or other unexpected content seen.
+Record this as owner-reported content inspection; the agent has not read the
+private dump. Previous dump exit 0 and nonempty-file exit 0 remain applicable.
+
+Next read-only owner check: connect explicitly over TCP as taskcompass_test to
+taskcompass_integration and run SELECT VERSION(), DATABASE(), CURRENT_USER();
+SHOW TABLES;. This confirms server version, authenticated account, selected target
+and current table emptiness without importing anything. Effective privilege review,
+source schema verification and exact-file restore approval remain prerequisites;
+the earlier administrator empty-catalog evidence is preserved. No restore is
+authorized or executed by this result. Keep writers stopped and the file unchanged.
+
+Only this milestone file changed; git diff --check passed. No application tests
+rerun for this documentation-only update; no agent live database operations.
+
+## Test-account password reset procedure — 2026-11-14
+
+The owner reports losing the taskcompass_test password and requested instructions
+for setting it. Scope: owner-operated password-only reset of the existing
+taskcompass_test@127.0.0.1 account. No grant changes, database reset, recreation or
+restore is included. No agent live execution is authorized or performed here.
+
+Open a history-disabled administrator session on Linux:
+
+```bash
+sudo env MYSQL_HISTFILE=/dev/null MARIADB_HISTFILE=/dev/null \
+   mariadb --no-defaults --protocol=SOCKET --user=root
+```
+
+Confirm the intended existing account (stop if absent or unexpected):
+
+```sql
+SELECT User,Host FROM mysql.user WHERE User='taskcompass_test';
+```
+
+Expected existing account: taskcompass_test@127.0.0.1. Generate a distinct strong
+password privately in a password manager, for example 32+ random letters/digits
+to avoid SQL quote/backslash escaping problems. Save it there. Replace the
+placeholder only in the private history-disabled SQL session, not in this file:
+
+```sql
+ALTER USER 'taskcompass_test'@'127.0.0.1'
+   IDENTIFIED BY '<new-strong-test-password>';
+```
+
+Do not use the literal placeholder, capture the session, put this password in a
+shell command/file, or share it. ALTER USER changes the credential, preserving
+existing grants and database contents. Other clients using the old credential
+will need the new password on reconnect. No FLUSH PRIVILEGES is required. On any
+error stop; do not drop/recreate the account or broaden privileges. There is no
+automatic credential rollback; a further reset requires an explicit decision.
+
+Exit with quit, then test the new credential at a hidden prompt:
+
+```bash
+mariadb --no-defaults --protocol=TCP --host=127.0.0.1 --port=3306 \
+   --user=taskcompass_test --password taskcompass_integration
+```
+
+```sql
+SELECT VERSION(),DATABASE(),CURRENT_USER();
+SHOW TABLES;
+quit
+```
+
+Expected target/account: taskcompass_integration and taskcompass_test@127.0.0.1;
+no tables. Report success/error without credentials. Reset and login results are
+pending owner execution. Stage 2B exact-file restore remains separately gated.
+Files changed: this milestone only. Documentation whitespace check passed; no
+application build/tests rerun because application behavior did not change.
+
+## Stage 2B resume checkpoint — 2026-11-14
+
+The owner requested help locating the next step after losing track of progress.
+Reviewed the latest milestone entries and added an explicit B3 resume pointer to
+section 10 of docs/TestingPhase1.1.md. Completed owner-reported evidence: Stage 2A
+GUI checklist, populated backup exit/nonempty checks, chosen artifact SHA-256,
+private dump inspection and four administrator empty-target catalog queries.
+Pending report: test-account password reset/login success, server/account identity
+and current effective privileges, source verification and exact-file restore
+approval. No restore execution or completion has been reported.
+
+Next owner command is the read-only TCP login/identity check from the password
+reset procedure, not another account reset if already completed and not a new
+backup merely to resume. Keep TaskCompass writers closed; if source data changed
+since the snapshot, review/recreate a fresh snapshot for exact comparisons without
+overwriting this one. The documented restore target remains only
+taskcompass_integration, never taskcompass_dev.
+
+Files changed: guide and milestone only. git diff --check passed; no application
+build/tests rerun for documentation-only navigation changes. No live SQL, account
+change, backup, restore, commit or push executed by the agent.
+
+## Stage 2B destination login and concrete import checkpoint — 2026-11-14
+
+Owner reports successful taskcompass_test login and an empty database check.
+Exact VERSION/DATABASE/CURRENT_USER output and current grant metadata were not
+supplied; no new server-version or effective-privilege evidence is inferred.
+Added the exact selected artifact's hash-check/import/status commands directly
+to B4 of docs/TestingPhase1.1.md. No source/schema changes or live execution.
+
+### Approval Requested — exact Stage 2B import
+
+Approve owner-operated import of
+/home/justin/temp/TaskCompassBackups/Phase1.1-20261114-015008/after-gui.sql,
+SHA-256 f7aa21d4404cc706701cc358e2c2309dddc6c1854a0a7c522c4527a74bb4799c,
+into the confirmed empty taskcompass_integration on 127.0.0.1:3306 using
+taskcompass_test@127.0.0.1. The exact command is now in B4 and the earlier Stage 2B
+proposal. Require unchanged hash, intended identity and reviewed restricted grants;
+keep source writers closed for the later comparison. This creates/populates five
+test tables, preserving source taskcompass_dev and the private backup. Capture
+exit status immediately. Stop on any error: DDL/data may partially commit; retain
+evidence and request separately reviewed recovery instead of retry/reset/drop.
+No development restore, cleanup, provisioning or privilege changes are included.
+Approval and import result remain pending; requesting commands is not recorded
+as completed restore or blanket agent live-operation authorization.
+
+Validation: guide Bash blocks passed bash -n without execution; git diff --check
+passed. Only guide/milestone changed; no application build/CTest rerun for this
+documentation-only clarification. No agent live SQL, restore, commit or push.
+
+## Owner approval — exact Stage 2B import — 2026-11-14
+
+The owner reconfirmed SHA-256
+f7aa21d4404cc706701cc358e2c2309dddc6c1854a0a7c522c4527a74bb4799c for
+/home/justin/temp/TaskCompassBackups/Phase1.1-20261114-015008/after-gui.sql,
+then explicitly answered “Yes” to approval of restoring this file into
+taskcompass_integration using taskcompass_test. This approves the exact
+owner-operated B4 import on 127.0.0.1:3306, creating/populating the five test
+tables while preserving taskcompass_dev. Keep writers closed; capture the import
+exit status immediately. Approval excludes cleanup/reset, account/grant changes,
+development restoration, or repeated imports after failure. On error, stop and
+preserve partial state for separately reviewed recovery. B5 verification and data
+comparison are still required; approval is not evidence of import success.
+
+Import result pending owner execution. No agent live SQL or restore was performed.
+Only this milestone document changed; git diff --check passed. Application tests
+not rerun for this documentation-only approval record. No commit or push.
+
+## Owner-reported Stage 2B import success — 2026-11-14
+
+Following explicit exact-file approval, the owner ran:
+
+```bash
+mariadb --no-defaults --protocol=TCP --host=127.0.0.1 --port=3306 \
+   --user=taskcompass_test --password --default-character-set=utf8mb4 \
+   taskcompass_integration \
+   < /home/justin/temp/TaskCompassBackups/Phase1.1-20261114-015008/after-gui.sql
+restoreExitCode=$?
+printf 'Restore exit code: %s\n' "$restoreExitCode"
+```
+
+Owner-reported result: password prompt, no displayed SQL error, Restore exit code:
+0. The approved artifact SHA-256 is
+f7aa21d4404cc706701cc358e2c2309dddc6c1854a0a7c522c4527a74bb4799c.
+This establishes successful client import, not yet full recovery validation.
+Do not repeat the import or run destructive integration tests on restored data.
+
+Next B5: TaskCompassMigrate --verify --integration with explicit TEST environment;
+require schema 1 and source dataset 21be9da7-b767-4578-b972-cc9a35122ddb, capture
+exit status, then compare counts and ordered exports/hashes of all five tables
+against the quiescent development source. Keep TaskCompass writers stopped.
+Schema/data comparison and final Stage 2B acceptance remain pending.
+
+This is owner-executed evidence; no agent live database operation was performed.
+Only this milestone changed; git diff --check passed. No application build/CTest
+rerun for documentation-only evidence recording; no commit or push.
+
+## Owner-reported restored schema verification — 2026-11-14
+
+The owner configured TASKCOMPASS_TEST_DB_* for loopback 3306,
+taskcompass_integration/taskcompass_test, then ran:
+
+```bash
+build/TaskCompassMigrate --verify --integration
+verificationExitCode=$?
+printf 'Verification exit code: %s\n' "$verificationExitCode"
+unset TASKCOMPASS_TEST_DB_PASSWORD
+```
+
+Reported output: Schema 1 verified; dataset
+21be9da7-b767-4578-b972-cc9a35122ddb; verification exit code 0.
+This matches the development dataset UUID. The repeated hidden password read is
+not a separate failure; verification succeeded, and the owner cleared the secret.
+This is owner-executed evidence, not agent verification. Together with import exit
+0 it establishes restored schema acceptance, but not yet equality of task/history
+data. All-five-table comparison remains pending.
+
+Added concrete B5 commands to docs/TestingPhase1.1.md for two private escaped,
+primary-key-ordered full exports with counts, using the existing restricted
+diagnostic and test accounts. The procedure short-circuits on client failure and
+requires equal hashes and cmp exit 0; it performs no database writes or cleanup.
+Private exports are placed in a new directory beside the selected backup, outside
+the repository. Keep all writers closed; commands do not enforce a server lock.
+
+Files changed: guide and milestone. Guide Bash syntax and git diff --check passed;
+no live export/database operation was executed by the agent. Application build/
+CTest not rerun for documentation-only commands. Stage 2B data equality and final
+platform/milestone acceptance remain pending; no commit or push.
+
+## Owner-reported Stage 2B data comparison success — 2026-11-14
+
+The owner ran the B5 comparison: two restricted-account read-only batch exports
+with identical UTF-8/batch escaping, row counts and every column of all five tables,
+ordered by primary key. Source account was taskcompass_dev on taskcompass_dev;
+restore account was taskcompass_test on taskcompass_integration. Commands were
+joined with && so export/hash failure would stop comparison. Reported evidence:
+
+```text
+6b75033e048fc344d19ee2c33f3a2d4c7b94f3b9a16e47e0889e42a90d214aff  /home/justin/temp/TaskCompassBackups/Phase1.1-20261114-015008/compare-L1SHDF/source.tsv
+6b75033e048fc344d19ee2c33f3a2d4c7b94f3b9a16e47e0889e42a90d214aff  /home/justin/temp/TaskCompassBackups/Phase1.1-20261114-015008/compare-L1SHDF/restored.tsv
+Comparison exit code: 0
+```
+
+Both exported data hashes match, and cmp returned 0. Therefore all five tables'
+exported counts and complete ordered contents matched, including dataset metadata,
+task IDs/fields/timestamps/tombstones, receipts, change payloads and migration
+metadata. This supplements owner-reported import exit 0 and restored schema 1 /
+dataset 21be9da7-b767-4578-b972-cc9a35122ddb verification exit 0. The approved backup
+artifact/hash and earlier failed/unknown-status attempts remain documented above.
+
+Stage 2B backup/import/schema/data comparison is recorded as owner-verified pass
+for this run, not agent-executed or independent Windows validation. Private export
+contents were not shared or inspected by the agent. Preserve backup and restored
+integration data; do not rerun destructive integration tests, import again or drop
+these tables without a separate concrete approval. No development data was reset.
+
+Remaining: exact platform/server metadata and outstanding preflight evidence,
+independent Windows Phase 1.1 validation and final owner acceptance. Phase 1.1 is
+not marked complete, and Phase 1.2 is not authorized. Files changed: milestone and
+operator guide current-status pointer. git diff --check passed; no application
+build/tests rerun for documentation-only owner-evidence recording. No agent live
+SQL, restore, account change, commit or push.
+
+## Scripted Windows validation preparation — 2026-11-14
+
+### Scope and owner direction
+
+The owner initially deferred Windows testing, then requested simplifying it through
+scripts run one step at a time. Implemented validation tooling only, within Phase
+1.1. No production functionality, domain/schema changes, dependency installation,
+live database access or later milestone work. Existing Linux evidence above is
+preserved; it does not authorize or prove Windows live results.
+
+### Files created or modified in this step
+
+- scripts/phase11-validate.sh: Bash runner with build, inspect, integration-setup,
+  integration-test, migration-setup, migrate, runtime-setup, gui, backup, restore
+  and compare actions. No arguments/help/--print-plan perform no connections.
+- scripts/phase11/migration-account.sql: exact migration account/grant review
+  template with in-memory-only password placeholder replacement.
+- scripts/phase11/runtime-account.sql: exact runtime grants and migrator write
+  revocation template; no overwrite/reset/account repair.
+- tests/Phase11ValidationScripts.test.sh: mock-only safety and end-to-end helper
+  tests. All credentials/client/executable behavior here are fabricated fixtures.
+- CMakeLists.txt: register Phase11ValidationScripts in ordinary CTest when Bash
+  exists. Live integration registration remains OFF by default.
+- docs/WindowsPhase1.1.md: numbered command sequence, password/account explanations,
+  script expectations, approval/recovery boundaries and manual checks.
+- README.md, docs/Building.md, docs/TestingPhase1.1.md: link the scripted path and
+  align current result summaries; manual walkthrough preserved.
+- docs/milestones/Phase1.1.md: this report and current navigation pointer. Existing
+  uncommitted owner/conversation changes were preserved, not reset or committed.
+
+### Behavior and architecture decisions
+
+Retained all database identities, five-table migration SQL and role boundaries.
+No schema change means no schema diagram regeneration is required. The runner
+uses the existing TaskCompassMigrate/GUI/integration executables; it is not an
+alternate persistence/migration implementation. Integration provisioning delegates
+to the existing guarded temp/testdb/setup.sh. Ordinary tests invoke no live clients.
+
+Windows defaults to build-ucrt64, CMAKE_PREFIX_PATH from /ucrt64 and a consistent
+compiler/runtime PATH. Client paths with spaces and explicit client/dump overrides
+are supported. Native dump result-file paths use cygpath, and password variables
+are excluded from MSYS2 automatic environment-path conversion. It does not require
+Qt Creator, VS Code, Python, a new framework or new installed packages.
+
+Administrative checks use root over loopback TCP; Linux users with socket-only root
+should retain the manual/sudo-socket route rather than change root authentication.
+Before mutation the script checks expected schema existence/charset/collation and
+absence of tables/views/routines/triggers/events, and rejects pre-existing new
+account names on any host. Grant checks require exact direct scope/table rights,
+no global write/grant authority, no column grants and no explicit roles. On MariaDB
+10.11+ it reuses the existing SHOW GRANTS parser for PUBLIC, accepts unrelated
+PUBLIC test/test_% grants, rejects matching write/DDL/grant rights, and conservatively
+stops for manual review if PUBLIC inherits roles. No PUBLIC/grant repair occurs.
+Final runtime, diagnostic and revoked migrator grants are checked automatically.
+
+Live write/test actions require --approved and typed target-specific confirmation;
+no Linux approval is inferred for Windows. Password prompts identify accounts,
+new passwords are confirmed twice, and no passwords are written in SQL/config/log
+files or argv. Only per-child client environments and existing Qt configuration
+variables carry secrets; exit clears them from the runner. Diagnostics redact raw
+and SQL-quoted secrets. MariaDB 13 password-option warnings are explained without
+disabling TLS verification. Scripts do not log grants containing authentication
+hashes or print private task data. No environment/profile files are generated.
+
+New baseline/snapshot directories must be outside the repository and absent.
+Linux uses umask 077; Windows uses built-in PowerShell to establish and verify a
+current-user-only protected directory ACL before data is written. Failures stop;
+actual PowerShell/NTFS behavior remains unverified until Windows execution. Client
+and server versions must match the backup identity for the proposed restore path;
+cross-server/version restores remain a separate design/review decision.
+
+Migration is explicit and verifies immediately; partial MariaDB DDL is not rolled
+back or automatically resumed. Runtime provisioning revokes migrator writes only
+after schema verification. GUI verification and launch are scripted; interactive
+behavior/restart review is still owner-performed, never inferred from window exit.
+Populated backup requires writers closed, saves the source export before/after
+and rejects changed snapshots. Restore checks backup/export hashes, exact-hash
+confirmation, private dump review confirmation, empty integration target, server
+identity, account identity and effective grants before import. It cannot target
+development or reset the destination. Failed import stops and preserves partial
+state. Comparison verifies schema/dataset and all five tables/counts against both
+the saved source snapshot and current development; writes must stay stopped.
+Comparison artifacts are not overwritten. No cleanup script is provided.
+
+### Validation commands and actual results
+
+Agent executed on Linux, with no live SQL:
+
+```bash
+bash -n scripts/phase11-validate.sh tests/Phase11ValidationScripts.test.sh
+bash scripts/phase11-validate.sh --help
+bash scripts/phase11-validate.sh migration-setup --print-plan
+bash tests/Phase11ValidationScripts.test.sh
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DTASKCOMPASS_ENABLE_DB_TESTS=OFF
+cmake --build build --parallel 2
+ctest --test-dir build --output-on-failure
+python3 docs/diagrams/GenerateDatabaseSchema.py --check
+sha256sum migrations/mariadb/001_PersistentTaskFoundation.sql
+git diff --check
+```
+
+Results: Bash syntax, no-op/plan checks and mock suite passed. Mock coverage:
+no-client defaults/previews/unapproved operations; typed confirmation mismatch;
+existing accounts/nonempty targets; unexpected direct and PUBLIC privileges;
+password redaction and quote/backslash/ampersand SQL escaping; integration test
+only after grant/catalog gates; role-specific migration/runtime/GUI configuration;
+backup failure/wrong identity/refusal to overwrite evidence; import failure;
+checksum tampering; dataset verification and matching/mismatched full exports.
+On Linux, fake UCRT64/cygpath/PowerShell dispatch additionally checks that ACL
+failure stops before a dump; it does not validate native Windows ACL execution.
+
+CMake configure and build succeeded. Ordinary CTest: **9 passed, 1 skipped, 0
+failed** (10 registered); skipped MariaDbIntegrationTests performs no live SQL.
+The previous eight-pass total predates registering this mock suite. Follow-up
+changes to the runner/tests receive the final focused CTest check below rather
+than claiming earlier output validates later edits. Diagram provenance check and
+migration checksum remain unchanged; no migration execution occurred.
+Markdown links/fences and diff whitespace checks are recorded with the final check.
+
+### Limitations and remaining work
+
+Native Windows build/runtime, real MariaDB 13 grants/provisioning/migrations,
+PowerShell ACL enforcement, native client paths/warnings, persistent GUI and
+backup/restore are not yet tested with these helpers. Conservatively unsupported
+grant/role policies stop instead of being automatically broadened. The runner does
+not detect every noncooperating writer or enforce a global server lock. Human
+private dump inspection and explicit live approvals remain necessary. It does not
+automatically update this milestone; actual owner results must be recorded here.
+No step resets existing databases/accounts. A failure may leave partial provisioning,
+DDL or private evidence; inspect and propose exact recovery with separate approval.
+Full Phase 1.1 acceptance and Phase 1.2 remain unapproved.
+
+### Approval Requested — Windows live stages, after inspection
+
+Safe next owner commands are build and inspect; provide Windows server identity,
+existing resources and test/build results before requesting execution of write
+stages. Source-tooling authorization does not authorize live Windows changes.
+The fresh-target proposals use the exact SQL review templates linked above and
+existing milestone Stage 1/2A migration 001, not new or broader grants:
+
+1. Windows Stage 1: if absent, create taskcompass_integration and
+   taskcompass_test@127.0.0.1 with SELECT/INSERT/UPDATE/CREATE/DROP/ALTER only on
+   escaped taskcompass_integration scope; run the existing opt-in disposable suite
+   on an entirely empty test schema. Only its own five integration tables may be
+   dropped by approved test cleanup. Refuse unexpected objects/roles/grants.
+2. Windows Stage 2A, separately after integration passes: require empty existing
+   taskcompass_dev and unchanged diagnostic account; private baseline backup,
+   fresh taskcompass_migrate with the exact template CREATE/SELECT and metadata
+   INSERT grants, explicit migration 001/verification; fresh taskcompass_app exact
+   nine table grants, revoke migrator CREATE/INSERT, final metadata validation and
+   owner-operated persistent GUI checklist. No existing account password/grant
+   overwrite or development DROP/ALTER/restore/cleanup is proposed.
+3. Windows Stage 2B, separately after GUI checks: create/inspect a populated backup,
+   identify its exact path/hash and obtain exact-file approval before importing
+   into the empty integration target. Verify/compare the restored data afterward.
+
+Each stage stops on unexpected state and preserves evidence. MariaDB DDL can
+partially commit; backups do not automatically authorize live recovery. Cleanup,
+failed-step retry/reset, privilege repair or development restore requires a new
+concrete procedure/approval. No live operations were executed while creating these
+scripts; all Windows live approval/results remain pending.
+
+### Final tooling checks and handoff
+
+Final focused validation after the last runner/test edits:
+
+```bash
+bash -n scripts/phase11-validate.sh tests/Phase11ValidationScripts.test.sh
+ctest --test-dir build --output-on-failure
+python3 docs/diagrams/GenerateDatabaseSchema.py --check
+sha256sum migrations/mariadb/001_PersistentTaskFoundation.sql
+git diff --check
+```
+
+Result: 9 passed, 1 skipped, 0 failed in 3.50 seconds. Mock suite includes fake
+UCRT64 path conversion/ACL failure and successful dispatch; actual Windows remains
+pending. Migration SHA-256 is still
+bb901d7580398893b5c04ee263f813b9d05873eb4bae08e0daf377faf73b0ea0;
+diagram check reports 5 tables/38 columns/4 SQL FKs/2 logical references unchanged.
+New/updated documentation local links and balanced fences passed. Bash code blocks
+passed bash -n via line-anchored fence extraction, without executing documentation
+commands. An initial naive fence splitter produced two historical here-document
+warnings by stopping inside Python string literals containing backticks; corrected
+line-anchored extraction verified those existing blocks cleanly. No document code
+or live database operation was executed by these syntax checks.
+
+Also updated docs/Roadmap.md's current-status pointer from pre-database review to
+validation and linked the Windows route; historical evidence stays in this file.
+All changes remain uncommitted. Safe next owner Windows commands: run the guide's
+build and inspect steps, report actual results, then approve the appropriate fresh
+Stage 1/2A operations. Do not rerun fresh provisioning against existing resources.

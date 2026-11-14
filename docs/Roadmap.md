@@ -1,8 +1,10 @@
 # Implementation roadmap
 
-Current work is **Phase 1.1 Step B implementation and pre-database review**.
-Owner approved source/migration/test/documentation work; live provisioning, grants
-and migrations remain behind explicit approval. Phase 0.1 is accepted on owner
+Current work is **Phase 1.1 validation**. The owner reports development GUI,
+restart and populated backup/restore checks passed on the current host. Independent
+Windows Phase 1.1 checks remain pending; use the
+[scripted Windows sequence](WindowsPhase1.1.md). Live provisioning, grants and
+migrations remain behind their specific approval checkpoints. Phase 0.1 is accepted on owner
 reported Linux/Windows builds, GUI launches and MariaDB diagnostics; earlier dated
 pending observations below remain historical. Phase 1.1 is not complete.
 The architecture stays C++20/Qt 6 Widgets/CMake with MariaDB, a shared UI-independent

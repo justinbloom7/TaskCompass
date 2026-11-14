@@ -8,9 +8,10 @@ projects, and guided planning at quarterly, sprint, weekly, and daily horizons.
 **Status: Phase 0.1 accepted; owner reports Phase 1.1 integration tests passed.**
 The original `TaskCompassPrototype` remains a disposable in-memory demonstration.
 The new persistent `TaskCompass` desktop and `TaskCompassMigrate` tool are implemented.
-Development migration, real GUI/restart testing, backup/restore and independent
-Linux/Windows evidence still gate Phase 1.1 acceptance. Stage 2 requires separate
-owner approval; no Stage 2 SQL has been executed by the agent. See the
+The owner reports development migration, GUI/restart and backup/restore checks
+passed on the current host; independent Windows Phase 1.1 validation and final
+acceptance remain pending. Live operations require their specific owner approval;
+no Stage 2 SQL has been executed by the agent. See the
 [Phase 1.1 milestone report](docs/milestones/Phase1.1.md) for the owner-reported
 integration output, proposed Stage 2 SQL/procedures and approval checkpoints.
 
@@ -23,6 +24,8 @@ Start with [Installation.md](docs/Installation.md) for Windows/UCRT64 and CentOS
 Stream 9 prerequisites, MariaDB Server installation and service startup. See
 [Building.md](docs/Building.md) for build/run/test commands, scripted database
 setup, QMYSQL diagnostics and validation limitations.
+For the scripted Windows Phase 1.1 sequence, use
+[WindowsPhase1.1.md](docs/WindowsPhase1.1.md).
 
 Read in this order:
 

@@ -3,8 +3,9 @@
 The Phase 0.1 prototype is accepted (owner-reported Linux/Windows builds, launches
 and CLI/Qt connectivity). Historical observations below remain dated evidence.
 Phase 1.1 adds separate executables. The owner reports the isolated integration
-suite passed; Stage 2 development migration and persistent GUI/backup validation
-still await their separate approval and execution. Platform/version details for
+suite, development migration, persistent GUI/restart and backup/restore checks
+passed on the current host. Independent Windows Phase 1.1 checks remain pending.
+Platform/version details for
 that reported integration run are pending confirmation.
 The authoritative [Phase 1.1 report](milestones/Phase1.1.md) contains SQL, privilege
 separation, backup/recovery, commands, test results and pending approvals.
@@ -12,6 +13,11 @@ separation, backup/recovery, commands, test results and pending approvals.
 For a step-by-step operator walkthrough, see [Testing Phase 1.1](TestingPhase1.1.md):
 database-free tests, isolated integration database/account setup, live test commands
 and the separate approval needed before persistent GUI testing.
+
+For a numbered scripted Windows validation route, see
+[WindowsPhase1.1.md](WindowsPhase1.1.md). It automates the reviewed provisioning,
+migration, backup/restore and full data comparisons while preserving approval
+checkpoints. No live operations are performed by help or --print-plan.
 
 ## Phase 1.1 executables and safety
 

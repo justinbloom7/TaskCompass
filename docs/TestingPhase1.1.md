@@ -2,6 +2,9 @@
 
 # Testing Phase 1.1
 
+For Windows, prefer the [scripted one-step-at-a-time guide](WindowsPhase1.1.md).
+The detailed manual procedure below remains available for inspection and Linux.
+
 This is an operator walkthrough. The authoritative approval record and exact
 preflight/grant checks are in [Phase1.1.md](milestones/Phase1.1.md), under
 **Approval Requested — Stage 1 after safety review**. Preparing these instructions
@@ -42,7 +45,7 @@ cmake --build build --parallel 2
 ctest --test-dir build --output-on-failure
 ```
 
-Expected current result: eight tests pass and MariaDbIntegrationTests is skipped
+Expected current result: nine tests pass and MariaDbIntegrationTests is skipped
 (including the database-free IntegrationDatabaseScripts mock suite).
 This validates core/fake-repository GUI/safety behavior, not live persistence.
 Keep live CTest registration OFF; run the live executable explicitly later.
@@ -276,3 +279,198 @@ test persistent GUI and all supported undo/redo operations → close/restart che
 complete the approved backup/restore validation → independently repeat required
 Linux/Windows checks → owner review and final acceptance. A build, mock test or
 successful Stage 1 alone does not complete the milestone.
+
+## 10. Stage 2B explained: restore a populated backup into the test database
+
+**Latest result (2026-11-14): Stage 2B owner-verified pass.** Import and restored
+schema verification exited 0, the dataset UUID matched, and B5 full five-table
+exports had identical hashes with comparison exit 0. Preserve the restored test
+database and private backups; no cleanup is authorized. Independent Windows
+Phase 1.1 validation and final milestone acceptance remain pending. The walkthrough
+below describes the completed procedure, not instructions to repeat the import.
+
+**Earlier resume checkpoint (superseded): B3, before restore.** The owner completed GUI
+checks, created and inspected a populated backup with exit 0, and reported all
+four administrator target-emptiness queries empty. The chosen backup is
+/home/justin/temp/TaskCompassBackups/Phase1.1-20261114-015008/after-gui.sql,
+SHA-256 f7aa21d4404cc706701cc358e2c2309dddc6c1854a0a7c522c4527a74bb4799c.
+Do not recreate this backup just to resume. The last unresolved item was the lost
+taskcompass_test password; reset instructions are recorded at the milestone's end,
+but completion and successful test-account login have not been reported. Resume
+with that login/identity check and current destination preflight, then the
+separate restore approval. No restore has been reported. If development changed
+after the backup, retain this artifact but plan a new quiescent snapshot for an
+exact source/restore comparison rather than assuming current source data matches.
+
+Stage 2A proved that the application saves and reloads tasks. Stage 2B proves that
+a backup can recover those tasks **and their history**. The source is
+taskcompass_dev; the destination is taskcompass_integration. Development is never
+overwritten. The complete approval procedure remains in the milestone under
+**Stage 2B restore rehearsal — prepared procedure, later exact-file approval**.
+
+### B1. Close the GUI and verify the source
+
+Close TaskCompass and leave it closed until the backup and source/restore
+comparison finish. Stop other TaskCompass writers too. Verify schema 1 using
+TaskCompassMigrate --verify with subsection G's runtime environment/password,
+without launching the GUI. Record the dataset UUID and exit status. This step
+does not apply a migration. Do not use --apply for a restore rehearsal.
+
+### B2. Back up the populated development database
+
+Yes: reuse subsection B's dump options, changing the output filename to after-gui.sql.
+Use the **diagnostic account password** here, not the runtime, migration or root
+password. This complete Linux command creates a fresh directory for each attempt:
+
+```bash
+taskCompassBackupDirectory="$HOME/temp/TaskCompassBackups/Phase1.1-restore-$(date +%Y%m%d-%H%M%S)"
+(
+   umask 077
+   mkdir -p -- "$(dirname "$taskCompassBackupDirectory")" &&
+   mkdir -- "$taskCompassBackupDirectory" &&
+   mariadb-dump --no-defaults --protocol=TCP --host=127.0.0.1 --port=3306 \
+      --user=taskcompass_dev --password --default-character-set=utf8mb4 \
+      --single-transaction --skip-lock-tables --no-tablespaces --skip-triggers \
+      --skip-add-drop-table --skip-add-locks --skip-disable-keys \
+      --no-create-db --hex-blob \
+      --result-file="$taskCompassBackupDirectory/after-gui.sql" taskcompass_dev
+)
+backupExitCode=$?
+printf 'Backup exit code: %s\n' "$backupExitCode"
+```
+
+Stop unless the exit code is zero. Then check the file:
+
+```bash
+test -s "$taskCompassBackupDirectory/after-gui.sql"
+printf 'Nonempty-file check exit code: %s\n' "$?"
+sha256sum "$taskCompassBackupDirectory/after-gui.sql"
+less "$taskCompassBackupDirectory/after-gui.sql"
+```
+
+Both exit codes must be zero. Unlike before-migration.sql, this dump should contain
+CREATE TABLE and INSERT statements for the five application tables, including
+your tasks and history. It must not contain account changes, DROP statements,
+USE/CREATE DATABASE, unrelated schemas or stored code. Review session-setting
+save/restore statements as described in the milestone. Keep the dump private:
+it contains task titles, notes and audit snapshots. Do not paste it into chat.
+
+If using your existing backup directory instead, changing just the filename is
+fine, but omit the mkdir commands: exclusive leaf creation intentionally fails
+when that directory already exists. Never reuse an existing output filename;
+--result-file can overwrite it. Preserve before-migration.sql unchanged.
+
+### B3. Check the isolated restore destination and request approval
+
+The test suite reported leaving taskcompass_integration empty, but recheck rather
+than assuming it is still empty. Follow the milestone's identity, catalog and
+effective privilege preflight for taskcompass_integration/taskcompass_test; inspect
+tables/views, routines, triggers and events. No new accounts or grants should be
+needed. Stop if the target has any existing objects or unexpected privileges.
+
+Record the backup path/hash, source server version/platform, dataset UUID,
+successful backup/verification exit codes and empty-target evidence. Review the
+exact file and proposed import command with the owner before live restoration.
+The earlier Stage 2A acceptance does not authorize this separate restore.
+
+### B4. Restore only after the separate approval
+
+The approved import reads after-gui.sql into taskcompass_integration using
+taskcompass_test (not root). Use the exact import command in the milestone.
+For the currently reviewed candidate, the concrete Linux command is below.
+This is the separate restore approval checkpoint: review and explicitly approve
+this exact file/target/import before running it. Keep TaskCompass closed. Confirm
+the file still has SHA-256
+f7aa21d4404cc706701cc358e2c2309dddc6c1854a0a7c522c4527a74bb4799c:
+
+```bash
+sha256sum /home/justin/temp/TaskCompassBackups/Phase1.1-20261114-015008/after-gui.sql
+```
+
+Stop if the hash differs. After separate restore approval, run from the normal
+Linux shell, not inside the MariaDB prompt:
+
+```bash
+mariadb --no-defaults --protocol=TCP --host=127.0.0.1 --port=3306 \
+   --user=taskcompass_test --password --default-character-set=utf8mb4 \
+   taskcompass_integration \
+   < /home/justin/temp/TaskCompassBackups/Phase1.1-20261114-015008/after-gui.sql
+restoreExitCode=$?
+printf 'Restore exit code: %s\n' "$restoreExitCode"
+```
+
+Enter the test-account password at the hidden prompt. No further terminal output
+is normal on success; require exit 0 and then complete B5. Any nonzero exit or SQL
+error means stop and preserve the partial state; do not rerun, reset or delete
+tables. A partial import may already have committed DDL/data. This procedure does
+not authorize cleanup, restoring development, or any account/privilege changes.
+
+Do not run TaskCompassMigrate --apply on the destination first: the dump itself
+creates the tables and restores migration metadata. Stop on any import error;
+partial restoration requires inspection and separate recovery approval.
+
+### B5. Verify the recovered database and compare its contents
+
+Use TaskCompassMigrate --verify --integration with the explicit TEST environment
+and test-account password. It must report schema 1 and the same dataset UUID.
+Compare row counts and deterministically ordered exports of all five tables with
+the still-quiescent source: Dataset, Task, CommandRecord, LocalChange and
+SchemaMigration. Matching private export hashes, alongside schema verification,
+prove that IDs, timestamps, task fields, tombstones and history were preserved.
+An import exit code of zero alone is insufficient. Record results in the milestone.
+
+For the current Linux rehearsal, use the following read-only comparison with
+TaskCompass still closed. It writes private escaped batch exports beside the
+backup, never to Git, and compares counts and every column of all five tables.
+Each export uses its own restricted account and a hidden password prompt. A new
+comparison directory prevents overwriting earlier evidence:
+
+```bash
+comparisonDirectory=$(umask 077; mktemp -d /home/justin/temp/TaskCompassBackups/Phase1.1-20261114-015008/compare-XXXXXX)
+```
+
+Stop if directory creation failed. Then run:
+
+```bash
+comparisonSql="SELECT 'Dataset',COUNT(*) FROM Dataset
+UNION ALL SELECT 'Task',COUNT(*) FROM Task
+UNION ALL SELECT 'CommandRecord',COUNT(*) FROM CommandRecord
+UNION ALL SELECT 'LocalChange',COUNT(*) FROM LocalChange
+UNION ALL SELECT 'SchemaMigration',COUNT(*) FROM SchemaMigration;
+SELECT * FROM Dataset ORDER BY id;
+SELECT * FROM Task ORDER BY id;
+SELECT * FROM CommandRecord ORDER BY id;
+SELECT * FROM LocalChange ORDER BY id;
+SELECT * FROM SchemaMigration ORDER BY version;"
+(
+   umask 077
+   mariadb --no-defaults --protocol=TCP --host=127.0.0.1 --port=3306 \
+      --user=taskcompass_dev --password --default-character-set=utf8mb4 \
+      --batch --skip-column-names --execute="$comparisonSql" taskcompass_dev \
+      > "$comparisonDirectory/source.tsv" &&
+   mariadb --no-defaults --protocol=TCP --host=127.0.0.1 --port=3306 \
+      --user=taskcompass_test --password --default-character-set=utf8mb4 \
+      --batch --skip-column-names --execute="$comparisonSql" taskcompass_integration \
+      > "$comparisonDirectory/restored.tsv" &&
+   sha256sum "$comparisonDirectory/source.tsv" "$comparisonDirectory/restored.tsv" &&
+   cmp -s "$comparisonDirectory/source.tsv" "$comparisonDirectory/restored.tsv"
+)
+comparisonExitCode=$?
+printf 'Comparison exit code: %s\n' "$comparisonExitCode"
+```
+
+The first password is the diagnostic account's; the second is the test account's.
+Require both clients to succeed, two identical hashes and comparison exit 0.
+Batch escaping is intentionally enabled (no --raw) so embedded newlines and NULL
+values have deterministic representations. The first five export rows are table
+counts; remaining rows contain private data, so share only hashes/status, not the
+files. A mismatch requires investigation, not reimport or cleanup. This comparison
+assumes all source/test writers remain stopped throughout; it does not lock out
+concurrent writes itself.
+
+### B6. Preserve the evidence
+
+Do not run the GUI against the restored test database or rerun integration tests
+there: those tests require an empty schema. Leave it intact; any cleanup is a
+separate approval. Stage 2B success does not authorize Phase 1.2 or complete the
+remaining platform-validation requirements.

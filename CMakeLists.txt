@@ -51,6 +51,9 @@ if(BUILD_TESTING)
       add_test(NAME IntegrationDatabaseScripts
                COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/IntegrationDatabaseScripts.test.sh")
       set_tests_properties(IntegrationDatabaseScripts PROPERTIES TIMEOUT 30)
+      add_test(NAME Phase11ValidationScripts
+               COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase11ValidationScripts.test.sh")
+      set_tests_properties(Phase11ValidationScripts PROPERTIES TIMEOUT 60)
    else()
       message(STATUS "Bash unavailable: skipping database helper mock tests")
    endif()
