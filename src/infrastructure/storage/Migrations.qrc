@@ -1,0 +1,5 @@
+<RCC>
+   <qresource prefix="/migrations">
+      <file alias="001.sql">../../../migrations/mariadb/001_PersistentTaskFoundation.sql</file>
+   </qresource>
+</RCC>

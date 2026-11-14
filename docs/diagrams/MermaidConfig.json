@@ -1,0 +1,15 @@
+{
+   "theme": "neutral",
+   "look": "neo",
+   "htmlLabels": true,
+   "fontFamily": "DejaVu Sans, sans-serif",
+   "deterministicIds": true,
+   "deterministicIDSeed": "TaskCompassSchema001",
+   "er": {
+      "look": "neo",
+      "useMaxWidth": false,
+      "fontSize": 18,
+      "nodeSpacing": 80,
+      "rankSpacing": 120
+   }
+}

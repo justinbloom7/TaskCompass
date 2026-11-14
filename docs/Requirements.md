@@ -41,7 +41,7 @@ influence the design; they need not ship in the first usable release.
 | Separation | Lifecycle, allocation, horizon, period priority, actual work, and completion are distinct. Unallocated is not inherently a lifecycle state. |
 | Capture | Fast inbox entry; future mobile voice capture independent of speech provider. |
 | Long term | Someday/long-term work stays available without cluttering daily planning. |
-| Current iteration | Phase 0.1 connectivity validation plus approved-ordering documentation after Phase 0.2. Dedicated empty development database and SELECT-only account permitted; no application tables, migrations, persistent task/ordering implementation, sync, mobile work or Git commit. |
+| Current iteration | Phase 1.1 Step B source implementation approved; task foundation only. Account/grant provisioning and live migrations require separate concrete approval. Preserve prototype; no later features or Git commit. See milestones/Phase1.1.md for current evidence. |
 
 ## Proposed behavior needing review
 

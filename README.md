@@ -5,16 +5,28 @@
 A traditional desktop task manager organized around responsibilities, objectives,
 projects, and guided planning at quarterly, sprint, weekly, and daily horizons.
 
-**Status: Phase 0.2 requirements/design refinement; Phase 0.1 partially validated.** The C++20/Qt 6
-Widgets desktop runs with disposable in-memory samples and an optional, separate
-MariaDB connectivity diagnostic. No TaskCompass domain system, task persistence,
-schema, migrations or synchronization service has been implemented. Windows and
-live database validation remain pending; architecture/schema review continues.
+**Status: Phase 1.1 accepted by the owner on 2026-11-14.**
+The original `TaskCompassPrototype` remains a disposable in-memory demonstration.
+The new persistent `TaskCompass` desktop and `TaskCompassMigrate` tool are implemented.
+Linux and Windows validation evidence is recorded, including the owner's confirmation
+that the Windows GUI reopened after restart with persisted data intact. Preserve
+all backups, exports and restored integration databases. Phase 1.2 is not authorized.
+Live operations require their specific owner approval;
+no Stage 2 SQL has been executed by the agent. See the
+[Phase 1.1 milestone report](docs/milestones/Phase1.1.md) for the owner-reported
+integration output, proposed Stage 2 SQL/procedures and approval checkpoints.
+
+Milestone plans and results live under `docs/milestones/`.
+
+[AGENTS.md](AGENTS.md) contains the permanent Codex development, safety and
+milestone-reporting instructions for this repository.
 
 Start with [Installation.md](docs/Installation.md) for Windows/UCRT64 and CentOS
 Stream 9 prerequisites, MariaDB Server installation and service startup. See
 [Building.md](docs/Building.md) for build/run/test commands, scripted database
 setup, QMYSQL diagnostics and validation limitations.
+For the scripted Windows Phase 1.1 sequence, use
+[WindowsPhase1.1.md](docs/WindowsPhase1.1.md).
 
 Read in this order:
 
@@ -45,7 +57,9 @@ preferences, and remaining implementation decisions.
 Production designs now distinguish Worked Today, Done for Today and Completed;
 include undo/redo from the first persistence milestone; and specify numeric
 priorities, user-defined context order and persistent drag/drop behavior. These
-capabilities are **not implemented by the sample prototype**. See the interaction
+capabilities are **not implemented by the sample prototype**. Phase 1.1 adds only
+independent task capture/edit/completion/reopen and transactional session undo/redo
+in the separate persistent executable; later task/planning capabilities remain deferred. See the interaction
 specification for confirmed requirements and recommended policies needing review.
 
 TaskCompass project-owned code and documentation are free software: you may

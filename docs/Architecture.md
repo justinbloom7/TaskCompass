@@ -484,3 +484,28 @@ Future iOS signing/store terms and library replacement rights require a separate
 release review; native iPhone distribution is not licensed/validated by this
 architecture proposal. A commercial Qt license alone does not remove the project's
 GPL obligations. No alternate license or linking exception is granted here.
+
+
+## Phase 1.1 implementation checkpoint — 2026-11-12
+
+Owner approved Step B source implementation. The original prototype remains
+unchanged; a separate TaskCompass desktop preserves its traditional layout without
+fixture organizational ownership. TaskCore uses standard C++ only. TaskStorage
+implements Qt SQL transactions, strict UTF-8/UTC sessions and explicit migration
+verification. PersistentDesktop invokes the command service on a serialized worker
+and refreshes after commit. No GUI migration or account provisioning occurs.
+
+A small TaskService history controller replaces the optional QUndoStack adapter.
+Command receipts and dormant LocalChange rows commit with Task. Undo/redo are new
+compensating writes; revisions/updatedAt advance while prior business values are
+restored. Session history is capped at 100 and clears on restart. An uncertain
+commit clears desktop history and requires reload/inspection, without blind retry.
+Known failures leave the history index unchanged. Runtime credentials append audit
+and change rows and cannot update/delete them. This is not a sync implementation.
+
+The schema tool embeds the reviewed migration resource, uses checksums and a
+stored normalized SHOW CREATE TABLE fingerprint, and rejects partial/newer/changed
+schemas. Fingerprints are conservative: server-version formatting changes may
+require operator review even without a semantic schema change. No automatic
+fingerprint repair is allowed. Detailed decisions, limitations, SQL approval gates
+and actual validation: [Phase 1.1](milestones/Phase1.1.md).
