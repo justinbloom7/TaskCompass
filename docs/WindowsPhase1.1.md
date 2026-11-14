@@ -29,6 +29,9 @@ too, but does not replace the existing Linux socket-admin instructions.
   taskcompass_dev, test taskcompass_test, migration taskcompass_migrate and runtime
   taskcompass_app. The scripts label each prompt. New passwords are entered twice,
   not generated or saved behind the scenes.
+- If the administrator password is lost, pause here and use the separately
+  reviewed [Windows MariaDB recovery procedure](WindowsMariaDbRecovery.md).
+  Recovery approval is separate from validation/provisioning approval.
 - Open a fresh UCRT64 terminal. No need to source the older diagnostic environment.
   This runner sets its own Qt build paths and exact per-command account settings.
 - `--approved` declares that the particular live step has already been approved;

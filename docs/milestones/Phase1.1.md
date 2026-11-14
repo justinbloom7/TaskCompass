@@ -18,9 +18,10 @@ Windows validation tooling: the source-only scripted sequence is now in
 [WindowsPhase1.1.md](../WindowsPhase1.1.md). See **Scripted Windows validation
 preparation — 2026-11-14** below for files, mock coverage, build/CTest evidence and
 the separate Windows approval checkpoints. Windows live execution remains pending.
-Owner now reports a successful Windows compilation (CMake 4.4.5, GCC 16.2.0,
-Qt 6.12.0) with two shell-suite failures. See **Windows stage 01 tooling failures
-and corrections — 2026-11-14** below; stage 01 rerun is pending, not passed.
+Owner reports Windows stage 01 passed after the tooling corrections: CMake 4.4.5,
+GCC 16.2.0, Qt 6.12.0; 9 tests passed, 1 live test skipped, QMYSQL loadable.
+See **Owner-reported Windows stage 01 success — 2026-11-14** below. Windows
+read-only inspection and subsequent live/GUI/restore stages remain pending.
 
 Source/documentation approval remains provisional. The owner's manual test result
 is not authorization for Codex to provision accounts, migrate development or perform
@@ -2787,3 +2788,140 @@ or further timeouts. Do not mark Windows stage 01 or full Phase 1.1 passed until
 that rerun succeeds. Live Windows provisioning/migration/restore still require
 previously documented distinct approval checkpoints; no new live approval is
 requested merely for this database-free rerun.
+
+## Owner-reported Windows stage 01 success — 2026-11-14
+
+Owner reran scripts/phase11/01-build.sh after the tooling corrections on Windows
+UCRT64. Reported CMake 4.4.5, MSYS2 GCC 16.2.0 Rev6, Qt 6.12.0. Configure/generate
+and build succeeded in C:/Users/justin/repo/TaskCompass/build-ucrt64.
+
+CTest: **9 passed, 1 skipped, 0 failed**, total 139.79 seconds. Specifically:
+PrototypeTests 0.42s; GuiStartup 0.67s; DevDatabaseScripts 65.68s;
+IntegrationDatabaseScripts 4.78s; Phase11ValidationScripts 66.61s; TaskCoreTests
+0.02s; MigrationSqlPreview 0.04s; PersistentDesktopTests 1.05s; StorageSafetyTests
+0.43s. MariaDbIntegrationTests skipped (0.04s), as intended for ordinary CTest.
+The 180-second Windows limits allowed the previously failing suites to finish;
+earlier failures remain preserved above rather than overwritten.
+
+Driver diagnostic reported QIBASE, QSQLITE, QMARIADB, QMYSQL, QODBC and QPSQL;
+QMYSQL available yes, loadable yes. Connection intentionally skipped because none
+was requested. Runner concluded PASS: build and database-free tests; no live
+validation claimed. This establishes owner-reported stage 01 success, not live
+MariaDB authentication or the persistent GUI acceptance checklist.
+
+Next owner command, read-only inspection:
+
+```bash
+bash scripts/phase11/02-inspect.sh
+```
+
+Use the administrator database password when prompted. If client autodiscovery
+fails, provide --client with the installed mariadb.exe path. Share server/resource
+inspection output without credentials to determine whether fresh provisioning
+stages are appropriate. Do not rerun setup blindly if resources already exist.
+Windows live stages retain their explicit approval checkpoints. Phase 1.1 remains
+incomplete; no Phase 1.2 authorization inferred.
+
+Only this milestone document changed. Agent validation: git diff --check passed;
+no application build/tests rerun for this documentation-only owner-result record.
+No agent Windows execution, live SQL, provisioning, migration, restore, commit,
+merge, tag or push was performed.
+
+## Windows administrator credential unavailable — 2026-11-14
+
+After successful Windows stage 01, the owner reports forgetting the Windows
+MariaDB root password. Stage 02 administrator inspection is blocked pending
+credential recovery or another already-authorized administrator login. No root
+reset, service stop, authentication bypass, reinstall, account/grant change or
+live SQL has been performed or authorized by this report. Application/diagnostic/
+test passwords are separate and must not be substituted or exposed.
+
+Reviewed existing Installation.md Windows service/password instructions and
+MariaDB's official Windows MSI and server-option documentation:
+https://mariadb.com/docs/server/server-management/install-and-upgrade-mariadb/installing-mariadb/binary-packages/installing-mariadb-msi-packages-on-windows
+https://mariadb.com/docs/server/server-management/starting-and-stopping-mariadb/mariadbd-options
+Recovery must preserve the existing instance/data and have a concrete separately
+approved account/service procedure; do not reinstall or initialize a new data
+folder as a password repair. Do not assume Linux socket-root behavior on Windows.
+
+Next owner step: check the password manager or another existing administrator
+session first. If unavailable, collect read-only Windows service metadata in
+PowerShell (not SQL or UCRT64):
+
+```powershell
+Get-CimInstance Win32_Service |
+   Where-Object { $_.PathName -match '(mariadbd|mysqld)(\.exe)?' } |
+   Select-Object Name, State, StartName, PathName |
+   Format-List
+```
+
+This identifies the service executable/configuration and service identity for a
+reviewable recovery plan; it does not stop/change the service. Service metadata
+has not yet been supplied. Do not share passwords. Exact root-account identity,
+instance configuration, downtime scope and recovery approval remain unresolved.
+No application source/scripts changed. Only this milestone changed; git diff
+--check passed. No build/CTest rerun for a documentation-only blocker record;
+previous Windows stage 01 success remains valid. No commit or push.
+
+## Windows MariaDB service identified; recovery proposal — 2026-11-14
+
+Owner supplied Get-CimInstance results: service MariaDB is Running as
+NT SERVICE\MariaDB. PathName identifies
+C:\Program Files\MariaDB 13.0\bin\mysqld.exe with
+--defaults-file=C:\Program Files\MariaDB 13.0\data\my.ini and service name MariaDB.
+This is owner-reported service metadata, not proof of the actual configured data
+directory or authenticated root-host identity. No credentials were supplied.
+
+Created docs/WindowsMariaDbRecovery.md with concrete PowerShell/native-client/SQL
+steps and linked it from docs/WindowsPhase1.1.md. Reviewed official MariaDB
+recovery, named-pipe connection, SET PASSWORD and system-variable documentation
+(linked in the procedure); MariaDB 13 supports the checked skip_grant_tables and
+skip_networking variables. Use FLUSH PRIVILEGES before SET PASSWORD, without
+rewriting authentication plugins or changing grants. PowerShell is unavailable in
+this Linux environment; commands have not been parsed or executed by PowerShell.
+No Windows service, SQL, database files or account was accessed by the agent.
+
+### Approval Requested — owner-operated Windows root recovery
+
+Approve only the documented recovery for the identified service/configuration:
+read nonsecret config fields; stop MariaDB cleanly; start the same server/config
+in a temporary foreground process with TCP disabled, a dedicated local named pipe,
+SQL text logs/binlog disabled and temporary skip-grant-tables; inspect intended
+instance/root plugin and stop on unexpected identities/audit/configuration; then:
+
+```sql
+FLUSH PRIVILEGES;
+SET PASSWORD FOR 'root'@'localhost' = PASSWORD('<new-strong-root-password>');
+SHUTDOWN;
+```
+
+The placeholder is replaced privately in a history-disabled interactive client,
+never in a file/argv/log. Scope is existing password-capable root@localhost only;
+no other root-host accounts, application accounts, grants, databases, service
+registration or my.ini changes. Brief service downtime affects all clients of
+that instance: coordinate/close them first. Recovery bypass is local-only but
+requires a trusted machine during that interval. Root/account and service changes
+require this separate authorization under AGENTS.md; forgotten credentials and
+service inspection are not execution approval.
+
+Restart the unchanged normal service only after the recovery process exits and
+test root TCP login/normal authentication/network flags. No reinstallation, new
+data directory, database deletion, InnoDB-file removal, copied credentials,
+force-kill, ownership repair or broader authentication rewrite is authorized.
+Do not access unrelated application data. Normal databases remain in place; no
+physical backup of unrelated databases is proposed or performed. This procedure
+is not data recovery and does not authorize replacing database files.
+
+On startup failure, stop and preserve errors; if foreground server is fully exited,
+restart the unchanged service to restore prior behavior. Before a successful SET
+PASSWORD, the old credential is unchanged; afterward there is no known-old-password
+rollback. Retain the new password securely and request a revised procedure on any
+failure rather than trying additional account changes. Datadir/plugin/include/
+audit surprises require review before resetting anything. No live execution or
+success is claimed. Existing TaskCompass Windows validation approvals remain separate.
+
+Validation: procedure/guide/milestone Markdown local links and balanced fences,
+git diff --check. No application build/CTest rerun for documentation-only recovery
+planning. Native Windows/PowerShell/MariaDB 13 recovery remains untested. Files
+changed: new recovery guide, Windows validation guide link and this milestone.
+No package installation, commit, merge, tag or push.
