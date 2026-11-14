@@ -163,7 +163,7 @@ redact() {
    local line=''
    while IFS= read -r line || [[ -n "$line" ]]; do
       local secret=''
-      for secret in "$adminPassword" "$accountPassword" "$newPassword"; do
+      for secret in "${adminPassword:-}" "${accountPassword:-}" "${newPassword:-}"; do
          [[ -z "$secret" ]] || line=${line//"$secret"/<redacted>}
          secret=${secret//\'/\'\'}
          [[ -z "$secret" ]] || line=${line//"$secret"/<redacted>}

@@ -17,11 +17,16 @@ that the owner's reported live operations did not occur.
 Windows validation tooling: the source-only scripted sequence is now in
 [WindowsPhase1.1.md](../WindowsPhase1.1.md). See **Scripted Windows validation
 preparation — 2026-11-14** below for files, mock coverage, build/CTest evidence and
-the separate Windows approval checkpoints. Windows live execution remains pending.
+the separate Windows approval checkpoints. Owner now reports Windows stages 01–04
+passed, including live integration testing; development/GUI/restore stages remain pending.
 Owner reports Windows stage 01 passed after the tooling corrections: CMake 4.4.5,
 GCC 16.2.0, Qt 6.12.0; 9 tests passed, 1 live test skipped, QMYSQL loadable.
-See **Owner-reported Windows stage 01 success — 2026-11-14** below. Windows
-read-only inspection and subsequent live/GUI/restore stages remain pending.
+Windows stages 05–07 were separately approved. Stage 05 now reports successful
+baseline/provisioning/grant checks with a diagnostic-handler bug corrected below;
+stage 06 migration/verification now passed with Windows dataset
+457bb52b-fea4-4347-9c47-675c6b035c90. Stage 07 final grant checks now passed per
+owner output, with repeated old diagnostic-handler errors; update the Windows
+runner before stage 08 GUI/restart validation, which remains pending.
 
 Source/documentation approval remains provisional. The owner's manual test result
 is not authorization for Codex to provision accounts, migrate development or perform
@@ -2925,3 +2930,373 @@ git diff --check. No application build/CTest rerun for documentation-only recove
 planning. Native Windows/PowerShell/MariaDB 13 recovery remains untested. Files
 changed: new recovery guide, Windows validation guide link and this milestone.
 No package installation, commit, merge, tag or push.
+
+## Owner-reported Windows stage 02 inspection — 2026-11-14
+
+After reporting administrator access recovered, the owner ran
+scripts/phase11/02-inspect.sh. The exact root recovery actions were not supplied;
+record successful administrator TCP access, not execution/verification of the
+proposed recovery procedure. Inspection reported:
+
+- Server feldria-w10, 13.0.2-MariaDB, TCP 3306.
+- Platform MINGW64_NT-10.0-19045 / UCRT64 (the MSYSTEM is UCRT64; uname's MINGW64
+  text does not mean the wrong MSYS2 environment).
+- Only taskcompass_dev among the two requested database names, utf8mb4 /
+  utf8mb4_unicode_ci; no table rows printed by the scoped catalog report.
+- Only taskcompass_dev@127.0.0.1 among the requested four accounts.
+- Diagnostic direct grants: USAGE, schema SELECT only, IS_GRANTABLE=NO; no other
+  account grant rows printed. Escaped backslash display in batch output is not a
+  request to rewrite the schema grant.
+- PASS: PUBLIC has no write/DDL authority covering either TaskCompass schema.
+- Native client password-option notices were explained; no TLS verification flags
+  were disabled. This was a read-only report; no automatic overwrite occurred.
+
+This supports fresh Windows integration provisioning as the next stage; it does
+not prove every stored-object catalog check, live task operation or normal
+post-recovery authentication flags. Before write steps confirm the temporary
+recovery server has exited and the normal service is running (skip_grant_tables=0,
+normal TCP enabled); do not run tests/provisioning with authentication bypass.
+No owner metadata/credentials were independently queried by the agent.
+
+### Approval Requested — Windows stages 03 and 04
+
+Approve only the fresh isolated Windows Stage 1 provisioning and disposable tests
+on feldria-w10 / 127.0.0.1:3306. Stage 03 uses the existing exact template:
+
+```sql
+SET SESSION sql_mode='NO_BACKSLASH_ESCAPES';
+CREATE DATABASE taskcompass_integration
+   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'taskcompass_test'@'127.0.0.1'
+   IDENTIFIED BY '<distinct-strong-test-password>';
+GRANT SELECT, INSERT, UPDATE, CREATE, DROP, ALTER
+   ON `taskcompass\_integration`.* TO 'taskcompass_test'@'127.0.0.1';
+```
+
+The password is supplied privately to the helper in memory, not edited into a
+file. Stage 03 refuses existing database/account names. Stage 04 verifies exact
+privileges/PUBLIC and completely empty target, then runs the existing opt-in
+MariaDbIntegrationTests. Approved scope would include only its own five disposable
+integration tables and known in-process DROP cleanup after empty-start proof, never
+development. No application/diagnostic account changes or unrelated data access.
+On partial provisioning/DDL/test failure, stop and preserve evidence; no automatic
+retry/reset, overwrite or broader grants. Recovery/cleanup needs separate approval.
+Stages 05–07 development setup/migration and stage 10 exact-file restore are not
+included and retain separate checkpoints.
+
+Only this milestone changed in this step. git diff --check passed. Application
+build/CTest not rerun for documentation-only owner-evidence/approval preparation.
+No agent live SQL, provisioning, migration, restore, commit or push.
+
+## Owner approval — Windows stages 03–04 — 2026-11-14
+
+The owner explicitly answered “Yes I approve” to the preceding Windows Stage 1
+request: fresh taskcompass_integration/taskcompass_test@127.0.0.1 provisioning
+and guarded disposable integration tests on feldria-w10 / 127.0.0.1:3306.
+This approves only the exact stages 03–04 SQL/procedure/scope recorded above,
+including in-process cleanup of the test's own five tables after empty-start proof.
+Normal service operation without recovery authentication bypass is a prerequisite.
+No development changes, existing-account overwrite, cleanup of pre-existing objects,
+failed-step repair/retry, broader grants or Windows stages 05–07/10 are included.
+
+Next owner commands, one at a time:
+
+```bash
+bash scripts/phase11/03-integration-setup.sh --approved
+bash scripts/phase11/04-integration-test.sh --approved
+```
+
+Proceed to 04 only if 03 succeeds; stop and report unexpected state/errors rather
+than repeating setup. Stage 03 confirmation: CREATE taskcompass_integration;
+passwords: administrator, new test password twice. Stage 04 confirmation:
+TEST taskcompass_integration WITH DISPOSABLE RESET; passwords: administrator then
+test account. Save the test password securely. Actual provisioning/test results
+are pending owner execution; approval is not evidence of success.
+
+Only this milestone changed; git diff --check passed. No application build/tests
+rerun for this documentation-only approval record. No agent live SQL, provisioning,
+test execution, migration, restore, commit or push.
+
+## Owner-reported Windows stages 03–04 success — 2026-11-14
+
+On feldria-w10 / MariaDB 13.0.2 / 127.0.0.1:3306, the owner executed the approved
+scripts in UCRT64. Stage 03 created taskcompass_integration and the dedicated
+TCP test account with six scoped privileges. Its output explicitly states no
+migrations/tests ran during setup. Two MariaDB password-option warnings appeared;
+no connection failure or TLS-verification override was reported.
+
+Stage 04 was initially attempted twice with only TEST taskcompass_integration.
+Both stopped with Confirmation mismatch; nothing changed. The successful third
+attempt supplied the entire required phrase:
+TEST taskcompass_integration WITH DISPOSABLE RESET. These two confirmation
+rejections are expected guards, not SQL/test failures, and occurred before the
+administrator login/preflight/test invocation.
+
+The successful attempt reported:
+
+```text
+PASS: exact direct grants and no explicit roles for taskcompass_test.
+PASS: PUBLIC has no write/DDL authority covering either TaskCompass schema.
+Running disposable integration tests on taskcompass_integration@127.0.0.1:3306.
+PASS: MariaDB migrations/version/checksum/fingerprint, persistence/restart, commands, constraints and atomic rollback. Test schema left empty.
+Integration test exit code: 0
+```
+
+Record Windows Stage 1/stages 03–04 as owner-verified passes. The test schema was
+left empty by the approved test cleanup; do not rerun provisioning. This does not
+claim development migration, interactive persistent GUI/restart or Windows restore
+success. Client notices remain explanatory output, not grounds to disable TLS.
+
+### Approval Requested — Windows stages 05–07 development foundation
+
+Request separate owner approval for the exact existing Stage 2A procedure on
+feldria-w10 / 127.0.0.1:3306 only. Source and concrete SQL are already reviewable in:
+
+- scripts/phase11/migration-account.sql (new migration account and narrow grants).
+- migrations/mariadb/001_PersistentTaskFoundation.sql, unchanged SHA-256
+  bb901d7580398893b5c04ee263f813b9d05873eb4bae08e0daf377faf73b0ea0
+  (full DDL also reproduced earlier in this milestone).
+- scripts/phase11/runtime-account.sql (new runtime grants and exact migrator
+  CREATE/INSERT revocations).
+- docs/WindowsPhase1.1.md stages 05–07 (one-command sequence, prompts and gates).
+
+Scope: stage 05 verifies the existing development database is entirely empty with
+utf8mb4/utf8mb4_unicode_ci, the diagnostic account unchanged SELECT-only, no new
+account names on any host, and no unexpected PUBLIC policy. It establishes and
+verifies private Windows backup ACLs, takes/checksums a nonempty baseline dump,
+then creates taskcompass_migrate with CREATE/SELECT on the exact escaped
+TaskCompass development scope and CREATE/INSERT only on Dataset/SchemaMigration.
+If ACL, backup or provisioning fails, stop and preserve evidence; no silent reuse.
+
+Stage 06 verifies the baseline hash/server identity and fresh schema/grants before
+executing migration 001 through the dedicated account, then verifies schema 1 and
+a new Windows dataset UUID. MariaDB CREATE DDL can partially commit; failure is
+not automatically rolled back, repaired, adopted or resumed. Preserve partial
+objects/metadata and request a new concrete recovery plan. Never edit schema
+version/checksum/fingerprint or broaden privileges to force success.
+
+Stage 07 verifies migration state, creates taskcompass_app with only Task
+SELECT/INSERT/UPDATE, CommandRecord and LocalChange SELECT/INSERT, Dataset and
+SchemaMigration SELECT; revokes migrator CREATE and metadata INSERT/CREATE and
+verifies the exact final runtime/diagnostic/read-only migrator grants. No existing
+account passwords/grants or diagnostic privileges are overwritten. A partial
+provision/revoke failure stops and retains state for review.
+
+No DROP/ALTER/development restoration, unrelated database access, existing-account
+reset, failure cleanup or additional privileges are included. The private empty
+baseline backup preserves evidence of the original state; it does not make DDL
+transactional or authorize a live restore. Populated recovery rehearsal/Windows
+stage 10 remains a separate later exact-file approval. Keep normal authentication
+enabled and other TaskCompass writers closed while migrating. Do not repeat stage
+03 or destructively clear databases to fit this procedure.
+
+Provisioning/migration results for Windows stages 05–07 are pending this approval.
+No agent live SQL was executed. Only this milestone changed; git diff --check
+passed. No application build/CTest rerun for documentation-only owner-result and
+approval preparation. No commit, merge, tag or push.
+
+## Owner approval — Windows stages 05–07 — 2026-11-14
+
+Owner explicitly answered “Yes, I approve” to the immediately preceding Windows
+stages 05–07 development-foundation request. Approval covers only its exact SQL,
+migration 001/hash, backup/preflight, new migration/runtime accounts, narrow grants,
+and migrator write revocations on feldria-w10 / 127.0.0.1:3306 as documented above.
+Existing diagnostic credentials/SELECT-only privileges remain unchanged. Stage 10
+restore, cleanup/reset, unexpected account reuse, failure repair and unrelated
+operations remain excluded. Stop on any unexpected result and preserve evidence.
+
+Run stages one at a time, proceeding only after each passes. First owner command:
+
+```bash
+baselineDirectory="$HOME/TaskCompassBackups/windows-baseline-$(date +%Y%m%d-%H%M%S)"
+bash scripts/phase11/05-migration-setup.sh --approved --backup-dir "$baselineDirectory"
+```
+
+Keep this terminal and baselineDirectory value for stage 06. Stage 05 confirmation
+is PROVISION taskcompass_migrate; password order is administrator root, existing
+diagnostic taskcompass_dev, then new taskcompass_migrate password twice. Save the
+new credential privately. No source/file should receive it. If client/dump
+locations require overrides, use the guide's dbOptions array with the same paths
+as the inspected installation. No live operation or success is inferred from this
+approval. All Windows stage 05–07 execution/results remain owner-pending.
+
+Only this milestone changed. git diff --check passed; no application build/tests
+rerun for this documentation-only approval record. No agent live SQL, provisioning,
+migration, backup, restore, commit or push.
+
+## Windows stage 05 password confirmation stopped before provisioning — 2026-11-14
+
+Owner transcript reports all administrator empty-schema/account/grant/PUBLIC
+preflight checks passed on feldria-w10 / MariaDB 13.0.2. Diagnostic authentication
+and baseline dump succeeded; nonempty/hash status reported for:
+/c/Users/justin/TaskCompassBackups/windows-baseline-20261114-140907/before-migration.sql.
+The new migrator password entries then differed; runner stopped with
+STOP: Passwords differ.
+
+Reviewed current migration-setup branch and readNewPassword: password matching
+finishes before applyTemplate migration is invoked. Therefore this attempt did
+not execute CREATE USER/GRANT or migrations; it created only the private baseline
+backup directory/files after read-only preflight. No migration account credential
+was set by the mismatched entries. Actual backup hash was not included in the
+transcript. This is a pre-provisioning input rejection, not partial SQL failure.
+
+It is safe for the owner to repeat the already approved stage 05 with a newly
+evaluated timestamp/new directory; preserve the prior backup and do not reuse its
+existing directory or overwrite/delete it. The repeated stage rechecks the empty
+schema and absence of new account names before any provisioning. Stop if those
+checks differ. No additional repair SQL/privilege change is needed. Keep/save the
+same intended new password in a password manager and enter it twice consistently.
+
+The original Windows stages 05–07 approval remains limited to that concrete plan;
+this recommendation does not authorize partial-SQL repair/reset or unexpected
+account reuse. Stage 05 remains incomplete pending successful retry. Files changed:
+this milestone only. git diff --check passed; application tests not rerun because
+no code changed. No agent live SQL, backup, provisioning, migration, commit or push.
+
+## Windows stage 05 provisioned; diagnostic-handler correction — 2026-11-14
+
+The owner reran the approved stage 05 with a new baseline directory on feldria-w10
+/ MariaDB 13.0.2. Owner transcript reports all preflight/diagnostic/PUBLIC checks
+passed and a successful nonempty/checksummed baseline backup at:
+/c/Users/justin/TaskCompassBackups/windows-baseline-20261114-141340/before-migration.sql.
+After matching new-password prompts, the script reported five instances of:
+`phase11-validate.sh: line 166: newPassword: unbound variable`.
+It then reported exact direct grants/no explicit roles for taskcompass_migrate
+and PASS: baseline backup and fresh migration account. Thus stage 05 provisioning
+and grant validation succeeded per owner output; the native diagnostic handling
+had a bug. Do not rerun stage 05 or recreate/reset this existing account.
+No migration has been reported yet for Windows; stage 06 is next.
+
+Root cause: applyTemplate deliberately unsets newPassword after provisioning.
+Later clients emit MariaDB 13's password-option warning to stderr. The redactor
+expanded the now-unset variable under set -u and exited in its process substitution,
+which could suppress those diagnostics without failing successful client calls.
+This is not evidence of credential leakage or grant failure; existing direct-grant
+validation still returned PASS. Preserve the error record rather than treating
+stage 05 as wholly clean.
+
+Correction: scripts/phase11-validate.sh now uses default-empty expansion for all
+three optional credential variables in the diagnostic handler. Secret clearing is
+retained; no password/grant/SQL changes or extra dependency. Regression added to
+tests/Phase11ValidationScripts.test.sh: fake native warnings on every client,
+including post-provisioning calls after secret clearing; require the explanatory
+TLS message, no raw credential fixture and no unbound-variable diagnostic.
+
+Agent validation (Linux, mock-only):
+
+```bash
+bash -n scripts/phase11-validate.sh tests/Phase11ValidationScripts.test.sh
+ctest --test-dir build --output-on-failure -R Phase11ValidationScripts
+git diff --check
+```
+
+Results: syntax/whitespace passed; focused CTest 1/1 passed in 1.13 seconds.
+No full C++ rebuild or broad CTest rerun because only a shell diagnostic path and
+its mock regression changed; focused suite covers the complete scripted fake
+workflow. Native Windows correction verification is pending next owner run.
+Files changed: runner, helper test and this milestone. No agent live SQL, account
+change, provisioning, backup, migration, restore, commit or push.
+
+Next owner step after transferring the corrected runner/test files to Windows:
+
+```bash
+bash scripts/phase11/06-migrate.sh --approved --backup-dir "$baselineDirectory"
+```
+
+Use the same terminal's baselineDirectory, expected path
+/c/Users/justin/TaskCompassBackups/windows-baseline-20261114-141340. Confirmation:
+MIGRATE taskcompass_dev. Password order: administrator root, then the newly saved
+migration account password. Existing stages 05–07 approval covers this exact
+migration; stop on any error and preserve partial DDL, never reset/retry blindly.
+
+## Owner-reported Windows stage 06 success — 2026-11-14
+
+Owner executed the approved command:
+
+```bash
+scripts/phase11/06-migrate.sh --approved --backup-dir "$baselineDirectory"
+```
+
+Reported target: feldria-w10 / MariaDB 13.0.2 / 127.0.0.1:3306, UCRT64 on
+MINGW64_NT-10.0-19045. Baseline before-migration.sql checksum: OK. Administrator
+preflight and exact migration-account direct grants/no explicit roles passed;
+PUBLIC had no write/DDL authority covering either TaskCompass schema.
+TaskCompassMigrate apply and verification both reported:
+
+```text
+Schema 1 verified; dataset 457bb52b-fea4-4347-9c47-675c6b035c90
+Schema 1 verified; dataset 457bb52b-fea4-4347-9c47-675c6b035c90
+PASS: migration and verification.
+```
+
+This establishes owner-reported successful Windows development migration 001 and
+schema verification. Windows dataset UUID is distinct from Linux's
+21be9da7-b767-4578-b972-cc9a35122ddb, as expected for independently initialized
+local databases; do not compare Windows restore against the Linux UUID. No
+separate numeric process exit transcript was supplied; the final PASS follows
+both successful CLI calls. No unbound-variable diagnostic appeared in this stage.
+
+Next approved owner step: scripts/phase11/07-runtime-setup.sh --approved.
+Confirmation: PROVISION taskcompass_app AND REVOKE migrator writes. Password order:
+migration-account verification, administrator root, new runtime account password
+twice. Stop on failure or unexpected existing account state; do not rerun stage
+06, restore development, or reset schemas. Windows runtime provisioning/final
+grants, interactive GUI/restart and populated restore remain pending.
+
+Only this milestone document changed. git diff --check passed. No build/CTest
+rerun for this documentation-only owner-result record. No agent live SQL,
+provisioning, migration, backup, restore, commit or push.
+
+## Owner-reported Windows stage 07 success with stale redactor symptom — 2026-11-14
+
+Owner ran the approved scripts/phase11/07-runtime-setup.sh --approved, supplying
+the complete confirmation. Migrator verification reported schema 1/dataset
+457bb52b-fea4-4347-9c47-675c6b035c90. On feldria-w10 / MariaDB 13.0.2 / UCRT64,
+preflight migration grants and PUBLIC checks passed. After runtime creation and
+revocation, all three account grant checks passed:
+
+```text
+PASS: exact direct grants and no explicit roles for taskcompass_app.
+PASS: exact direct grants and no explicit roles for taskcompass_migrate.
+PASS: exact direct grants and no explicit roles for taskcompass_dev.
+PASS: runtime grants and migrator write revocation.
+```
+
+The transcript again contains line 166 newPassword: unbound variable during native
+stderr processing after secret clearing. This is consistent with the older Windows
+runner still being used; the agent has not inspected that machine's file directly.
+The repository's current loop uses default-empty credential expansions:
+
+```bash
+for secret in "${adminPassword:-}" "${accountPassword:-}" "${newPassword:-}"; do
+```
+
+Transfer that corrected scripts/phase11-validate.sh to Windows (or make this exact
+loop correction in VIM); no C++ rebuild/database changes are required. Do not rerun
+stage 07: its account creation and final grant validation succeeded per the owner
+transcript. Keep the new runtime credential securely. Error-handler output problems
+do not authorize password/grant resets or repeating provisioning.
+
+Extended tests/Phase11ValidationScripts.test.sh so runtime provisioning/revocations,
+not just migration-account provisioning, receive warnings on every mock client;
+require successful final grants, explained TLS notice, no unbound-variable errors
+and no credential fixture in output. Agent validation:
+
+```bash
+bash -n tests/Phase11ValidationScripts.test.sh
+ctest --test-dir build --output-on-failure -R Phase11ValidationScripts
+git diff --check
+```
+
+Focused suite passed 1/1 in 1.12 seconds. Existing runner fix confirmed by source
+inspection; no additional production/script implementation change in this step.
+No broad rebuild/CTest because only the regression test and milestone changed;
+focused suite exercises the full mock workflow. Native corrected Windows redactor
+behavior remains pending confirmation. No agent live SQL, account change,
+provisioning, migration, backup, restore, commit or push.
+
+Next: scripts/phase11/08-gui.sh after updating the Windows runner. Password order:
+root for read-only final grant checks, then taskcompass_app runtime password.
+Perform the GUI checklist and close/relaunch via the same stage for persistence.
+Windows stages 08 onward are not yet validated; stage 10 restore retains its
+separate exact-file approval. Phase 1.1 remains incomplete.

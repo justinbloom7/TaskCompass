@@ -26,6 +26,9 @@ for argument in "$@"; do
 done
 sql=$(cat)
 printf 'client\n' >> "$MOCK_PHASE11_DIRECTORY/calls"
+if [[ "${MOCK_CLIENT_WARNING:-0}" == 1 ]]; then
+   printf '%s\n' 'WARNING: option --ssl-verify-server-cert is disabled, because of an insecure passwordless login.' >&2
+fi
 if [[ "${MOCK_CLIENT_FAIL:-0}" == 1 ]]; then
    printf 'mock failure password=%s\n' "$MYSQL_PWD" >&2
    exit 1
@@ -185,12 +188,17 @@ printf 'PASS: live-test delegation follows grant/catalog checks and uses isolate
 
 # Full fake migration-account/baseline path, including password SQL escaping.
 baseline="$temporaryDirectory/baseline with spaces"
-run migration-setup --approved --backup-dir "$baseline" <<< "$(printf '%s\n' 'PROVISION taskcompass_migrate' "$PASSWORD" "$PASSWORD" "$NEW_PASSWORD" "$NEW_PASSWORD")" > "$temporaryDirectory/setup.out"
+MOCK_CLIENT_WARNING=1 run migration-setup --approved --backup-dir "$baseline" <<< "$(printf '%s\n' 'PROVISION taskcompass_migrate' "$PASSWORD" "$PASSWORD" "$NEW_PASSWORD" "$NEW_PASSWORD")" > "$temporaryDirectory/setup.out" 2>&1
 [[ -f "$temporaryDirectory/migrator" && -s "$baseline/before-migration.sql" ]]
 ! grep -q 'fixture-secret' "$temporaryDirectory/setup.out"
+! grep -q 'unbound variable' "$temporaryDirectory/setup.out"
+grep -q 'TLS verification settings unchanged' "$temporaryDirectory/setup.out"
 run migrate --approved --backup-dir "$baseline" <<< "$(printf '%s\n' 'MIGRATE taskcompass_dev' "$PASSWORD" "$PASSWORD")" >/dev/null
 [[ -f "$temporaryDirectory/applied" ]]
-run runtime-setup --approved <<< "$(printf '%s\n' 'PROVISION taskcompass_app AND REVOKE migrator writes' "$PASSWORD" "$PASSWORD" "$NEW_PASSWORD" "$NEW_PASSWORD")" >/dev/null
+MOCK_CLIENT_WARNING=1 run runtime-setup --approved <<< "$(printf '%s\n' 'PROVISION taskcompass_app AND REVOKE migrator writes' "$PASSWORD" "$PASSWORD" "$NEW_PASSWORD" "$NEW_PASSWORD")" > "$temporaryDirectory/runtime.out" 2>&1
+! grep -q 'unbound variable\|fixture-secret' "$temporaryDirectory/runtime.out"
+grep -q 'TLS verification settings unchanged' "$temporaryDirectory/runtime.out"
+grep -q 'PASS: runtime grants and migrator write revocation' "$temporaryDirectory/runtime.out"
 run gui <<< "$(printf '%s\n' "$PASSWORD" "$PASSWORD")" >/dev/null
 MOCK_VERIFY_FAIL=1 reject run gui <<< "$(printf '%s\n' "$PASSWORD" "$PASSWORD")"
 printf 'PASS: fake baseline, migration, runtime grants/revocation and GUI configuration.\n'
