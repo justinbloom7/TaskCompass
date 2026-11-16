@@ -3,7 +3,8 @@
 **Phase 1.1 was accepted by the owner on 2026-11-14.** Linux and Windows validation
 evidence is preserved in the milestone, including confirmed Windows GUI restart
 with persisted data intact. Preserve backups, exports and restored integration
-databases. **Phase 1.2 is not authorized and has not begun.** See the
+databases. **Phase 1.2 Step A planning began on 2026-11-15; Step B implementation
+is not approved or started.** See the
 [scripted Windows sequence](WindowsPhase1.1.md). Live provisioning, grants and
 migrations remain behind their specific approval checkpoints. Phase 0.1 is accepted on owner
 reported Linux/Windows builds, GUI launches and MariaDB diagnostics; earlier dated
@@ -21,6 +22,9 @@ overview and requirements/architecture as the shared design baseline.
 
 - [Phase 1.1 — Persistent Task Foundation](milestones/Phase1.1.md): implementation report, validation evidence and
   concrete database SQL/procedure approval checkpoint.
+- [Phase 1.2 — Organizational Management](milestones/Phase1.2.md): Step A architecture
+  review, proposed incremental migration, staged implementation/testing plan and
+  source-only Step B approval request. No live database changes authorized.
 
 | Phase | Intended delivery | Dependencies / principal exit gate |
 | --- | --- | --- |
@@ -28,7 +32,7 @@ overview and requirements/architecture as the shared design baseline.
 | 0.1 (accepted) | Desktop technology prototype | Owner accepted; Linux/Windows build, GUI launch and MariaDB diagnostics reported successful. |
 | 0.2 (documentation delivered) | Requirements, interactions, command design, logical schema, roadmap and GPL license | Documentation consistency and licensing review; no production features. |
 | 1.1 (accepted 2026-11-14) | Persistent task foundation with undo from its first edits | Owner accepted Linux/Windows validation, GUI restart/persistence, transaction/history and backup/restore evidence. |
-| 1.2 | Organizational management | 1.1 command/storage core; legal ownership, nested navigation and undoable moves/archive. |
+| 1.2 (Step A planning) | Organizational management | 1.1 accepted; architecture/implementation plan under review. Step B and live database operations need distinct approval. |
 | 1.3 | Everyday progress, contexts, numeric priority and drag ordering | 1.1/1.2; context order first, then grouped insertion/atomic moves and undo. |
 | 1.4 | Due/scheduled dates, presentation and basic filters | 1.3; shared calendar logic, minimal persisted day allocations; due/allocation separation. |
 | 2 | Recurrence, dependencies, related/next actions | 1.x; stable occurrence identity and preserved instance history. |
@@ -345,3 +349,15 @@ reset is supported. Phase 1.1 stays incomplete pending approved provisioning,
 migration/live integration checks on MariaDB 10.5/13, Windows validation of the new
 code, and manual restart/backup/usability checks. Full file inventory, actual test
 results, limitations and proposed SQL are in [the milestone](milestones/Phase1.1.md).
+
+## Phase 1.2 Step A planning checkpoint — 2026-11-15
+
+Owner authorized architecture review and an implementation plan on branch
+jb_20261114_ms1p2. [Phase1.2.md](milestones/Phase1.2.md) records the confirmed
+ownership rules, proposed common command/transaction extension, incremental
+migration 002/journal strategy, exact draft SQL/least privileges, isolated test
+target, staged work and acceptance matrix. These are proposals, not implementation
+or migration execution. Phase 1.1 remains accepted on 2026-11-14; its evidence,
+backups/exports and restored integration databases are preserved. Stop at Step A
+for explicit Step B source approval; live SQL/provisioning/backup/restore retain
+separate concrete approval checkpoints. No Phase 1.3+ work is authorized.
