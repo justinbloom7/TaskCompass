@@ -15,6 +15,7 @@ public:
    ~PersistentTaskController() override;
    void reload();
    void execute(const taskcompass::TaskCommand &command);
+   void execute(const taskcompass::OrganizationCommand &command);
    void undo();
    void redo();
    bool isBusy() const;
@@ -24,18 +25,20 @@ public:
    QString undoDescription() const;
    QString redoDescription() const;
    const std::vector<taskcompass::Task> &tasks() const;
+   const taskcompass::WorkspaceSnapshot &workspace() const;
 
 signals:
    void changed();
    void failed(const QString &message);
 
 private:
-   void dispatch(std::function<void(taskcompass::TaskService &)> operation);
+   void dispatch(std::function<void(PersistentTaskSession &)> operation);
    SessionFactory factory;
    QThread thread;
    QObject *worker;
    std::unique_ptr<PersistentTaskSession> session;
    std::vector<taskcompass::Task> currentTasks;
+   taskcompass::WorkspaceSnapshot currentWorkspace;
    QString undoText;
    QString redoText;
    bool busy = false;

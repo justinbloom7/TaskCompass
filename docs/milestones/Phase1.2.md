@@ -2,10 +2,11 @@
 
 # Phase 1.2 — Organizational Management
 
-**Status: Step A planning completed for owner review on 2026-11-15. Step B is not
-approved or started.** Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
-Only this document and the roadmap are changed by Step A. All designs/SQL below
-are proposals, not implemented behavior or permission to execute SQL.
+**Status: Step B source implementation resumed; source/offline review delivered on 2026-11-16. Live validation and acceptance pending.**
+Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
+Only this document and the roadmap were changed by Step A. Its designs/SQL were
+proposals. The dated Step B reports below identify subsequent source implementation;
+no SQL execution is authorized.
 
 [Phase 1.1](Phase1.1.md) was accepted on 2026-11-14, including Windows GUI restart
 with persisted data intact. Preserve its task workflows, audit/history data,
@@ -752,3 +753,552 @@ PY
 Final handoff: review D1–D7 and the Step B source-only approval request above.
 No outstanding owner decision has been silently settled; all new physical choices
 remain proposals. Phase 1.1 records/data/backup/restore evidence remain untouched.
+
+## Step B authorization — 2026-11-16
+
+Owner approved the general architecture/D1–D7 and source-only B1–B6 implementation.
+Clarifications are binding: keep explicit/inherited archive distinct and archived
+records easy to locate/restore; defer organization completion and user deletion;
+one shared chronological history, touched-field inverses and concurrent-edit safety;
+test mutation leases with separate connections including conflicts/timeouts/loss;
+never resume/reset/repair partial migrations; validate 002 on separately approved
+10.5/13 test targets before dev upgrades; iterative deep core/Qt models; preserve
+all accepted Phase 1.1 data/history/artifacts/restored databases.
+
+No live SQL/provisioning/grants/test resets/dev migration/backup/restore/destructive
+operation is authorized. Such stages need separate exact target/SQL/recovery
+approval. No commit/push/merge/tag. Initial step: B1 pure shared values/rules and
+offline tests, then the shared command/history path. Subsequent reports append here.
+
+## B1/B2 first source increment — 2026-11-16
+
+Added standard-C++ Pillar/Project/Objective records, typed organization keys/parents,
+TaskOwner, iterative OrganizationRules and optional task ownership command intent.
+No lifecycle fields for project/objective completion or user-facing delete were
+introduced. Pure tests cover legal/illegal parent shapes, dataset rejection,
+self/ancestor cycles, inherited vs explicit archive, completed-task dependency
+protection and a 2001-level hierarchy. The graph constructor memoizes iterative
+ancestry validation; no recursive core traversal or depth cap.
+
+Added one generic four-target CommandService/WorkspaceRepository transaction port,
+receipt touched-field mask/read dependencies, bounded mixed chronological history,
+commit-gated undo/redo and unknown-commit clearing. TaskService is being retained
+as a thin compatibility facade for accepted schema-1 adapters/tests, delegating
+history to the same CommandService (no independent history engine). Production
+schema-2 workspace transaction/Widgets integration is still in progress.
+
+Files so far: domain OrganizationFields/Pillar/Project/Objective/TaskOwner/
+OrganizationRules, Task; application OrganizationCommand/WorkspaceRepository/
+CommandService, TaskCommand/TaskService; test MemoryWorkspaceRepository,
+OrganizationRulesTests/CommandServiceTests; CMake test/source registration.
+Unit tests exercise mixed task/organization inverses, stable completion timestamps,
+archive propagation without child writes, stale previews, rejected undo-create
+with external completed tasks, rollback contract, redo preservation, external field
+edits and uncertain commits. A first compile of the new fake repository rejected
+conversion between two variant types; fixed by explicit type-aware revision access.
+Initial missing-field warnings were corrected with a default owner initializer.
+
+Commands executed: cmake configure/build with live DB tests OFF; ctest focused on
+TaskCoreTests, OrganizationRulesTests and CommandServiceTests: 3/3 passed. Subsequent
+TaskService facade compatibility build/test is in progress. No live database,
+backup, account, migration execution or package installation occurred. Migration
+001 and Phase1.1.md remain unchanged. B3–B6 and full regression validation remain.
+
+
+## Source checkpoint and owner-requested pause — 2026-11-16
+
+The owner requested a stopping point within five minutes before internet loss.
+Feature work stopped; build, offline regression checks and this handoff were
+completed. **Phase 1.2 is not complete or accepted.** No live SQL, database
+connection, provisioning, grants, migration execution, test reset, backup/restore,
+package installation or Git commit/push/merge/tag was performed.
+
+### Implemented source, with validation limits
+
+- B1/B2: typed organizational records and iterative ownership/cycle/archive rules;
+  one shared chronological CommandService across task and organizational mutations.
+  TaskService delegates to that engine for Phase 1.1 compatibility. Transaction
+  callbacks prepare receipts from fresh state; inverses carry touched fields,
+  revisions/dependencies and compensation links. Fake transactional tests cover
+  rollback, stale state, failed undo/redo, redo retention and uncertain commits.
+- B3: migration 002 and cumulative structural manifest, versioned incremental
+  runner, partial-attempt journal, legacy-data preservation checks and explicit
+  rejection of interrupted attempts. Migration 001 is unchanged. New migration
+  source has **not** been executed. No automatic recovery/resume is provided.
+- B4: prepared-query MariaDbWorkspaceRepository, typed version-2 payload codec,
+  durable receipts/change rows in the entity transaction and database-scoped
+  mutation lease. These paths compile; live correctness remains unverified.
+- B5: persistent hierarchy model, project/objective projections, organization
+  editor/move dialogs, parent-aware task capture/editing, archive visibility and
+  ancestor-location/restore controls, stable navigation settings and shared undo.
+  Iterative core/model tests exercise 2001-level hierarchies. Existing prototype
+  remains; production startup now requires verified schema 2 and does not upgrade
+  automatically. Do not use this new binary with the unchanged schema-1 development
+  database until separately approved migration validation is complete.
+- B6, partial: separate opt-in OrganizationIntegrationTests target for only
+  `taskcompass_phase12_test` / `taskcompass_phase12_test@127.0.0.1:3306`, interruption
+  fixtures, rollback hooks and separate-connection lease/conflicting-move tests.
+  This executable compiled but has never connected to a database. Ordinary CTest
+  skips both integration executables. Existing restored integration data remains
+  untouched. A fixed-target provisioning helper extraction and Phase 1.2 SQL
+  template/preview wrapper are prepared; operator automation is not finished or
+  approved for execution. Legacy provisioning-script fake tests still pass.
+- Schema diagrams and generator now reflect cumulative actual migration source:
+  nine tables, 85 columns, 20 SQL foreign keys and two logical references. SVG was
+  regenerated with installed Mermaid CLI and visually inspected using a local
+  headless Firefox screenshot; no new dependency was installed. First sandboxed
+  rendering failed; approved renderer execution succeeded. Diagram changes describe
+  source schema, not a claim about any live database.
+
+### Validation actually executed at this checkpoint
+
+```bash
+cmake --build build --parallel 2
+ctest --test-dir build --output-on-failure
+python3 docs/diagrams/GenerateDatabaseSchema.py --check
+bash -n scripts/provision-integration.sh scripts/phase12/03-setup-test.sh temp/testdb/setup.sh
+bash scripts/phase12/03-setup-test.sh --print-plan
+git diff --check
+sha256sum migrations/mariadb/001_PersistentTaskFoundation.sql docs/milestones/Phase1.1.md
+```
+
+Build succeeded (`ninja: no work to do` after earlier successful compilation).
+CTest: **14 passed, two intentionally skipped, zero failed**, 5.89 seconds.
+Skipped: MariaDbIntegrationTests and OrganizationIntegrationTests. This includes
+legacy script, core, desktop and storage safety regressions, new rules/shared
+commands/codec/desktop tests and schema documentation checks. Bash syntax and
+placeholder-only preview succeeded without connection. Diagram consistency check
+passed (9/85/20/2). Diff whitespace check passed before this report and is rerun
+below. Initial development compile failures (variant conversion and missing
+WorkspaceSnapshot include) were corrected before the successful final build/tests.
+An intermediate test run used older binaries after a failed build; it is not
+counted as validation of those source changes.
+
+Protected files retain their baseline SHA-256:
+
+- Migration 001: `bb901d7580398893b5c04ee263f813b9d05873eb4bae08e0daf377faf73b0ea0`.
+- Phase1.1.md: `ffbf123937642a3478662d817a4f522377bb0ae6271fec51810e5b735bc34bde`.
+
+### Known limitations and resume order
+
+1. Finish B6 operator helpers, their fake safety tests and source documentation.
+   Preview scripts are preparation only; do not run live provisioning or tests.
+2. Review migration runner/manifest and CLI edge cases (including explicit target
+   version zero); structural checks currently independently compare CHECK names,
+   while exact expressions rely on approved SQL and schema fingerprints. Add
+   stronger negative constraint/ownership coverage before live approval.
+3. Review full-subtree move/archive impact reporting: current GUI move count is
+   filtered-view based. Review duplicate-name disambiguation and optional notes
+   empty/NULL fidelity. Live performance of per-operation schema verification is
+   unmeasured. No material architectural deviation is approved by this checkpoint.
+4. Finish integration test coverage review, especially invalid/cross-dataset SQL
+   ownership, concurrent undo failures and failure recovery. Separate-connection
+   timeout/loss/conflicting-move tests exist as source, not verified live results.
+5. Update shared architecture/data-model/build documentation to distinguish newly
+   implemented source from pending operational validation; rerun offline checks.
+6. Only then present exact isolated-target SQL, grants, migration/recovery and
+   backup procedures for separate approval. MariaDB 10.5 and 13 live validation,
+   Windows compilation, interactive GUI review, restart persistence and expanded
+   backup/restore are all pending. No development upgrade is authorized.
+
+No further owner design decision was silently approved. The existing source-only
+B1–B6 authorization remains the boundary when work resumes. No live approval is
+requested at this pause checkpoint.
+
+### Files created or modified at pause
+
+The following inventory includes source-only work in this milestone; generated
+Python bytecode, if present locally, is not a deliverable.
+
+```text
+ M CMakeLists.txt
+ M docs/Roadmap.md
+ M docs/diagrams/DatabaseSchema.md
+ M docs/diagrams/DatabaseSchema.svg
+ M docs/diagrams/GenerateDatabaseSchema.py
+ M docs/milestones/Phase1.2.md
+ M src/application/TaskCommand.h
+ M src/application/TaskService.cpp
+ M src/application/TaskService.h
+ M src/desktop/persistent/PersistentMain.cpp
+ M src/desktop/persistent/PersistentTaskController.cpp
+ M src/desktop/persistent/PersistentTaskController.h
+ M src/desktop/persistent/PersistentTaskFilter.cpp
+ M src/desktop/persistent/PersistentTaskFilter.h
+ M src/desktop/persistent/PersistentTaskModel.cpp
+ M src/desktop/persistent/PersistentTaskModel.h
+ M src/desktop/persistent/PersistentTaskSession.h
+ M src/desktop/persistent/PersistentTaskWindow.cpp
+ M src/desktop/persistent/PersistentTaskWindow.h
+ M src/domain/Task.cpp
+ M src/domain/Task.h
+ M src/infrastructure/storage/DatabaseConfig.cpp
+ M src/infrastructure/storage/DatabaseConfig.h
+ M src/infrastructure/storage/MigrateMain.cpp
+ M src/infrastructure/storage/MigrationRunner.cpp
+ M src/infrastructure/storage/MigrationRunner.h
+ M src/infrastructure/storage/Migrations.qrc
+ M temp/testdb/setup.sh
+?? docs/diagrams/__pycache__/
+?? migrations/mariadb/002_OrganizationalManagement.sql
+?? migrations/mariadb/SchemaManifest.json
+?? scripts/phase12/
+?? scripts/provision-integration.sh
+?? src/application/CommandService.cpp
+?? src/application/CommandService.h
+?? src/application/OrganizationCommand.h
+?? src/application/WorkspaceRepository.h
+?? src/desktop/dialogs/OrganizationEditDialog.cpp
+?? src/desktop/dialogs/OrganizationEditDialog.h
+?? src/desktop/dialogs/OrganizationMoveDialog.cpp
+?? src/desktop/dialogs/OrganizationMoveDialog.h
+?? src/desktop/models/OrganizationTreeModel.cpp
+?? src/desktop/models/OrganizationTreeModel.h
+?? src/domain/Objective.h
+?? src/domain/OrganizationFields.h
+?? src/domain/OrganizationRules.cpp
+?? src/domain/OrganizationRules.h
+?? src/domain/Pillar.h
+?? src/domain/Project.h
+?? src/domain/TaskOwner.h
+?? src/infrastructure/storage/MariaDbWorkspaceRepository.cpp
+?? src/infrastructure/storage/MariaDbWorkspaceRepository.h
+?? src/infrastructure/storage/MutationLease.cpp
+?? src/infrastructure/storage/MutationLease.h
+?? src/infrastructure/storage/WorkspaceCodec.cpp
+?? src/infrastructure/storage/WorkspaceCodec.h
+?? tests/CommandServiceTests.cpp
+?? tests/DatabaseSchemaTests.py
+?? tests/MemoryWorkspaceRepository.h
+?? tests/OrganizationDesktopTests.cpp
+?? tests/OrganizationIntegrationTests.cpp
+?? tests/OrganizationRulesTests.cpp
+?? tests/OrganizationTestSafety.h
+?? tests/WorkspaceCodecTests.cpp
+```
+
+
+## Step B resumed: source review handoff — 2026-11-16
+
+Owner requested continuation after the pause. Source-only B1–B6 authorization
+remains in effect; no live authorization was inferred. B1–B5 source and B6 tooling,
+diagrams and offline checks are delivered for review. B6 live/platform validation
+and B7 development upgrade/acceptance are **pending**, not complete. No production
+or test database connection/SQL, account/grant change, reset, backup/restore,
+dependency installation or Git commit/push/merge/tag occurred in this continuation.
+
+### Changes and decisions since the pause
+
+- Finished numbered Phase 1.2 helpers: 01-build, 02-review-plan, 03-setup-test,
+  04-integration-test. Help/preview never connects; setup needs --apply --approved
+  plus exact typed confirmation. Test execution has its own --approved/confirmation,
+  fresh-empty catalog proof and read-only administrator grant/role/PUBLIC preflight.
+  Test credentials are separately scoped; existing conflicting environment values
+  fail before connecting. Unrelated PUBLIC test/test_% grants are accepted without
+  allowing matching write/DDL grants. No TLS verification setting is changed.
+- Extracted the established fresh provisioner to scripts/provision-integration.sh
+  with exactly two fixed presets. temp/testdb/setup.sh retains its Phase 1.1 CLI
+  as a compatibility wrapper; legacy mock tests pass. The new preset never selects
+  taskcompass_dev or taskcompass_integration. No general arbitrary-target option
+  was introduced. Phase 1.1's build helper now explicitly disables **both** live
+  CTest options, preventing a cached Phase 1.2 opt-in from making that build live.
+- GUI move/archive/restore previews now count the entire subtree, including hidden,
+  completed and archived work, rather than the filtered table. Confirmation is
+  bound to workspace revisions and revalidated transactionally. Duplicate names
+  remain legal; navigation/pickers show kind/UUID suffixes when names repeat and
+  full paths/tooltips. Organization notes preserve unchanged NULL versus empty text.
+- Strengthened tests for typed parent combinations, 2001-level pillar and 2002-level
+  project paths, mixed entity history, subtree moves with untouched descendant
+  revisions/flags, explicit versus inherited archive, failed redo and restart.
+  Desktop fake sessions cover archive discovery/ancestor restoration and duplicate
+  names/notes. No real persistent GUI review has been claimed.
+- Added migration CLI guards rejecting explicit target 0/unknown targets and
+  ambiguous target-without-action calls before connection. New process tests cover
+  these guards, runtime --apply rejection and new-suite opt-in/configuration errors
+  without a connection. Test cleanup policy is independently exercised offline.
+- Fresh migration initialization now rejects visible unexpected stored code before
+  DDL, complementing the required administrator preflight. Incomplete attempts still
+  require review; no resume/repair/reset path was added.
+- Live-suite source now includes SQL constraint/ownership probes, cross-dataset FK
+  rejection, typed receipt/change target checks and migration-history tamper cases.
+  Probes roll back their synthetic DML fixtures. Expected fault-injection cleanup
+  requires proof the requested injection was reached; an earlier unexpected error
+  stops and preserves partial state instead of being mistaken for an expected fault.
+  Lease-busy tests additionally verify the second connection is alive, distinguishing
+  a genuine busy result from loss of that connection. None of this has run live.
+- Updated README, Requirements, Architecture, DataModel, Interactions, Roadmap and
+  Building to distinguish accepted Phase 1.1, new schema-2 source and pending live
+  validation. Added [TestingPhase1.2.md](../TestingPhase1.2.md) with numbered commands.
+  Standard C++ domain/application, Qt Widgets, existing task IDs/lifecycle and
+  future-feature boundaries are unchanged. No D1–D7 architectural change is proposed.
+
+The source schema diagram remains cumulative 001+002: **9 tables, 85 columns,
+20 enforced SQL FKs and 2 logical references**. The generated structural registry
+is tested against both cumulative source versions. Only generated Python bytecode
+is newly ignored; it is not a deliverable. Earlier diagram rendering/visual evidence
+remains in the checkpoint above; unchanged SVG did not need another render here.
+
+### Agent-executed validation and observed failures
+
+Host tools: GCC **11.5.0**, CMake **3.31.8**, Qt **6.10.3**. No current MariaDB server
+version was queried; 10.5.29/Linux and 13.0.2/Windows remain the intended owner
+validation targets, not newly verified observations.
+
+```bash
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug \
+   -DTASKCOMPASS_ENABLE_DB_TESTS=OFF -DTASKCOMPASS_ENABLE_PHASE12_DB_TESTS=OFF
+cmake --build build --parallel 2
+bash tests/Phase12ValidationScripts.test.sh
+scripts/phase12/01-build.sh
+python3 docs/diagrams/GenerateDatabaseSchema.py --check
+bash -n scripts/provision-integration.sh scripts/phase12/*.sh temp/testdb/setup.sh
+scripts/phase12/02-review-plan.sh
+scripts/phase12/03-setup-test.sh --print-plan
+scripts/phase12/04-integration-test.sh --print-plan
+git diff --check
+sha256sum migrations/mariadb/001_PersistentTaskFoundation.sql \
+   migrations/mariadb/002_OrganizationalManagement.sql docs/milestones/Phase1.1.md
+```
+
+Final numbered build/configure succeeded. Its full CTest run: **15 passed,
+2 deliberately skipped, 0 failed**, 6.28 seconds. Skips: MariaDbIntegrationTests
+and OrganizationIntegrationTests. There are 17 registered tests, not 17 live passes.
+The two integration executables compile but ordinary execution returns 77 without
+configuration or SQL. Shell safety tests use fake clients/executables only. The
+original prototype startup runs offscreen; real GUI/manual and Windows validation
+are pending. Source-only previews and shell syntax passed; diagram check passed.
+Documentation reference/fence consistency and final whitespace checks are recorded
+below after this report is written.
+
+Intermediate failures in this continuation: the new manifest comparison initially
+compared JSON lists with parser tuples rather than normalizing through JSON, and
+an added deep-project fixture duplicated UUIDs already covered by an existing
+2002-level project fixture. Corrected the comparison and removed the duplicate
+fixture. Both tests pass in the final run; neither failure justified a production
+schema or ownership change. The earlier 14-pass checkpoint remains historical.
+
+### Remaining limits and review requirements
+
+- No live SQL compatibility, isolation/constraint, transaction, locking or migration
+  recovery result yet for 002 on either server. Source tests do not establish these.
+- CHECK names, FK targets, columns/types/nullability and explicit indexes are checked
+  structurally. CHECK expression semantics are not independently parsed/compared;
+  source-checksum verification, registered DDL, conservative latest fingerprint and
+  live negative constraint tests are complementary checks. Fingerprints can change
+  with server formatting; stop for review, never rewrite metadata automatically.
+- Named leases serialize cooperating schema-2 clients only. Old running clients
+  and raw SQL bypass that lease, so all writers must stop for upgrades/tests.
+  Restricted metadata cannot prove absence of hidden stored code; administrator
+  preflight is mandatory before tests. Unexpected failure preserves evidence.
+- Per-operation schema verification/coherent graph loads favor correctness;
+  live latency and large-workspace performance remain unmeasured. Ancestor traversal
+  and our model ownership are iterative; there is no product depth cap.
+- Preview revision sets are conservative: any workspace change invalidates a stale
+  impact/owner confirmation. External revision conflicts reject undo; there is no
+  automatic merge of an external edit. A rejected command leaves history intact;
+  an uncertain commit clears it and requires reload/inspection.
+- Session history remains bounded/nonpersistent. Durable receipts are retained but
+  are not a cross-restart undo UI, sync implementation or durable-history recovery.
+- Windows build/CTest, both MariaDB live suites, interactive keyboard/navigation,
+  mixed undo/redo, archive/owner/restart persistence and expanded-schema private
+  backup/restore still gate milestone completion. No Phase 1.3 behavior was added.
+
+MariaDB privilege rationale was cross-checked against primary documentation:
+[ALTER TABLE privileges](https://mariadb.com/docs/server/reference/sql-statements/data-definition/alter/alter-table)
+and [GRANT/index privileges](https://mariadb.com/docs/server/reference/sql-statements/account-management-sql-statements/grant).
+ALTER suffices for indexes introduced by ALTER; standalone INDEX is not requested.
+Actual least-privilege behavior still requires both approved server validations.
+
+### Approval Requested — Stage 1A: fresh test provisioning only
+
+Request **separate explicit approval for each intended host**: Linux/CentOS MariaDB
+10.5.29 and later Windows/UCRT64 MariaDB 13.0.2, local TCP 127.0.0.1:3306.
+Target database and account: **taskcompass_phase12_test**, account host **127.0.0.1**.
+No existing database/account is to be changed or reused. Existing development,
+diagnostic/runtime/migration accounts and restored Phase 1.1 databases/artifacts
+are outside this request. If either name already exists, stop and report it.
+
+Exact provisioning template (password placeholder is substituted only in memory):
+
+```sql
+SET SESSION sql_mode='NO_BACKSLASH_ESCAPES';
+CREATE DATABASE taskcompass_phase12_test
+   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'taskcompass_phase12_test'@'127.0.0.1'
+   IDENTIFIED BY '<distinct-20+-character-password-from-password-manager>';
+GRANT SELECT, INSERT, UPDATE, CREATE, DROP, ALTER
+   ON `taskcompass\_phase12\_test`.*
+   TO 'taskcompass_phase12_test'@'127.0.0.1';
+```
+
+Template: scripts/phase12/test-account.sql, SHA-256
+`2ed6b69647dabeba4f2eb8f2da815cd54d5b4c35903a439aafe44c861be40a1c`.
+Read-only preflight before provisioning:
+
+```sql
+SELECT @@hostname,VERSION(),@@port;
+SELECT @@port,
+   (SELECT COUNT(*) FROM information_schema.SCHEMATA
+      WHERE SCHEMA_NAME='taskcompass_phase12_test'),
+   (SELECT COUNT(*) FROM mysql.user WHERE User='taskcompass_phase12_test');
+```
+
+Require approved hostname/version/platform, port 3306 and counts zero/zero. The
+script reports identity and accepts only MariaDB 10.5/13 series; any unexpected
+patch/host still needs owner review. After approval the operator command is:
+
+```bash
+scripts/phase12/03-setup-test.sh --apply --approved
+```
+
+No migration or integration execution is included in Stage 1A approval. Risk:
+CREATE DATABASE/USER/GRANT is not one atomic transaction; failure may leave a fresh
+partial provision. Stop and retain output, inspect actual resources/privileges
+read-only, then obtain a concrete recovery decision. No automatic ALTER USER,
+GRANT repair, DROP USER/DATABASE, retry or cleanup is authorized. No prior data
+needs overwriting/backing up because only a nonexistent target is accepted.
+
+### Stage 1B preview — not included in Stage 1A approval
+
+After reviewing Stage 1A's actual result, request separate authorization for
+`scripts/phase12/04-integration-test.sh --approved` on the same specific host/target.
+Its initial administrator queries are read-only, scoped to target catalog and test
+account grants/roles plus applicable PUBLIC policy. It requires the exact six
+schema privileges, no global privileges beyond USAGE, no table/column extras or
+explicit roles, no unexpected inherited authority, and an empty utf8mb4 target.
+It then delegates using only test-account credentials/environment.
+
+The source migration SQL is exactly section 6's nine statements, now in the actual
+002 file (not merely a proposal), plus unchanged 001 for synthetic baseline setup:
+
+- 001 SHA-256: `bb901d7580398893b5c04ee263f813b9d05873eb4bae08e0daf377faf73b0ea0`.
+- 002 SHA-256: `7de311935843e4fc04cbca74d025d9f38986a4154d70bdd29b35a2820f87b736`.
+
+The suite creates synthetic tasks/history, upgrades them, injects twelve deliberate
+migration interruptions, validates rejection of partial attempts, probes constraints
+inside rolled-back DML transactions and tests serial mutation leases/commands.
+Expected fault fixtures are explicitly run-owned disposable resets under that
+future approval. Unexpected errors do not trigger cleanup. At successful fixture
+boundaries only the following statements can remove run-owned objects:
+
+```sql
+DROP TABLE IF EXISTS taskcompass_phase12_test.LocalChange;
+DROP TABLE IF EXISTS taskcompass_phase12_test.CommandRecord;
+DROP TABLE IF EXISTS taskcompass_phase12_test.Task;
+DROP TABLE IF EXISTS taskcompass_phase12_test.Objective;
+DROP TABLE IF EXISTS taskcompass_phase12_test.Project;
+DROP TABLE IF EXISTS taskcompass_phase12_test.Pillar;
+DROP TABLE IF EXISTS taskcompass_phase12_test.MigrationAttempt;
+DROP TABLE IF EXISTS taskcompass_phase12_test.Dataset;
+DROP TABLE IF EXISTS taskcompass_phase12_test.SchemaMigration;
+```
+
+These do not adopt/reset pre-existing objects. Interrupted/failed attempts outside
+intentional injected fixtures need explicit review: preserve catalog, attempt row,
+migration history and output; do not rerun/reset/repair. No generic down migration
+or transactional DDL rollback is promised. Request recovery SQL separately after
+inspection. Successful suite leaves **this new test schema** empty; it never touches
+taskcompass_integration. Development migration/privileges, real-data rehearsal,
+backup/restore and GUI use remain separate later approvals after both server tests.
+
+### Current changed-file inventory for independent review
+
+```text
+ M .gitignore
+ M CMakeLists.txt
+ M README.md
+ M docs/Architecture.md
+ M docs/Building.md
+ M docs/DataModel.md
+ M docs/Interactions.md
+ M docs/Requirements.md
+ M docs/Roadmap.md
+ M docs/diagrams/DatabaseSchema.md
+ M docs/diagrams/DatabaseSchema.svg
+ M docs/diagrams/GenerateDatabaseSchema.py
+ M docs/milestones/Phase1.2.md
+ M scripts/phase11-validate.sh
+ M src/application/TaskCommand.h
+ M src/application/TaskService.cpp
+ M src/application/TaskService.h
+ M src/desktop/persistent/PersistentMain.cpp
+ M src/desktop/persistent/PersistentTaskController.cpp
+ M src/desktop/persistent/PersistentTaskController.h
+ M src/desktop/persistent/PersistentTaskFilter.cpp
+ M src/desktop/persistent/PersistentTaskFilter.h
+ M src/desktop/persistent/PersistentTaskModel.cpp
+ M src/desktop/persistent/PersistentTaskModel.h
+ M src/desktop/persistent/PersistentTaskSession.h
+ M src/desktop/persistent/PersistentTaskWindow.cpp
+ M src/desktop/persistent/PersistentTaskWindow.h
+ M src/domain/Task.cpp
+ M src/domain/Task.h
+ M src/infrastructure/storage/DatabaseConfig.cpp
+ M src/infrastructure/storage/DatabaseConfig.h
+ M src/infrastructure/storage/MigrateMain.cpp
+ M src/infrastructure/storage/MigrationRunner.cpp
+ M src/infrastructure/storage/MigrationRunner.h
+ M src/infrastructure/storage/Migrations.qrc
+ M temp/testdb/setup.sh
+?? docs/TestingPhase1.2.md
+?? migrations/mariadb/002_OrganizationalManagement.sql
+?? migrations/mariadb/SchemaManifest.json
+?? scripts/phase12/
+?? scripts/provision-integration.sh
+?? src/application/CommandService.cpp
+?? src/application/CommandService.h
+?? src/application/OrganizationCommand.h
+?? src/application/WorkspaceRepository.h
+?? src/desktop/dialogs/OrganizationEditDialog.cpp
+?? src/desktop/dialogs/OrganizationEditDialog.h
+?? src/desktop/dialogs/OrganizationMoveDialog.cpp
+?? src/desktop/dialogs/OrganizationMoveDialog.h
+?? src/desktop/models/OrganizationTreeModel.cpp
+?? src/desktop/models/OrganizationTreeModel.h
+?? src/domain/Objective.h
+?? src/domain/OrganizationFields.h
+?? src/domain/OrganizationRules.cpp
+?? src/domain/OrganizationRules.h
+?? src/domain/Pillar.h
+?? src/domain/Project.h
+?? src/domain/TaskOwner.h
+?? src/infrastructure/storage/MariaDbWorkspaceRepository.cpp
+?? src/infrastructure/storage/MariaDbWorkspaceRepository.h
+?? src/infrastructure/storage/MutationLease.cpp
+?? src/infrastructure/storage/MutationLease.h
+?? src/infrastructure/storage/WorkspaceCodec.cpp
+?? src/infrastructure/storage/WorkspaceCodec.h
+?? tests/CommandServiceTests.cpp
+?? tests/DatabaseSchemaTests.py
+?? tests/MemoryWorkspaceRepository.h
+?? tests/OrganizationDesktopTests.cpp
+?? tests/OrganizationIntegrationTests.cpp
+?? tests/OrganizationRulesTests.cpp
+?? tests/OrganizationTestSafety.h
+?? tests/Phase12ValidationScripts.test.sh
+?? tests/WorkspaceCodecTests.cpp
+```
+
+
+### Final documentation consistency checks — 2026-11-16
+
+Agent-executed local-reference/fenced-block checks passed for README, Requirements,
+Architecture, DataModel, Interactions, Roadmap, Building, TestingPhase1.2,
+Phase1.2 and DatabaseSchema Markdown (10 files). Section 6's SQL block equals the
+actual 002 file exactly after trimming terminal whitespace. All three numbered
+preview routes and Bash syntax validation passed without a database connection;
+the previews were redirected to /tmp/taskcompass-phase12-* for inspection and
+contain only source/placeholder SQL, no credentials or application data.
+Diagram consistency passed (9/85/20/2). git diff --check passed and is rerun after
+this final entry. Migration 001 and Phase1.1.md hashes still match the protected
+baseline above. Existing backup/export/restored databases were not accessed.
+
+The recorded connection-loss fixture uses controlled connection closure while a
+lease is held; it is not a verified network-outage or uncertain-commit experiment.
+All live fixtures remain unexecuted. Intermediate failed-test diagnostics included
+`Duplicate or cross-dataset organization record.` and a JSON structure assertion;
+these were test-fixture errors corrected before the final passing run.
+
+**Next action:** owner review of source changes and Stage 1A approval for the first
+specific host. Stop here. Stage 1B testing, development migration, privileges,
+backup/restore and milestone acceptance remain separate pending checkpoints.

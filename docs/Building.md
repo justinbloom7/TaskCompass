@@ -8,7 +8,8 @@ passed on the current host. Windows build/CTest, live integration, migration/gra
 and populated backup/restore comparison also passed per owner transcripts on
 MariaDB 13.0.2 / UCRT64, Qt 6.12.0 and GCC 16.2.0. The owner accepted Phase 1.1 on
 2026-11-14 and confirmed Windows GUI restart with persisted data intact. Preserve
-all backup/export artifacts and restored integration databases; Phase 1.2 is not authorized.
+all backup/export artifacts and restored integration databases. Phase 1.2 source-only
+work is authorized; live database work still requires separate approval.
 The authoritative [Phase 1.1 report](milestones/Phase1.1.md) contains SQL, privilege
 separation, backup/recovery, commands, test results and pending approvals.
 
@@ -20,6 +21,19 @@ For a numbered scripted Windows validation route, see
 [WindowsPhase1.1.md](WindowsPhase1.1.md). It automates the reviewed provisioning,
 migration, backup/restore and full data comparisons while preserving approval
 checkpoints. No live operations are performed by help or --print-plan.
+
+## Current Phase 1.2 source branch
+
+Use [TestingPhase1.2.md](TestingPhase1.2.md) for the numbered offline build/review
+and separately gated new-target setup/testing steps. Both CMake live-test options
+must remain OFF for ordinary builds. Current `TaskCompass` requires schema 2 and
+will reject the unchanged accepted schema-1 database; it never migrates on startup.
+Do not run the old Phase 1.1 disposable scripts against preserved restored databases.
+The Phase 1.1 commands below remain historical/reference procedures for that phase.
+
+No Phase 1.2 migration has run. The new test target is **taskcompass_phase12_test**,
+not taskcompass_integration or taskcompass_dev. Runtime/dev grant changes, live GUI,
+real-data upgrades and expanded backup/restore each remain later approval stages.
 
 ## Phase 1.1 executables and safety
 

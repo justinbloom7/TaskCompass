@@ -292,3 +292,27 @@ review. Do not rewrite daily work history or automatically roll unfinished work.
 Undo restores bounds when revision checks permit. A planning-period change and a
 scheduling change are separate commands unless the user explicitly confirms a
 single combined operation. Day bounds remain exactly one calendar day.
+
+## Phase 1.2 source implementation — 2026-11-16
+
+The organization policy above is approved by D1–D7 in
+[Phase1.2.md](milestones/Phase1.2.md). Source now provides Organize and tree context
+menu actions for creation, Edit/Rename, Move, Archive and Restore, plus New Task
+under a selected project/objective. Global New Task stays independent. Task dialogs
+choose one objective or direct project, or Independent, atomically with edits.
+
+Show Archived reveals explicit and inherited indicators. Restore clears only the
+selected explicit flag; Locate Archived Ancestor navigates to an ancestor that
+must be restored separately. Editing existing archived work does not unarchive it;
+creation under archived owners is blocked. Moves into archived owners warn and
+bind confirmation to the preview revisions. Move/archive impact summaries include
+all descendant organizations and tasks, including completed/archived work omitted
+by filters. Tombstones are not counted as live descendants. Project/objective
+completion and user deletion remain deferred. Duplicate names are allowed; tree
+and picker labels add type/UUID when names repeat, with full paths/UUID tooltips.
+
+Project/objective navigation mode, selected/expanded UUIDs and archive visibility
+use local QSettings. Organization records and task ownership persist through the
+repository. Live restart/GUI validation has not occurred for this source increment;
+offline fake-session tests are not a substitute. Contexts, drag ordering, progress,
+dates, planning and sync described elsewhere remain later-phase designs.

@@ -10,7 +10,12 @@ The original `TaskCompassPrototype` remains a disposable in-memory demonstration
 The new persistent `TaskCompass` desktop and `TaskCompassMigrate` tool are implemented.
 Linux and Windows validation evidence is recorded, including the owner's confirmation
 that the Windows GUI reopened after restart with persisted data intact. Preserve
-all backups, exports and restored integration databases. Phase 1.2 is not authorized.
+all backups, exports and restored integration databases.
+**Phase 1.2 source-only organizational management implementation is under review;
+live migration and platform validation remain pending.** See the
+[Phase 1.2 milestone](docs/milestones/Phase1.2.md) and
+[numbered source-validation guide](docs/TestingPhase1.2.md). The current persistent
+desktop requires schema 2; it never upgrades the accepted schema-1 database itself.
 Live operations require their specific owner approval;
 no Stage 2 SQL has been executed by the agent. See the
 [Phase 1.1 milestone report](docs/milestones/Phase1.1.md) for the owner-reported

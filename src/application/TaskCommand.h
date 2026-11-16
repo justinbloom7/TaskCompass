@@ -1,6 +1,7 @@
 #pragma once
 
 #include "domain/Task.h"
+#include "OrganizationCommand.h"
 
 namespace taskcompass {
 
@@ -12,6 +13,9 @@ struct TaskCommand {
    std::int64_t expectedRevision = 0;
    std::string title;
    std::optional<std::string> notes;
+   std::optional<TaskOwner> ownerChange = {};
+   bool allowArchivedDestination = false;
+   std::optional<std::vector<RevisionCheck>> expectedWorkspace = {};
 };
 
 }

@@ -31,6 +31,12 @@ add_executable(TaskCompassPrototype src/desktop/Main.cpp)
 target_link_libraries(TaskCompassPrototype PRIVATE PrototypeDesktop)
 
 include(CTest)
+if(BUILD_TESTING)
+   find_package(Python3 QUIET COMPONENTS Interpreter)
+   if(Python3_Interpreter_FOUND)
+      add_test(NAME DatabaseSchemaTests COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/DatabaseSchemaTests.py")
+   endif()
+endif()
 
 add_executable(TaskCompassDbDiagnostic src/infrastructure/storage/MariaDbDiagnostic.cpp)
 target_link_libraries(TaskCompassDbDiagnostic PRIVATE Qt6::Sql)
@@ -60,6 +66,8 @@ if(BUILD_TESTING)
       add_test(NAME IntegrationDatabaseScripts
                COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/IntegrationDatabaseScripts.test.sh")
       set_tests_properties(IntegrationDatabaseScripts PROPERTIES TIMEOUT ${TASKCOMPASS_SHELL_TEST_TIMEOUT})
+      add_test(NAME Phase12ValidationScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12ValidationScripts.test.sh")
+      set_tests_properties(Phase12ValidationScripts PROPERTIES TIMEOUT ${TASKCOMPASS_PHASE11_SCRIPT_TIMEOUT})
       add_test(NAME Phase11ValidationScripts
                COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase11ValidationScripts.test.sh")
       set_tests_properties(Phase11ValidationScripts PROPERTIES TIMEOUT ${TASKCOMPASS_PHASE11_SCRIPT_TIMEOUT})
@@ -72,7 +80,8 @@ if(BUILD_TESTING)
 endif()
 
 # Phase 1.1: standard-C++ core, Qt SQL adapter and separate persistent desktop.
-add_library(TaskCore STATIC src/domain/Task.cpp src/application/TaskService.cpp)
+add_library(TaskCore STATIC src/domain/Task.cpp src/domain/OrganizationRules.cpp
+            src/application/CommandService.cpp src/application/TaskService.cpp)
 set_target_properties(TaskCore PROPERTIES AUTOMOC OFF)
 target_include_directories(TaskCore PUBLIC src)
 
@@ -81,7 +90,10 @@ add_library(TaskStorage STATIC
             src/infrastructure/storage/DatabaseConnection.cpp
             src/infrastructure/storage/DatabaseConfig.cpp
             src/infrastructure/storage/MigrationRunner.cpp
+            src/infrastructure/storage/MutationLease.cpp
             src/infrastructure/storage/MariaDbTaskRepository.cpp
+            src/infrastructure/storage/MariaDbWorkspaceRepository.cpp
+            src/infrastructure/storage/WorkspaceCodec.cpp
             src/infrastructure/storage/Migrations.qrc)
 target_link_libraries(TaskStorage PUBLIC TaskCore Qt6::Sql)
 add_executable(TaskCompassMigrate src/infrastructure/storage/MigrateMain.cpp)
@@ -92,10 +104,21 @@ if(BUILD_TESTING)
    set_target_properties(TaskCoreTests PROPERTIES AUTOMOC OFF)
    target_link_libraries(TaskCoreTests PRIVATE TaskCore)
    add_test(NAME TaskCoreTests COMMAND TaskCoreTests)
+   add_executable(OrganizationRulesTests tests/OrganizationRulesTests.cpp)
+   set_target_properties(OrganizationRulesTests PROPERTIES AUTOMOC OFF)
+   target_link_libraries(OrganizationRulesTests PRIVATE TaskCore)
+   add_test(NAME OrganizationRulesTests COMMAND OrganizationRulesTests)
+   add_executable(CommandServiceTests tests/CommandServiceTests.cpp)
+   set_target_properties(CommandServiceTests PROPERTIES AUTOMOC OFF)
+   target_link_libraries(CommandServiceTests PRIVATE TaskCore)
+   add_test(NAME CommandServiceTests COMMAND CommandServiceTests)
    add_test(NAME MigrationSqlPreview COMMAND TaskCompassMigrate)
 endif()
 
 add_library(PersistentDesktop STATIC
+            src/desktop/dialogs/OrganizationEditDialog.cpp
+            src/desktop/dialogs/OrganizationMoveDialog.cpp
+            src/desktop/models/OrganizationTreeModel.cpp
             src/desktop/persistent/PersistentTaskController.cpp
             src/desktop/persistent/PersistentTaskModel.cpp
             src/desktop/persistent/PersistentTaskFilter.cpp
@@ -109,6 +132,10 @@ if(BUILD_TESTING)
    target_link_libraries(PersistentDesktopTests PRIVATE PersistentDesktop Qt6::Test)
    add_test(NAME PersistentDesktopTests COMMAND PersistentDesktopTests)
    set_tests_properties(PersistentDesktopTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 30)
+   add_executable(OrganizationDesktopTests tests/OrganizationDesktopTests.cpp)
+   target_link_libraries(OrganizationDesktopTests PRIVATE PersistentDesktop Qt6::Test)
+   add_test(NAME OrganizationDesktopTests COMMAND OrganizationDesktopTests)
+   set_tests_properties(OrganizationDesktopTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 90)
 endif()
 
 if(BUILD_TESTING)
@@ -121,10 +148,26 @@ if(BUILD_TESTING)
       add_test(NAME MariaDbIntegrationTests COMMAND MariaDbIntegrationTests)
    endif()
    set_tests_properties(MariaDbIntegrationTests PROPERTIES SKIP_RETURN_CODE 77 LABELS integration TIMEOUT 120)
+   find_package(Threads REQUIRED)
+   add_executable(OrganizationIntegrationTests tests/OrganizationIntegrationTests.cpp)
+   target_link_libraries(OrganizationIntegrationTests PRIVATE TaskStorage Threads::Threads)
+   option(TASKCOMPASS_ENABLE_PHASE12_DB_TESTS "Enable separately approved Phase 1.2 tests on fresh taskcompass_phase12_test only" OFF)
+   if(TASKCOMPASS_ENABLE_PHASE12_DB_TESTS)
+      add_test(NAME OrganizationIntegrationTests COMMAND OrganizationIntegrationTests --run --allow-reset)
+   else()
+      add_test(NAME OrganizationIntegrationTests COMMAND OrganizationIntegrationTests)
+   endif()
+   set_tests_properties(OrganizationIntegrationTests PROPERTIES SKIP_RETURN_CODE 77 LABELS integration TIMEOUT 600)
 endif()
 
 if(BUILD_TESTING)
    add_executable(StorageSafetyTests tests/StorageSafetyTests.cpp)
+   add_executable(WorkspaceCodecTests tests/WorkspaceCodecTests.cpp)
+   target_link_libraries(WorkspaceCodecTests PRIVATE TaskStorage)
+   add_dependencies(WorkspaceCodecTests TaskCompassMigrate OrganizationIntegrationTests)
+   add_test(NAME WorkspaceCodecTests COMMAND WorkspaceCodecTests
+            "${CMAKE_CURRENT_SOURCE_DIR}/migrations/mariadb/002_OrganizationalManagement.sql"
+            $<TARGET_FILE:TaskCompassMigrate> $<TARGET_FILE:OrganizationIntegrationTests>)
    target_link_libraries(StorageSafetyTests PRIVATE TaskStorage)
    add_dependencies(StorageSafetyTests MariaDbIntegrationTests)
    add_test(NAME StorageSafetyTests COMMAND StorageSafetyTests

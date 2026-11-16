@@ -4,6 +4,7 @@
 
 #include <functional>
 #include <map>
+#include <memory>
 
 namespace taskcompass {
 
@@ -13,6 +14,7 @@ public:
    using IdGenerator = std::function<std::string()>;
    TaskService(TaskRepository &repository, std::string datasetId,
                Clock clock, IdGenerator generateId);
+   ~TaskService();
    std::vector<Task> list();
    CommandReceipt execute(const TaskCommand &command);
    CommandReceipt undo();
@@ -24,23 +26,11 @@ public:
    void clearHistory();
 
 private:
-   struct HistoryEntry {
-      CommandReceipt original;
-      std::string lastCommandId;
-   };
-   CommandReceipt compensate(bool forward);
-   CommandReceipt makeReceipt(TaskOperation operation, const std::optional<Task> &before, Task after);
-   Task requireTask(const std::string &id, std::int64_t revision);
-   void rememberRevision(const CommandReceipt &receipt);
-
-   TaskRepository &repository;
-   std::string datasetId;
-   Clock clock;
-   IdGenerator generateId;
-   std::vector<HistoryEntry> history;
-   std::size_t historyIndex = 0;
-   std::map<std::string, std::int64_t> knownRevisions;
-   static constexpr std::size_t HISTORY_LIMIT = 100;
+   // Compatibility facade for accepted schema-1 tests/adapters. Production
+   // organization sessions use CommandService directly, never a second stack.
+   class Adapter;
+   std::unique_ptr<Adapter> adapter;
+   std::unique_ptr<class CommandService> commands;
 };
 
 }

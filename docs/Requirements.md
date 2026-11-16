@@ -41,7 +41,7 @@ influence the design; they need not ship in the first usable release.
 | Separation | Lifecycle, allocation, horizon, period priority, actual work, and completion are distinct. Unallocated is not inherently a lifecycle state. |
 | Capture | Fast inbox entry; future mobile voice capture independent of speech provider. |
 | Long term | Someday/long-term work stays available without cluttering daily planning. |
-| Current iteration | Phase 1.1 Step B source implementation approved; task foundation only. Account/grant provisioning and live migrations require separate concrete approval. Preserve prototype; no later features or Git commit. See milestones/Phase1.1.md for current evidence. |
+| Current iteration | Phase 1.1 accepted 2026-11-14. Phase 1.2 source-only organizational management authorized; current implementation/validation status is in milestones/Phase1.2.md. No live provisioning, migrations or test resets authorized. Preserve accepted evidence, databases and prototype; no later features or Git commit. |
 
 ## Proposed behavior needing review
 
@@ -129,3 +129,15 @@ with binary deterministic comparison. Token alphabet/encoding, length threshold,
 normalization window/algorithm, and physical indexes remain implementation choices;
 the user-visible behavior is settled. See Interactions.md and DataModel.md. This
 approval does not authorize implementing ordering or starting Phase 1.1.
+
+## Phase 1.2 approved refinements — 2026-11-16
+
+D1–D7 in [Phase1.2.md](milestones/Phase1.2.md) supersede earlier archive/move
+recommendations for this milestone. Archive/restore changes only the selected
+explicit flag; inherited archive is derived. Archived work must be discoverable
+and explicitly restorable. Moves preserve descendant IDs/flags/history; prevent
+cycles and cross-dataset ownership under a shared mutation lease and transaction.
+No project/objective completion fields or user deletion in Phase 1.2. Undo-create
+uses dependency-safe tombstones. One chronological command engine serves all four
+entity types, with revision checks and touched-field compensation. The shared core
+uses standard C++ only. Source implementation is not evidence of live validation.

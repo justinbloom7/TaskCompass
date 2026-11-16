@@ -3,6 +3,7 @@
 #include <QDateTime>
 #include <QTimeZone>
 #include <QStringList>
+#include <algorithm>
 
 PersistentTaskModel::PersistentTaskModel(QObject *parent) : QAbstractTableModel(parent) {}
 int PersistentTaskModel::rowCount(const QModelIndex &parent) const { return parent.isValid() ? 0 : static_cast<int>(tasks.size()); }
@@ -34,6 +35,13 @@ QVariant PersistentTaskModel::data(const QModelIndex &index, int role) const {
       case CREATED_COLUMN: return date(task.createdAt);
       case UPDATED_COLUMN: return date(task.updatedAt);
       case COMPLETED_COLUMN: return task.completedAt ? date(*task.completedAt) : QString();
+      case ORGANIZATION_COLUMN: {
+         if (!graph || task.owner.kind == taskcompass::TaskOwnerKind::INDEPENDENT) { return "Independent"; }
+         const taskcompass::OrganizationKey owner{task.owner.kind == taskcompass::TaskOwnerKind::OBJECTIVE ? taskcompass::OrganizationKind::OBJECTIVE : taskcompass::OrganizationKind::PROJECT, task.owner.id};
+         QStringList parts;
+         for (const auto &key : graph->path(owner)) { parts.append(QString::fromStdString(taskcompass::organizationTitle(graph->find(key)))); }
+         return parts.join(" / ") + (graph->taskArchived(task) ? " [archived context]" : "");
+      }
       default: return {};
    }
 }
@@ -45,7 +53,7 @@ QVariant PersistentTaskModel::headerData(int section, Qt::Orientation orientatio
    if (orientation == Qt::Vertical) {
       return section + 1;
    }
-   const QStringList headers = {"Task name", "Status", "Created", "Last modified", "Completed at"};
+   const QStringList headers = {"Task name", "Status", "Created", "Last modified", "Completed at", "Organization"};
    return section >= 0 && section < headers.size() ? QVariant(headers.at(section)) : QVariant();
 }
 
@@ -73,9 +81,28 @@ bool PersistentTaskModel::setData(const QModelIndex &index, const QVariant &valu
 }
 
 void PersistentTaskModel::replaceTasks(const std::vector<taskcompass::Task> &replacement) {
+   replaceWorkspace({replacement, {}});
+}
+void PersistentTaskModel::replaceWorkspace(const taskcompass::WorkspaceSnapshot &replacement) {
+   std::unique_ptr<taskcompass::OrganizationRules> replacementGraph;
+   if (!replacement.organizations.empty()) {
+      replacementGraph = std::make_unique<taskcompass::OrganizationRules>(taskcompass::organizationFields(replacement.organizations.front()).datasetId, replacement.organizations);
+   }
    beginResetModel();
-   tasks = replacement;
+   graph = std::move(replacementGraph);
+   tasks = replacement.tasks;
+   std::erase_if(tasks, [](const auto &task) { return task.deletedAt.has_value(); });
    endResetModel();
+}
+bool PersistentTaskModel::effectivelyArchived(int row) const { return graph && graph->taskArchived(tasks.at(row)); }
+bool PersistentTaskModel::matchesScope(int row, const std::optional<taskcompass::OrganizationKey> &scope, bool independentOnly) const {
+   const auto &task = tasks.at(row);
+   if (independentOnly) { return task.owner.kind == taskcompass::TaskOwnerKind::INDEPENDENT; }
+   if (!scope) { return true; }
+   if (!graph || task.owner.kind == taskcompass::TaskOwnerKind::INDEPENDENT) { return false; }
+   const taskcompass::OrganizationKey owner{task.owner.kind == taskcompass::TaskOwnerKind::OBJECTIVE ? taskcompass::OrganizationKind::OBJECTIVE : taskcompass::OrganizationKind::PROJECT, task.owner.id};
+   const auto ancestors = graph->path(owner);
+   return std::find(ancestors.begin(), ancestors.end(), *scope) != ancestors.end();
 }
 const taskcompass::Task &PersistentTaskModel::taskAt(int row) const { return tasks.at(row); }
 void PersistentTaskModel::setWritable(bool enabled) { writable = enabled; }

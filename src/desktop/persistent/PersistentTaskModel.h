@@ -1,12 +1,14 @@
 #pragma once
 
 #include "domain/Task.h"
+#include "application/WorkspaceRepository.h"
 #include <QAbstractTableModel>
+#include <memory>
 
 class PersistentTaskModel : public QAbstractTableModel {
    Q_OBJECT
 public:
-   enum Column { TITLE_COLUMN, STATUS_COLUMN, CREATED_COLUMN, UPDATED_COLUMN, COMPLETED_COLUMN, COLUMN_COUNT };
+   enum Column { TITLE_COLUMN, STATUS_COLUMN, CREATED_COLUMN, UPDATED_COLUMN, COMPLETED_COLUMN, ORGANIZATION_COLUMN, COLUMN_COUNT };
    explicit PersistentTaskModel(QObject *parent = nullptr);
    int rowCount(const QModelIndex &parent = {}) const override;
    int columnCount(const QModelIndex &parent = {}) const override;
@@ -15,6 +17,9 @@ public:
    Qt::ItemFlags flags(const QModelIndex &index) const override;
    bool setData(const QModelIndex &index, const QVariant &value, int role) override;
    void replaceTasks(const std::vector<taskcompass::Task> &tasks);
+   void replaceWorkspace(const taskcompass::WorkspaceSnapshot &replacement);
+   bool effectivelyArchived(int row) const;
+   bool matchesScope(int row, const std::optional<taskcompass::OrganizationKey> &scope, bool independentOnly) const;
    const taskcompass::Task &taskAt(int row) const;
    void setWritable(bool enabled);
 
@@ -22,6 +27,7 @@ signals:
    void completionRequested(const QString &id, bool completed);
 
 private:
+   std::unique_ptr<taskcompass::OrganizationRules> graph;
    std::vector<taskcompass::Task> tasks;
    bool writable = false;
 };

@@ -1,17 +1,49 @@
 # Preliminary relational model
 
-For the actual Phase 1.1 migration schema, see the
+For the cumulative migration 001 + 002 source schema, see the
 [database ER diagram and constraint reference](diagrams/DatabaseSchema.md) or
 [open its standalone SVG](diagrams/DatabaseSchema.svg). Those artifacts derive
 from migration SQL; the broader logical model below includes future features.
 
-**Future logical model; Phase 1.1 now has proposed executable DDL for its subset.**
-See [migration 001](../migrations/mariadb/001_PersistentTaskFoundation.sql) and the
-[Phase 1.1 report](milestones/Phase1.1.md). DDL has not been executed against a live
-database; owner approval is required. Organizational cardinalities are
-confirmed; physical representation and other proposed columns/states remain for
-review. This is not an instruction to create tables or migrations. Table names use
-PascalCase and column names camelCase; no SQL snake_case exception is assumed.
+**The broad model below includes future features.** Phase 1.1 migration 001 was
+accepted with Linux/Windows validation; see [its historical report](milestones/Phase1.1.md).
+Phase 1.2 migration 002 is implemented as source only and has not been executed.
+See [002](../migrations/mariadb/002_OrganizationalManagement.sql) and the
+[Phase 1.2 record](milestones/Phase1.2.md) for current approval/validation status.
+Table names use PascalCase and columns camelCase.
+
+## Phase 1.2 physical subset — source implemented, live validation pending
+
+The cumulative schema has nine tables. Dataset, Task, SchemaMigration,
+CommandRecord and LocalChange retain all existing rows; 001 is immutable.
+Pillar/Project/Objective add UUID/dataset IDs, title (Pillar.name), optional
+notes (description), explicit archivedAt, creation/update/tombstone timestamps and
+localRevision. No project/objective lifecycle/completion fields are introduced.
+Typed nullable parent columns implement exactly the combinations below; composite
+same-dataset FKs and CHECKs enforce legal row shapes. Application graph checks under
+the mutation lease prevent transitive cycles, removed parents and invalid archive
+moves. SQL does not enforce the full transitive graph; raw SQL writers are outside
+that cooperative transaction protocol.
+
+Task adds only nullable objectiveId and directProjectId, both NULL for old tasks.
+No redundant task pillar/project context is stored. All inherited context/archive
+is calculated through the live owner path. A subtree move changes just its root
+parent/revision; archive/restore changes only its own flag. Child task UUIDs,
+revisions, lifecycle, completion and explicit flags are unchanged.
+
+CommandRecord and LocalChange now have four nullable typed target columns with an
+exactly-one constraint and same-dataset FKs. Existing payloadVersion=1 task-only
+JSON remains unchanged; new commands use version 2 (typed snapshot, touched-field
+mask and revision dependencies). Compensation IDs remain logical references as
+shown in the diagram. There is no persistent undo stack or synchronization engine.
+MigrationAttempt is local schema-operation metadata, not organizational ownership
+or synchronized domain history. It records step/state/checksum/baseline; incomplete
+attempts block operation and require explicit review, never automatic repair.
+
+The [diagram constraint/index reference](diagrams/DatabaseSchema.md) lists every
+actual column, nullability, SQL type/key/CHECK and index. Its cumulative source is
+not a statement that a live schema has been upgraded. The remaining tables and
+fields in the preliminary model are deferred to their respective milestones.
 
 ## Domain relationships
 

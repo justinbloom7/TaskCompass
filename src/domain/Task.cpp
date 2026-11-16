@@ -74,6 +74,7 @@ std::string normalizeTitle(const std::string &title) {
 }
 
 void validateTask(const Task &task) {
+   validateTaskOwner(task.owner);
    if (!isUuid(task.id) || !isUuid(task.datasetId)) {
       throw std::invalid_argument("Invalid canonical task or dataset UUID.");
    }
@@ -93,6 +94,14 @@ void validateTask(const Task &task) {
        || (task.completedAt && (*task.completedAt < task.createdAt || *task.completedAt > task.updatedAt))
        || (task.deletedAt && (*task.deletedAt < task.createdAt || *task.deletedAt > task.updatedAt))) {
       throw std::invalid_argument("Invalid task timestamps or revision.");
+   }
+}
+
+void validateTaskOwner(const TaskOwner &owner) {
+   if (owner.kind == TaskOwnerKind::INDEPENDENT) {
+      if (!owner.id.empty()) { throw std::invalid_argument("Independent tasks have no owner ID."); }
+   } else if ((owner.kind != TaskOwnerKind::OBJECTIVE && owner.kind != TaskOwnerKind::PROJECT) || !isUuid(owner.id)) {
+      throw std::invalid_argument("Task owner must be an objective or project UUID.");
    }
 }
 
