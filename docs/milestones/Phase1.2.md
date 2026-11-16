@@ -1302,3 +1302,94 @@ these were test-fixture errors corrected before the final passing run.
 **Next action:** owner review of source changes and Stage 1A approval for the first
 specific host. Stop here. Stage 1B testing, development migration, privileges,
 backup/restore and milestone acceptance remain separate pending checkpoints.
+
+
+## Stage 1A administrator socket authentication — 2026-11-16
+
+Owner reports CentOS MariaDB root normally authenticates through the Unix socket.
+The default helper selected TCP and requested a MariaDB password. Existing
+`--admin-socket` already selected the socket and omitted that prompt, but did not
+change the OS identity; a normal Linux user may therefore be unable to authenticate
+as MariaDB root. This is a transport/OS-authentication issue, not evidence of a lost
+password or a reason to change MariaDB authentication/accounts.
+
+### Source changes and preserved boundaries
+
+- `scripts/provision-integration.sh`: new explicit Linux `--admin-sudo` implies
+  socket mode. After the existing approval/typed-confirmation gates, validate sudo
+  authorization (`sudo -v`) before SQL or new test credentials are prepared. Each
+  database invocation uses `sudo -n -- <client> --no-defaults ... --protocol=SOCKET
+  --user=root`; only the client is elevated, not the repository script. No `sudo -S`,
+  stored OS password, TCP fallback, server-authentication changes or repair logic.
+- Both direct/socket-sudo modes remove inherited MYSQL_PWD before the client;
+  TCP/password operation remains unchanged. Sudo denial/expiry fails closed.
+  Windows rejects socket/elevation flags and retains its TCP password workflow.
+- Corrected Phase 1.2 help to show the wrapper's required --approved argument.
+  SQL templates, proposed privileges, fixed target/port checks, fresh-resource
+  inspection and existing-resource rejection remain unchanged. No new packages.
+- `tests/Phase12ValidationScripts.test.sh`: fake sudo/client coverage proves no
+  MariaDB password input is consumed in socket mode, no MYSQL_PWD reaches sudo or
+  the socket client, only the fixed client is elevated, and denial/expiry/Windows
+  rejection cannot trigger SQL. Existing TCP and Phase 1.1 fake suites remain.
+- `docs/TestingPhase1.2.md`: documented command, Linux-versus-DB-versus-test password
+  distinctions and the current Stage 1B limitation. This milestone records the
+  review and validation; prior proposals/results remain historical.
+
+After separate Stage 1A approval, the intended CentOS operator command is:
+
+```bash
+bash scripts/phase12/03-setup-test.sh --apply --approved --admin-sudo
+```
+
+The sudo prompt, if present, is for the Linux login password. Only the new
+`taskcompass_phase12_test` password is then requested twice by this script. For an
+OS account already authorized for direct socket login, use --admin-socket instead.
+Do not elevate the whole script. The provisioned account remains
+`taskcompass_phase12_test@127.0.0.1` for TCP; the administrator's socket login is
+separate. Setup's SQL/partial-failure recovery and Stage 1A approval scope above
+remain unchanged. **No provisioning approval or execution is inferred from this
+source-only request.**
+
+### Validation
+
+Executed only fake clients/sudo, syntax checks, no-connection help/preview and
+local automated tests. Commands/results are recorded below after final checks.
+No actual sudo, client connection, SQL, database/account/grant/authentication change,
+backup/restore, cleanup or Git commit/push/merge/tag was executed. C++ application
+source, migration SQL and schema diagrams are unaffected; rebuilding C++ is not
+needed for this shell/documentation-only adjustment.
+
+### Remaining work and Approval Requested
+
+Review this Stage 1A authentication correction alongside the existing concrete
+Stage 1A SQL/procedure request. Live provisioning still needs explicit approval
+for the specific host/target. Real CentOS socket/sudo execution has not been tested.
+Stage 1B remains a separate approval and currently still requests TCP administrator
+authentication: adapt its read-only preflight for a socket-only administrator before
+that later execution, rather than changing root authentication. No Stage 1B live
+SQL, test resets, development upgrade or milestone acceptance is requested here.
+
+### Socket-authentication validation results
+
+```bash
+bash -n scripts/provision-integration.sh tests/Phase12ValidationScripts.test.sh scripts/phase12/03-setup-test.sh
+bash tests/Phase12ValidationScripts.test.sh
+ctest --test-dir build --output-on-failure
+bash scripts/phase12/03-setup-test.sh --help
+bash scripts/phase12/03-setup-test.sh --print-plan
+git diff --check
+```
+
+Results: syntax, expanded mock suite, no-connection help/preview and whitespace
+checks passed. Full CTest: **15 passed, 2 intentionally skipped, 0 failed**, 6.32
+seconds. Both live integration executables skipped. Python pathlib/re checks of
+both changed Markdown files passed local-link existence and code-fence balance.
+No C++ rebuild was needed because source, schema and CMake were unchanged.
+
+During test editing, a duplicated socket mock scenario caused an accumulated
+sudo-call-count assertion to fail. Removed the duplicate fixture block; the final
+expanded suite and full CTest passed. The Linux-only branch uses a mock uname so
+it can also be exercised by future UCRT64 CTest runs; actual Windows execution
+was not performed here. No real sudo or database client was executed. The only
+files changed are the shared provisioning helper, its Phase 1.2 mock test, the
+Phase 1.2 testing guide and this milestone report.

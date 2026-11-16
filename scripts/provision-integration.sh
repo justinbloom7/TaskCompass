@@ -23,6 +23,8 @@ readonly databaseName databaseUser templatePath entryPoint
 clientPath=''
 adminUser=root
 adminSocket=false
+adminSudo=false
+sudoPath=''
 adminPassword=''
 testPassword=''
 confirmation=''
@@ -31,14 +33,19 @@ action=${1:---help}
 trap 'unset adminPassword testPassword confirmation passwordSql setupSql MYSQL_PWD' EXIT
 
 usage() {
+   local approvalOption=''
+   [[ "$purpose" != phase12 ]] || approvalOption=' --approved'
    cat <<USAGE
 Usage: bash $entryPoint --print-plan
-       bash $entryPoint --apply [--admin-socket] [--admin-user NAME] [--client PATH]
+       bash $entryPoint --apply$approvalOption [--admin-socket|--admin-sudo] [--admin-user NAME] [--client PATH]
 No arguments: help only; no connection. --print-plan: placeholder SQL only.
 --apply requires approved Stage 1 operations and an explicit confirmation.
 Uses $databaseName/$databaseUser@127.0.0.1:3306 only.
 Stops if either database or any same-name account exists; never repairs/resets it.
-Prompts for passwords; writes no credentials or configuration files.
+Default: TCP administrator password. --admin-socket: current OS user, no DB password.
+Linux --admin-sudo: socket authentication with only the MariaDB client elevated;
+sudo may ask for your OS password, then the script asks only for the NEW test password.
+No automatic authentication fallback. No credentials or configuration files written.
 USAGE
 }
 fail() { printf '%s\n' "$1" >&2; exit 1; }
@@ -61,6 +68,7 @@ while [[ $# -gt 0 ]]; do
          esac
          shift 2 ;;
       --admin-socket) adminSocket=true; shift ;;
+      --admin-sudo) adminSudo=true; adminSocket=true; shift ;;
       *) fail "Unknown option: $1" ;;
    esac
 done
@@ -80,12 +88,23 @@ if [[ -z "$clientPath" ]]; then
    fi
 fi
 [[ -n "$clientPath" && -x "$clientPath" ]] || fail 'MariaDB client not found; specify --client.'
+if "$adminSudo"; then
+   [[ "$(uname -s)" == Linux ]] || fail '--admin-sudo is for Linux only.'
+   sudoPath=$(command -v sudo || true)
+   [[ -n "$sudoPath" && -x "$sudoPath" ]] || fail 'sudo not found; use --admin-socket from an already authorized OS account.'
+fi
 # Read/validate the template before any connection or password is requested.
 setupTemplate=$(cat -- "$templatePath")
 [[ "$setupTemplate" == *'{{TEST_PASSWORD_SQL_LITERAL}}'* ]] || fail 'Missing template password token.'
 IFS= read -r -p "Type CREATE $databaseName to confirm the approved provisioning: " confirmation || fail 'Cancelled.'
 [[ "$confirmation" == "CREATE $databaseName" ]] || fail 'Confirmation mismatch; no connection made.'
 unset confirmation
+if "$adminSudo"; then
+   printf 'Using sudo for the MariaDB client over the local Unix socket; sudo may request your OS password.\n' >&2
+   env -u MYSQL_PWD "$sudoPath" -v || fail 'sudo authorization failed; no database connection made.'
+elif "$adminSocket"; then
+   printf 'Using local Unix-socket administrator authentication as the current OS user; no MariaDB administrator password requested.\n' >&2
+fi
 if ! "$adminSocket"; then
    IFS= read -r -s -p 'MariaDB administrator password: ' adminPassword || fail 'Cancelled.'
    printf '\n' >&2
@@ -110,7 +129,15 @@ runAdmin() {
    else
       options+=(--protocol=TCP --host=127.0.0.1 --port=3306)
    fi
-   if ! output=$(printf '%s\n' "$sql" | MYSQL_PWD="$adminPassword" "$clientPath" "${options[@]}" 2> >(redactDiagnostics)); then
+   local -a command=("$clientPath" "${options[@]}")
+   if "$adminSudo"; then
+      # Authenticate sudo before SQL/secrets. -n fails closed if authorization expires.
+      # Never use sudo -S: the client SQL stdin must not become a sudo password.
+      command=(env -u MYSQL_PWD "$sudoPath" -n -- "${command[@]}")
+   elif "$adminSocket"; then
+      command=(env -u MYSQL_PWD "${command[@]}")
+   fi
+   if ! output=$(printf '%s\n' "$sql" | MYSQL_PWD="$adminPassword" "${command[@]}" 2> >(redactDiagnostics)); then
       fail 'Administrator command failed. Check service/authentication; if provisioning began, preserve evidence and inspect before retrying.'
    fi
    printf '%s' "${output//$'\r'/}"

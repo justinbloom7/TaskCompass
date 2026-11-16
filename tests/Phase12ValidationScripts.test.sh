@@ -16,6 +16,10 @@ cat > "$client" <<'CLIENT'
 set -euo pipefail
 [[ "$1" == --no-defaults ]]
 for argument in "$@"; do [[ "$argument" != *fixture* ]] || exit 90; done
+if [[ "${MOCK_SOCKET:-0}" == 1 ]]; then
+   [[ " $* " == *' --protocol=SOCKET '* && ! -v MYSQL_PWD ]]
+   [[ " $* " != *' --protocol=TCP '* && " $* " != *' --host='* && " $* " != *' --password'* ]]
+fi
 sql=$(cat)
 printf 'query\n' >> "$MOCK_DIRECTORY/calls"
 [[ "$sql" != *taskcompass_dev* && "$sql" != *taskcompass_integration* ]] || exit 91
@@ -67,6 +71,56 @@ export MOCK_EXISTING=1
 if printf '%s\n' 'CREATE taskcompass_phase12_test' 'admin-fixture' | bash "$helperDirectory/03-setup-test.sh" --apply --approved --client "$client" >/dev/null 2>&1; then exit 1; fi
 unset MOCK_EXISTING
 printf 'PASS: fixed fresh target provisioning and existing-resource refusal.\n'
+
+# Fake sudo only; neither real privilege escalation nor live SQL is permitted here.
+export MOCK_CLIENT="$client"
+cat > "$temporaryDirectory/sudo" <<'SUDO'
+#!/usr/bin/env bash
+set -euo pipefail
+[[ ! -v MYSQL_PWD ]]
+case "$*" in
+   -v)
+      printf 'authorize\n' >> "$MOCK_DIRECTORY/sudo-calls"
+      [[ "${MOCK_SUDO_FAIL:-0}" != 1 ]] || exit 1
+      exit 0 ;;
+esac
+[[ "$1" == -n && "$2" == -- && "$3" == "$MOCK_CLIENT" ]]
+[[ "${MOCK_SUDO_EXPIRED:-0}" != 1 ]] || exit 1
+printf 'client\n' >> "$MOCK_DIRECTORY/sudo-calls"
+shift 2
+exec "$@"
+SUDO
+chmod +x "$temporaryDirectory/sudo"
+# Simulate Linux for this branch even when CTest itself runs on UCRT64.
+cat > "$temporaryDirectory/uname" <<'UNAME'
+#!/usr/bin/env bash
+[[ "$*" == -s ]] || exit 1
+printf 'Linux\n'
+UNAME
+chmod +x "$temporaryDirectory/uname"
+export MOCK_SOCKET=1
+for mode in --admin-socket --admin-sudo; do
+   : > "$temporaryDirectory/calls"
+   result=$(printf '%s\n' 'CREATE taskcompass_phase12_test' "$MOCK_PASSWORD" "$MOCK_PASSWORD" |
+      MYSQL_PWD=inherited-fixture-password PATH="$temporaryDirectory:$PATH" \
+      bash "$helperDirectory/03-setup-test.sh" --apply --approved "$mode" --client "$client" 2>&1)
+   [[ $(cat "$temporaryDirectory/calls") == $'query\nquery\nquery\ncreate' ]]
+   [[ "$result" == *'Created the isolated'* && "$result" != *'MariaDB administrator password:'* && "$result" != *"$MOCK_PASSWORD"* ]]
+done
+[[ $(cat "$temporaryDirectory/sudo-calls") == $'authorize\nclient\nclient\nclient' ]]
+for scenario in MOCK_SUDO_FAIL MOCK_SUDO_EXPIRED; do
+   : > "$temporaryDirectory/calls"
+   export "$scenario=1"
+   if result=$(printf '%s\n' 'CREATE taskcompass_phase12_test' |
+      PATH="$temporaryDirectory:$PATH" bash "$helperDirectory/03-setup-test.sh" --apply --approved --admin-sudo --client "$client" 2>&1); then exit 1; fi
+   [[ ! -s "$temporaryDirectory/calls" && "$result" != *'MariaDB administrator password:'* ]]
+   unset "$scenario"
+done
+: > "$temporaryDirectory/calls"
+if MSYSTEM=UCRT64 PATH="$temporaryDirectory:$PATH" bash "$helperDirectory/03-setup-test.sh" --apply --approved --admin-sudo --client "$client" >/dev/null 2>&1; then exit 1; fi
+[[ ! -s "$temporaryDirectory/calls" ]]
+unset MOCK_SOCKET
+printf 'PASS: socket modes omit DB passwords, clear inherited MYSQL_PWD, elevate only client via fake sudo and fail closed on denied/expired sudo; Windows rejects socket elevation.\n'
 runTest() {
    printf '%s\n' 'TEST taskcompass_phase12_test WITH RUN-OWNED RESET' 'admin-fixture' "$MOCK_PASSWORD" |
       bash "$helperDirectory/04-integration-test.sh" --approved --client "$client" --build-dir "$temporaryDirectory/build with spaces"

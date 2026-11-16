@@ -76,12 +76,34 @@ After explicit provisioning approval:
 bash scripts/phase12/03-setup-test.sh --apply --approved
 ```
 
-Optional `--client '/path with spaces/mariadb.exe'`, `--admin-user NAME`, or Linux
-`--admin-socket` use the existing provisioning interface. UCRT64 auto-detects
-MariaDB's Program Files client if PATH lacks it; multiple candidates require
-`--client`. Type the exact prompted phrase `CREATE taskcompass_phase12_test`.
-The administrator password is only for setup/inspection. Then enter and repeat a
-**distinct 20+ character test-account password** from your password manager.
+Choose administrator authentication to match the server; no root authentication
+or password change is needed for this helper.
+
+On CentOS with socket-authenticated MariaDB root, after Stage 1A approval use:
+
+```bash
+bash scripts/phase12/03-setup-test.sh --apply --approved --admin-sudo
+```
+
+Run this as your normal Linux user. The script validates sudo authorization, then
+uses `sudo -n` for **only the MariaDB client**, with `--protocol=SOCKET --user=root`.
+Sudo may ask for your **Linux login password**; there is no MariaDB administrator
+password prompt. Do not run the whole repository script under sudo. If the current
+OS account already has socket-login authority, `--admin-socket` uses it directly
+without sudo. Neither socket mode supplies MYSQL_PWD to the client. Neither falls
+back to TCP/password login on failure. Sudo denial/expiry stops the operation.
+
+Windows/UCRT64 keeps the original TCP/password command above. `--admin-sudo` and
+`--admin-socket` are rejected there. Linux administrators who use TCP passwords
+can also keep the original default. The new **test account** remains the same
+TCP account at 127.0.0.1:3306 in every case; only administrator transport differs.
+
+Optional `--client '/path with spaces/mariadb.exe'` and `--admin-user NAME` remain
+available. UCRT64 auto-detects MariaDB's Program Files client if PATH lacks it;
+multiple candidates require `--client`. Type the exact prompted phrase
+`CREATE taskcompass_phase12_test`. Then enter and repeat a **distinct 20+ character
+password for taskcompass_phase12_test** from your password manager. This is a new
+test-account password, not the Linux/sudo or MariaDB administrator password.
 
 The helper reports hostname/version/port/platform, rejects an unapproved server
 series/port, then checks the proposed database and any same-name user do not exist.
@@ -89,7 +111,8 @@ It refuses to overwrite/reuse/repair them. Password mismatch/cancellation before
 provisioning submits no DDL. CREATE/USER/GRANT is not atomic: if an execution error
 occurs, stop and preserve evidence; do not rerun expecting repair or auto-cleanup.
 Nothing is saved to an env/credential file. Do not put passwords in command lines,
-Git, shell history or logs. MYSQL_PWD is scoped to the client child environment;
+Git, shell history or logs. In TCP administrator mode, MYSQL_PWD is scoped to the
+client child environment; socket modes remove it, including inherited values;
 MariaDB 13 client warnings may still appear, redacted. TLS verification is unchanged.
 
 No migrations or tests run in this step. Existing diagnostic, runtime, migration
@@ -106,7 +129,10 @@ bash scripts/phase12/04-integration-test.sh --approved
 
 Optional `--client PATH` and `--build-dir PATH` are supported. Type exactly
 `TEST taskcompass_phase12_test WITH RUN-OWNED RESET`. Enter the administrator
-password for **read-only preflight** (catalog/grant/role/PUBLIC checks). Enter the
+password for **read-only preflight** (catalog/grant/role/PUBLIC checks). This step
+currently supports TCP administrator authentication only; the Stage 1A socket
+options are not yet supported here. For a socket-only administrator, stop for a
+source update before Stage 1B rather than changing root authentication. Enter the
 new test-account password when prompted. They are different accounts/passwords.
 The test password is exported only to the test subprocess; it is unset on exit.
 Conflicting pre-existing TASKCOMPASS_PHASE12_TEST_DB_* settings stop the wrapper.
