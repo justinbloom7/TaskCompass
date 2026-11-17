@@ -6,9 +6,11 @@ with persisted data intact. Preserve backups, exports and restored integration
 databases. **Phase 1.2 Step B source-only implementation was authorized on 2026-11-16
 and resumed after the owner-requested pause. Source/offline checks are delivered;
 Linux Stage 1A and corrected Stage 1B passed (owner-reported), including approved
-fixture cleanup. Windows compilation succeeded, but two offline test failures
-await retesting after portability corrections. Windows live validation and
-development-upgrade/GUI/backup gates remain pending; Phase 1.2 is not accepted.** See the
+fixture cleanup. Windows compilation/offline checks passed across the original
+run plus focused portability retest (owner-reported). Windows Stage 1A provisioning
+and Windows Stage 1B also passed (owner-reported). Both isolated platform gates
+are met; development-upgrade/narrow-privilege/GUI/backup gates remain pending.
+Phase 1.2 is not accepted.** See the
 [scripted Windows sequence](WindowsPhase1.1.md). Live provisioning, grants and
 migrations remain behind their specific approval checkpoints. Phase 0.1 is accepted on owner
 reported Linux/Windows builds, GUI launches and MariaDB diagnostics; earlier dated
@@ -36,7 +38,7 @@ overview and requirements/architecture as the shared design baseline.
 | 0.1 (accepted) | Desktop technology prototype | Owner accepted; Linux/Windows build, GUI launch and MariaDB diagnostics reported successful. |
 | 0.2 (documentation delivered) | Requirements, interactions, command design, logical schema, roadmap and GPL license | Documentation consistency and licensing review; no production features. |
 | 1.1 (accepted 2026-11-14) | Persistent task foundation with undo from its first edits | Owner accepted Linux/Windows validation, GUI restart/persistence, transaction/history and backup/restore evidence. |
-| 1.2 (source review / validation pending) | Organizational management | B1–B5 source/B6 offline tools delivered; Linux 10.5 isolated integration passed (owner-reported). Windows 13, development migration, GUI and backup/restore remain pending/separate gates. |
+| 1.2 (source review / validation pending) | Organizational management | B1–B5 source/B6 offline tools delivered; Linux 10.5 isolated integration passed (owner-reported). Windows 13 isolated integration also passed (owner-reported); development migration, narrow privilege validation, GUI and backup/restore remain separate pending gates. |
 | 1.3 | Everyday progress, contexts, numeric priority and drag ordering | 1.1/1.2; context order first, then grouped insertion/atomic moves and undo. |
 | 1.4 | Due/scheduled dates, presentation and basic filters | 1.3; shared calendar logic, minimal persisted day allocations; due/allocation separation. |
 | 2 | Recurrence, dependencies, related/next actions | 1.x; stable occurrence identity and preserved instance history. |

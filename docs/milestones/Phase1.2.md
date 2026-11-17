@@ -2,7 +2,7 @@
 
 # Phase 1.2 — Organizational Management
 
-**Status: Linux isolated validation passed (owner-reported). Windows compilation succeeded; two offline test failures have source corrections awaiting Windows retest. Windows live validation and development-upgrade/GUI/backup gates remain pending. Phase 1.2 is not accepted.**
+**Status: isolated migration/integration validation passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported). Development upgrade, narrow runtime/migrator privilege validation, real GUI/restart and backup/restore gates remain pending. Phase 1.2 is not accepted.**
 Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
 Only this document and the roadmap were changed by Step A. Its designs/SQL were
 proposals. Step A itself authorized no SQL; the dated Step B reports below record
@@ -2085,3 +2085,325 @@ Final consistency checks: all three modified Markdown files passed local-referen
 and code-fence validation; git diff --check passed. No schema artifacts or historical
 Phase 1.1 evidence were modified. Stop for the owner's focused Windows retest;
 no additional live operation is authorized by these portability corrections.
+
+
+## Windows offline retest passed — owner report, 2026-11-16
+
+Owner ran:
+
+```bash
+ctest --test-dir build-ucrt64 -R '^(DatabaseSchemaTests|Phase12ValidationScripts)$' --output-on-failure
+```
+
+Actual reported results:
+
+```text
+DatabaseSchemaTests         Passed  0.91 sec
+Phase12ValidationScripts    Passed  6.20 sec
+100% tests passed out of 2
+Total Test time (real) = 7.12 sec
+```
+
+Record both prior Windows failures as resolved. Windows compilation and offline
+checks now pass **across the original 17-entry run (13 pass / 2 fail / 2 skip) and
+this focused two-test retest**, not a newly executed full 17-entry pass. No Windows
+live integration, new database setup or current server query is claimed. Original
+failure/portability corrections remain preserved above. The agent performed no
+build, test, SQL or provisioning in this documentation-only reporting turn.
+
+### Approval Requested — Windows Stage 1A provisioning only
+
+The next checkpoint is a separate Windows Stage 1A approval. Proposed target:
+Windows MariaDB server at **127.0.0.1:3306** (expected 13.0.2-MariaDB, previous owner
+hostname feldria-w10; actual identity must be reviewed from preflight). Fresh
+database/account **taskcompass_phase12_test**, account host **127.0.0.1**.
+Linux's completed approvals/results do not authorize this Windows operation.
+
+Exact SQL (unchanged shared provisioning template):
+
+```sql
+SET SESSION sql_mode='NO_BACKSLASH_ESCAPES';
+CREATE DATABASE taskcompass_phase12_test
+   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'taskcompass_phase12_test'@'127.0.0.1'
+   IDENTIFIED BY '<distinct-12+-character-test-password>';
+GRANT SELECT, INSERT, UPDATE, CREATE, DROP, ALTER
+   ON `taskcompass\_phase12\_test`.*
+   TO 'taskcompass_phase12_test'@'127.0.0.1';
+```
+
+The administrator uses Windows TCP/password authentication; no sudo/socket flag.
+Preflight prints server hostname/version/port/platform, requires expected port and
+MariaDB series, and requires zero existing database/same-name user counts before
+creation. Review the actual host/version before supplying the new account password;
+stop on any unexpected identity/version. Existing resources are not reused,
+changed or repaired. Runtime/diagnostic/migration/Phase 1.1 test accounts, existing
+taskcompass_dev data and restored taskcompass_integration remain outside scope.
+No application tables or migration execution is included.
+
+After explicit Windows Stage 1A approval, owner command in UCRT64:
+
+```bash
+scripts/phase12/03-setup-test.sh --apply --approved
+```
+
+Confirm `CREATE taskcompass_phase12_test`; provide the Windows MariaDB administrator
+password, then a distinct new test-account password twice (12+ characters). Keep
+passwords local/private. Source template/helper never stores them in the repository.
+CREATE DATABASE/USER/GRANT is not atomic: if any operation fails, stop and preserve
+output/resources; inspect before requesting exact recovery. No automatic retries,
+DROP/reset, password repair, grant changes to existing accounts or dependency
+installation is authorized. If resources already exist, report that and stop.
+
+Stage 1B Windows live migrations/destructive synthetic integration requires another
+explicit approval after provisioning/preflight review; development upgrades,
+backup/restore, GUI acceptance and milestone acceptance remain later gates.
+
+### Documentation validation
+
+Changed current status in this milestone, docs/Roadmap.md and
+docs/TestingPhase1.2.md, preserving chronological Windows failure and retest evidence.
+Local Markdown reference/fence checks and git diff --check passed. No application,
+SQL template, migration, script or test files changed; no executable checks needed
+for this documentation-only approval request. No Git operations beyond read/diff.
+
+## Windows Stage 1A approved — 2026-11-16
+
+Owner explicitly approved the preceding Windows Stage 1A provisioning request.
+Authorization covers only the new taskcompass_phase12_test database and dedicated
+taskcompass_phase12_test@127.0.0.1 account on the intended Windows MariaDB server
+at 127.0.0.1:3306, with the exact six scoped privileges and preconditions above.
+Stop if existing resources or unexpected server identity/version are found; no
+repair/overwrite is authorized. Stage 1B, development upgrades, existing-account
+changes, backups/restores and other databases remain outside this approval.
+
+Owner command in the Windows UCRT64 terminal:
+
+```bash
+scripts/phase12/03-setup-test.sh --apply --approved
+```
+
+Type `CREATE taskcompass_phase12_test`. Enter the Windows MariaDB administrator
+password, review reported host/version/port, then enter a distinct new test-account
+password twice (12+ characters). No sudo/socket option applies on Windows. Keep
+passwords private; share only nonsecret result/error output. Stop after an error,
+with no blind retry, and preserve partial state if provisioning began.
+
+Status: authorization recorded; owner execution/result pending. The agent has not
+executed provisioning, live SQL or database inspection. Only this milestone file
+changed in this turn; local-link/fence and git diff --check validation passed.
+No executable checks were rerun for this documentation-only approval record.
+
+
+## Windows Stage 1A provisioning succeeded — owner report, 2026-11-16
+
+Owner ran the approved command in UCRT64:
+
+```bash
+scripts/phase12/03-setup-test.sh --apply --approved
+```
+
+Reported server: **feldria-w10 / 13.0.2-MariaDB / port 3306**; platform
+**MINGW64_NT-10.0-19045 / UCRT64**. Exact CREATE confirmation was entered and the
+new 12+ character test-account password supplied twice. The helper reported:
+
+```text
+Created the isolated integration database/account with six scoped privileges.
+No migrations/tests ran. Review grants and inherited policy before running tests.
+```
+
+Record **Windows Stage 1A passed (owner-reported)** for taskcompass_phase12_test /
+taskcompass_phase12_test@127.0.0.1. No migration or integration result is implied;
+exact effective privilege and empty-catalog verification remains Stage 1B preflight.
+The client emitted its previously observed MariaDB 13 warning before calls:
+
+```text
+WARNING: option --ssl-verify-server-cert is disabled, because of an insecure passwordless login.
+```
+
+It did not stop provisioning. The helper did not change TLS options, root password,
+authentication plugin or existing-account grants. No actual TLS-negotiation state
+was measured here; the warning alone is not such a measurement. No action to
+silence it by weakening verification is proposed. Existing Phase 1.1 development,
+restored integration databases and backup artifacts remain outside this operation.
+
+### Approval Requested — Windows Stage 1B isolated integration tests
+
+Request separate approval for **feldria-w10 / MariaDB 13.0.2 / UCRT64**, test target
+**127.0.0.1:3306 / taskcompass_phase12_test**, dedicated TCP account
+**taskcompass_phase12_test@127.0.0.1**. This is not covered by Windows Stage 1A or
+Linux execution approvals.
+
+Authorized scope requested:
+
+1. Windows TCP/password administrator **read-only** preflight: server identity,
+   completely empty expected-encoding catalog, exact six scoped direct grants,
+   no unexpected global/table/column/role grants or effective PUBLIC write/DDL
+   authority. Unrelated PUBLIC test/test_% grants are accepted. Unknown state stops.
+2. Execute the corrected OrganizationIntegrationTests using the unprivileged OS
+   process and dedicated test account, creating synthetic schema-1 fixtures and
+   exercising migration 002, ownership/constraints/receipts, rollback, restart,
+   separate-connection mutation leases and deliberate interruption cases.
+3. Only the suite's run-owned known-object fixture cleanup after empty-start proof;
+   no adoption/reset of pre-existing objects. An intentional interruption must
+   actually be reached before its cleanup. Unexpected failure preserves state
+   and needs explicit review/recovery before retry.
+
+The exact DDL is unchanged migration 001 plus section 6's nine statements in 002:
+
+- 001 source SHA-256: `bb901d7580398893b5c04ee263f813b9d05873eb4bae08e0daf377faf73b0ea0`.
+- 002 source SHA-256: `7de311935843e4fc04cbca74d025d9f38986a4154d70bdd29b35a2820f87b736`.
+
+Source files are migrations/mariadb/001_PersistentTaskFoundation.sql and
+migrations/mariadb/002_OrganizationalManagement.sql. Metadata prepared statements
+and synthetic fixture operations are documented in the earlier Stage 1B preview
+and tests/OrganizationIntegrationTests.cpp. The only run-owned cleanup statements
+are the reviewed dependency order (server-normalized table identifier case may vary):
+
+```sql
+DROP TABLE IF EXISTS taskcompass_phase12_test.LocalChange;
+DROP TABLE IF EXISTS taskcompass_phase12_test.CommandRecord;
+DROP TABLE IF EXISTS taskcompass_phase12_test.Task;
+DROP TABLE IF EXISTS taskcompass_phase12_test.Objective;
+DROP TABLE IF EXISTS taskcompass_phase12_test.Project;
+DROP TABLE IF EXISTS taskcompass_phase12_test.Pillar;
+DROP TABLE IF EXISTS taskcompass_phase12_test.MigrationAttempt;
+DROP TABLE IF EXISTS taskcompass_phase12_test.Dataset;
+DROP TABLE IF EXISTS taskcompass_phase12_test.SchemaMigration;
+```
+
+These are synthetic test resets, never a general migration recovery mechanism.
+Existing baseline-reset-reviewed SQL is specific to its earlier Linux failure and
+must not be reused for an unexpected Windows failure. DDL cannot be assumed to
+roll back: on failure preserve catalog/history/attempt/output, inspect read-only,
+then obtain exact new recovery approval. No automatic resume/repair/reset/retry.
+No backup is proposed for the initial completely empty new target; no real task
+records or historical Phase 1.1 data are adopted. Successful suite exit 0 reports
+this new schema empty; exit 1 fails, 77 skips and is not a live pass.
+
+After explicit Windows Stage 1B approval, owner command in UCRT64:
+
+```bash
+scripts/phase12/04-integration-test.sh --approved
+```
+
+Confirm `TEST taskcompass_phase12_test WITH RUN-OWNED RESET`. Enter the MariaDB
+administrator password for read-only preflight, then the **new test-account
+password created in Windows Stage 1A**. No sudo/socket option. Keep credentials
+private and share nonsecret result/error output. This approval request includes no
+account/grant changes, other databases, development upgrade, backup/restore, GUI
+acceptance or milestone acceptance.
+
+### Reporting-only changes and validation
+
+Updated this milestone and current Roadmap/TestingPhase1.2 status. No source, SQL,
+migration, script, account or database was changed by the agent. Local Markdown
+references/fences and git diff --check passed; no application build/test rerun is
+needed for this documentation-only result and approval request. No commit/push.
+
+## Windows Stage 1B approved — 2026-11-16
+
+Owner explicitly approved starting Windows Stage 1B. Authorization is the exact
+preceding request: feldria-w10 / MariaDB 13.0.2 / UCRT64, isolated database/account
+taskcompass_phase12_test at 127.0.0.1:3306, read-only administrator preflight and
+synthetic suite/migrations/run-owned cleanup. All fresh-start, privilege, identity,
+known-object and deliberate-fault guards remain. No other database, account/grant
+change, development upgrade, backup/restore, unexpected-state reset or milestone
+acceptance is authorized.
+
+Owner command in UCRT64:
+
+```bash
+scripts/phase12/04-integration-test.sh --approved
+```
+
+Confirmation: `TEST taskcompass_phase12_test WITH RUN-OWNED RESET`. Enter the Windows
+MariaDB administrator password for read-only checks, followed by the dedicated
+taskcompass_phase12_test password created in Windows Stage 1A. No sudo/socket flag.
+Keep passwords private. Share nonsecret output and stop on unexpected failure;
+preserve state and do not rerun/reset automatically. Successful suite exit 0
+reports the new test schema empty; neither approval nor a skipped run is a pass.
+
+Status: approved, owner execution/result pending. The agent executed no live SQL,
+preflight or tests in this turn. Only this milestone approval record changed;
+Markdown references/fences and git diff --check passed. No application build/test
+rerun needed for this documentation-only update; no commit/push/merge/tag.
+
+
+## Windows Stage 1B passed — owner report, 2026-11-16
+
+Owner ran the explicitly approved UCRT64 command:
+
+```bash
+scripts/phase12/04-integration-test.sh --approved
+```
+
+Server **feldria-w10 / 13.0.2-MariaDB / 3306**; platform
+**MINGW64_NT-10.0-19045 / UCRT64**. The owner entered the exact test confirmation,
+administrator preflight credentials and the dedicated Windows test-account password.
+Read-only preflight reported:
+
+```text
+PASS: empty fixed target, exact direct grants, no explicit roles, PUBLIC reviewed.
+```
+
+The integration executable reported:
+
+```text
+PASS: schema-1 preservation/upgrade, partial-migration refusal, typed commands/archive/history, atomic rollback, separate-connection lease timeout/loss/conflicting moves and restart. Phase 1.2 test schema left empty.
+Organization integration test exit code: 0
+```
+
+Record **Windows Stage 1B passed (owner-reported)**. The suite's source-defined
+synthetic baseline/upgrade, deliberate interruption/refusal, SQL constraint/ownership,
+commands/audit/change atomicity and separate-connection scenarios succeeded on
+MariaDB 13.0.2. Its final message reports the new Phase 1.2 test schema empty;
+no independent post-suite query or agent-executed SQL is claimed. Restart refers
+to a new repository connection; connection-loss coverage is controlled lease-holder
+closure, not an unreported interactive GUI/network-outage experiment.
+
+The MariaDB 13 client warning about ssl-verify-server-cert appeared repeatedly
+on administrator CLI calls. It did not prevent successful preflight or integration.
+No TLS/client/authentication settings were changed to suppress it, and actual
+TLS-negotiation status was not independently measured. No credentials were shared
+in the owner's transcript or added to the repository.
+
+### Completed isolated platform gate and remaining work
+
+| Check | Linux / MariaDB 10.5.29 | Windows / MariaDB 13.0.2 |
+| --- | --- | --- |
+| Source build and offline checks | Agent-executed passing results above | Owner-reported compile pass and offline pass across full initial run plus two-test retest |
+| New isolated target provisioning | Owner-reported Stage 1A passed | Owner-reported Stage 1A passed |
+| Synthetic migration/integration suite | Owner-reported corrected Stage 1B passed after approved recovery | Owner-reported Stage 1B passed, exit 0 |
+| Final new-test schema state | Suite reported empty | Suite reported empty |
+
+Both server-version isolated validation prerequisites are now met. This does not
+approve any taskcompass_dev upgrade or change to existing accounts/grants. Existing
+accepted Phase 1.1 development data, restored taskcompass_integration databases,
+private backups/exports and historical reports remain outside this test scope.
+No repeated test/reset, migration resume/repair or Phase 1.3 work is implied.
+
+Next prepare the separate development-upgrade review package: fresh read-only
+baseline/identity/grant inspection, private populated backup and recovery/rehearsal
+plan, actual-data preservation projections, exact temporary migration grants,
+exact runtime grant additions/revocations and operator procedures. Section 7's
+narrow per-table migrator/runtime privileges are still **proposed**: synthetic
+integration used the six database-scoped test privileges, so it did not prove
+those narrower role boundaries. Their validation/rehearsal must remain explicit
+before relying on them for development execution. No privilege broadening is
+silently authorized by the integration pass.
+
+Separate approval remains required for each live next stage, including backup/
+restore targets and exact artifacts, account/grant changes and development DDL.
+Then real persistent organizational GUI/undo/redo/owner/archive/restart acceptance
+and expanded-schema backup/restore checks remain on both platforms. Phase 1.2 is
+not complete/accepted; no application launch against schema 1 is recommended.
+
+### Documentation-only changes and validation
+
+Updated current status in this milestone, docs/Roadmap.md and
+docs/TestingPhase1.2.md, preserving all earlier failures, approvals and validation
+evidence. No source/migration/scripts/schema/permissions or database contents were
+changed by the agent. Markdown local-link/code-fence checks and git diff --check
+passed. No build/test/live queries were rerun for this reporting-only update;
+owner-reported live results are distinguished above. No commit/push/merge/tag.

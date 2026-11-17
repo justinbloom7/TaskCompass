@@ -4,7 +4,8 @@
 
 The [milestone record](milestones/Phase1.2.md) is authoritative for approvals and
 actual results. **Linux Stage 1A and corrected Stage 1B passed (owner-reported);
-Windows live validation and development upgrades remain pending.** Do not execute
+Windows Stage 1A and Stage 1B also passed. Development upgrades and subsequent
+privilege/GUI/backup gates remain pending and require separate approval.** Do not execute
 steps 3 or 4 without separate approval for that step, platform and target. None of
 these steps upgrades taskcompass_dev. Preserve taskcompass_integration, all accepted
 Phase 1.1 records and private backups/exports. Do not use its old reset scripts here.
@@ -41,8 +42,8 @@ ctest --test-dir build --output-on-failure
 
 Windows: use `build-ucrt64` and the existing UCRT64 CMake prefix/toolchain setup.
 The wrapper sets CMAKE_PREFIX_PATH from `/ucrt64`. Windows Phase 1.2 compilation
-passed, but two offline failures need retesting after the UTF-8/test-platform fixes.
-With the updated checkout, rerun just those tests (no C++ rebuild needed):
+passed. The two initial offline failures were resolved by the focused retest
+(2026-11-16, owner-reported). That focused regression command is:
 
 ```bash
 ctest --test-dir build-ucrt64 -R '^(DatabaseSchemaTests|Phase12ValidationScripts)$' --output-on-failure
@@ -52,9 +53,9 @@ Schema tooling explicitly reads/writes UTF-8; no global locale/Python mode chang
 is required. Linux socket/sudo positive mock fixtures run only on Linux; Windows
 still exercises TCP workflows, safety gates and rejection of socket options. A
 SKIP message for those Linux-only fixtures does not skip the whole shell suite.
-The two live integration executables still skip in ordinary CTest. Windows native
-retest/live validation remain pending; accepted Phase 1.1 results do not establish
-Phase 1.2 success.
+The two live integration executables still skip in ordinary CTest. Windows offline
+evidence combines the original run with the focused two-test pass. Windows isolated
+live integration also passed (owner-reported); development upgrades remain separately gated.
 
 ## 2 — Review the source plan (safe now)
 
@@ -73,9 +74,9 @@ its default action is an offline build/test run.
 
 ## 3 — Provision a NEW Phase 1.2 test target (approval required)
 
-**Linux provisioning completed; Windows provisioning remains pending.** Approve
-this separately on each intended host; do not rerun setup on the existing Linux
-account/database. The fixed target is:
+**Linux and Windows provisioning completed (owner-reported).** Approve
+this separately on each intended host; do not rerun setup on the existing
+accounts/databases. The fixed target is:
 
 | Setting | Value |
 | --- | --- |
@@ -159,8 +160,7 @@ reset or TCP fallback is needed. The helper does not start services automaticall
 
 ## 4 — Run disposable Phase 1.2 integration fixtures (separate approval required)
 
-**Corrected Linux suite passed after approved recovery; Windows suite remains
-pending.** These are the reusable commands, not authorization to repeat recovery
+**Corrected Linux and Windows suites passed (owner-reported).** These are the reusable commands, not authorization to repeat recovery
 or run on another host. After provisioning, report/review its result before
 obtaining approval to run the suite. Then:
 
