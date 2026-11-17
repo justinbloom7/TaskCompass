@@ -2,11 +2,11 @@
 
 # Phase 1.2 — Organizational Management
 
-**Status: Step B source implementation resumed; source/offline review delivered on 2026-11-16. Live validation and acceptance pending.**
+**Status: Linux Stage 1A and corrected Stage 1B passed (owner-reported). Approved fixture cleanup verified successful. Windows validation and all development-upgrade/GUI/backup gates remain pending; Phase 1.2 is not accepted.**
 Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
 Only this document and the roadmap were changed by Step A. Its designs/SQL were
-proposals. The dated Step B reports below identify subsequent source implementation;
-no SQL execution is authorized.
+proposals. Step A itself authorized no SQL; the dated Step B reports below record
+subsequent source implementation, narrowly scoped live approvals and actual results.
 
 [Phase 1.1](Phase1.1.md) was accepted on 2026-11-14, including Windows GUI restart
 with persisted data intact. Preserve its task workflows, audit/history data,
@@ -1570,3 +1570,409 @@ help/preview, Markdown link/fence consistency and whitespace checks passed. Both
 live CMake options remain OFF. Migration hashes equal the approved-source preview
 values above. No real sudo/client, live preflight, integration tests or database
 changes were performed by the agent. Stop for Stage 1B Linux approval.
+
+## Stage 1B Linux approval recorded — 2026-11-16
+
+Owner explicitly approved Stage 1B in response to the concrete request above.
+Authorization covers feledria / MariaDB 10.5.29, the fresh isolated
+taskcompass_phase12_test database/account, read-only socket/sudo administrator
+preflight, migrations 001/002 on synthetic fixtures and the documented run-owned
+cleanup/negative tests. It does not authorize Windows execution, development
+migration, account/grant changes, backup/restore, cleanup of unexpected failure
+state, or access/reset of retained taskcompass_integration data.
+
+Owner execution command from the repository root:
+
+```bash
+scripts/phase12/04-integration-test.sh --approved --admin-sudo
+```
+
+Confirmation: `TEST taskcompass_phase12_test WITH RUN-OWNED RESET`.
+Use the Linux/sudo password if requested, then the Stage 1A password for
+taskcompass_phase12_test. Do not disclose either password in conversation/logs.
+The owner runs this interactive operation locally to supply private authentication;
+the agent has not run it and no successful live validation is claimed. Await the
+nonsecret output/exit result. On unexpected failure stop and preserve state; do not
+rerun/reset/repair without reviewing it and obtaining any required recovery approval.
+
+Only this milestone document changed. Markdown reference/fence and whitespace
+checks passed. Source/tests were not rerun for this approval-record-only update.
+
+
+## Linux Stage 1B unexpected failure and source correction — 2026-11-16
+
+### Owner-reported live result — failed, state preserved
+
+Owner ran the approved socket/sudo Stage 1B command on **feledria / MariaDB
+10.5.29 / 3306 / Linux**. The wrapper reported successful empty fixed-target,
+exact direct-grant, no-explicit-role and PUBLIC policy preflight. After the test
+account password prompt, the executable reported:
+
+```text
+Unexpected migration failure before injection; preserve state for explicit review.
+STOP: preserve Phase 1.2 test state; no automatic recovery/reset.
+Organization integration test exit code: 1
+```
+
+This is **not a passed integration run**. The failure guard correctly avoided
+cleanup of an unexpected failure. The agent has not rerun live tests, inspected SQL
+on the server, modified retained state, executed migrations, changed grants/accounts
+or accessed any other database. Stage 1B approval excludes automatic cleanup of
+unexpected failures; a separate recovery decision is required. Preserve the current
+taskcompass_phase12_test contents and output. No development migration is approved.
+
+### Confirmed offline defect and changes
+
+The schema-2 runner counted statements using QString::split(';', SkipEmptyParts).
+The reviewed SQL ends in a semicolon followed by a newline; that newline is not
+an empty string. The old expression therefore produces **10 segments** for 9 DDL
+statements and fails the fixed manifest count before the first 002 DDL statement.
+The old fault test swallowed this original exception and reported only that the
+requested injected fault was not reached. The transcript lacks its original
+exception/step, so other live issues cannot yet be ruled out.
+
+Added the real runner statement-splitting path as MigrationRunner::migrationStatements
+and regression assertions on the embedded resources (5 statements for 001, 9 for
+002, no whitespace-only statements). With the old splitting behavior, the new
+WorkspaceCodecTests assertion **failed offline** (exit 8, `Workspace codec/resource
+assertion failed`). Then corrected the shared schema-2 splitting path to trim and
+omit whitespace-only segments. The nine-statement manifest check remains enforced;
+this is not a general-purpose SQL parser and does not support quoted semicolons or
+stored programs. Migration SQL bytes, source checksums and schema are unchanged.
+
+Updated the live fault-injection fixture to preserve/report the original safe
+application diagnostic and intended injection index when failure precedes injection.
+Migration DDL failures now report statement number plus numeric native MariaDB code
+(or unavailable), without raw driver text, SQL values or credentials. Fail-closed
+state preservation and the no-resume/no-repair policy remain unchanged.
+
+Files changed by this correction:
+
+- src/infrastructure/storage/MigrationRunner.h/.cpp: shared reviewed-DDL splitter,
+  schema-2 usage and safe step/native-code failure diagnostic.
+- tests/WorkspaceCodecTests.cpp: direct embedded statement-count regression.
+- tests/OrganizationIntegrationTests.cpp: unexpected pre-injection cause reporting.
+- scripts/phase12/inspect-failure.sql: four SELECT-only queries for the fixed
+  Phase 1.2 target; no task text, authentication data, writes or recovery operations.
+- docs/TestingPhase1.2.md: read-only retained-fixture inspection command.
+- This milestone: failed result, source correction, evidence and next review gate.
+
+### Retained state — expectation only, not observed
+
+The first loop initializes and verifies schema 1 before attempting 002. If the
+reported binary follows this source path, the statement-count rejection is before
+MigrationAttempt CREATE, so expect the original five InnoDB tables, SchemaMigration
+row 1, one Dataset row, no Task/CommandRecord/LocalChange rows and no MigrationAttempt.
+No actual catalog/count/row state has yet been independently checked. Do not delete
+objects based on this expectation; unexpected contents must be preserved/reviewed.
+
+Read-only owner inspection command:
+
+```bash
+sudo mariadb --no-defaults --protocol=SOCKET --user=root \
+   taskcompass_phase12_test < scripts/phase12/inspect-failure.sql
+```
+
+The inspection SQL is checked-in for exact review and contains only fixed-target
+metadata/count SELECTs. No reset, migration, account or grant command is included.
+If SchemaMigration/original tables are unexpectedly absent, the command can stop
+with a query error; share that result and preserve state rather than improvising
+repair. Actual output is needed before proposing concrete cleanup SQL.
+
+### Validation and remaining checkpoint
+
+Source-only builds/offline tests follow below. Both CMake live-test options remain
+OFF; ordinary test runs do not connect. SQL 001/002 and Phase1.1.md remain unchanged;
+no diagram regeneration is needed because the schema source is unchanged. Existing
+backups and restored taskcompass_integration databases are untouched.
+
+No cleanup/retry approval is requested yet: first inspect the retained state. Then
+prepare exact target-specific recovery SQL and a renewed Stage 1B retry request
+with the corrected build. Do not automatically resume migrations or rerun tests.
+
+### Agent-executed offline results for the correction
+
+```bash
+cmake --build build --parallel 2
+ctest --test-dir build -R '^WorkspaceCodecTests$' --output-on-failure
+# Above regression failed before the fix; rebuild after applying it:
+cmake --build build --parallel 2
+ctest --test-dir build --output-on-failure
+python3 docs/diagrams/GenerateDatabaseSchema.py --check
+sha256sum migrations/mariadb/001_PersistentTaskFoundation.sql migrations/mariadb/002_OrganizationalManagement.sql docs/milestones/Phase1.1.md
+git diff --check
+```
+
+Both builds succeeded. The initial new regression failed with the old split logic;
+after the fix, full CTest passed **15 tests, 2 intentionally skipped, 0 failed**
+(6.60 seconds). MariaDbIntegrationTests/OrganizationIntegrationTests skipped; the
+live failure is not superseded by these offline results. Diagram/manifest check
+passed (9 tables/85 columns/20 FKs/2 logical references). Migration 001/002 hashes
+and accepted Phase1.1.md match their recorded protected values. Python checks passed
+for modified Markdown references/fences and all four inspection statements being
+SELECT-only and excluding the other TaskCompass database names. Final whitespace
+check passed. No live SQL or recovery was executed by the agent.
+
+
+## Retained Linux fixture inspection and recovery request — 2026-11-16
+
+### Owner-reported read-only inspection
+
+Owner executed scripts/phase12/inspect-failure.sql through the local socket client.
+Reported server/database: **feledria / 10.5.29-MariaDB / 3306 /
+taskcompass_phase12_test**. Exactly five BASE TABLE/InnoDB entries:
+CommandRecord, Dataset, LocalChange, SchemaMigration and Task. MigrationAttempt
+and organizational tables were absent from the table listing.
+
+SchemaMigration contains row 1:
+
+- checksum: `bb901d7580398893b5c04ee263f813b9d05873eb4bae08e0daf377faf73b0ea0`;
+- recorded schema fingerprint: `6b3bd320ea92630b21909de0bd7cd38ea3bc3f644a69ba1fd249db43e656a343`;
+- appliedAt: `1794878522914`.
+
+Counts: **Dataset=1, Task=0, CommandRecord=0, LocalChange=0**. This matches the
+source-based expectation: initial schema-1 synthetic baseline initialized before
+the schema-2 statement-count rejection. This is owner-provided inspection evidence,
+not a passed Stage 1B run or agent-executed SQL. The reported fingerprint is its
+stored value; no separate current-DDL fingerprint recomputation is claimed.
+
+### Approval Requested — reviewed fixture cleanup and corrected Linux Stage 1B retry
+
+Request explicit authorization for this recovery only, on **feledria / MariaDB
+10.5.29 / taskcompass_phase12_test**:
+
+1. Stop/close all test writers and confirm retained contents still match the
+   inspection above. If anything differs or additional objects/stored code are
+   found, stop and review; this request does not cover unexpected contents.
+2. Execute only the five statements below, in FK dependency order, without
+   disabling foreign-key checks, --force, IF EXISTS, retries or general reset logic.
+3. Verify the database remains present and entirely empty of schema objects.
+4. Rebuild the corrected source, then rerun the previously reviewed Stage 1B suite
+   using its normal strict preflight and test-account credentials. The suite's
+   original migration hashes, fixed target and run-owned cleanup policy remain.
+
+Exact proposed cleanup SQL, saved for review in
+[scripts/phase12/reset-reviewed-baseline.sql](../../scripts/phase12/reset-reviewed-baseline.sql):
+
+```sql
+DROP TABLE taskcompass_phase12_test.LocalChange;
+DROP TABLE taskcompass_phase12_test.CommandRecord;
+DROP TABLE taskcompass_phase12_test.Task;
+DROP TABLE taskcompass_phase12_test.Dataset;
+DROP TABLE taskcompass_phase12_test.SchemaMigration;
+```
+
+The database, test account and all its grants remain. This discards the synthetic
+Dataset row and schema-1 migration metadata recorded above; there are no reported
+tasks/audit/change records to preserve. Do not drop or recreate the database/user.
+No application data in taskcompass_dev or restored taskcompass_integration, no
+other account/privilege and no backup/restore artifacts are included. No development
+upgrade or Windows action is authorized by this request.
+
+After approval, owner commands (not executed yet):
+
+```bash
+# Recheck; stop if contents differ from this reviewed baseline.
+sudo mariadb --no-defaults --protocol=SOCKET --user=root \
+   taskcompass_phase12_test < scripts/phase12/inspect-failure.sql
+# Execute only after approval and matching inspection.
+sudo mariadb --no-defaults --protocol=SOCKET --user=root \
+   taskcompass_phase12_test < scripts/phase12/reset-reviewed-baseline.sql
+```
+
+Before cleanup, also run the following read-only object-count check and require
+5/0/0/0 (tables/routines/triggers/events). Run it again after successful cleanup:
+
+```sql
+SELECT
+   (SELECT COUNT(*) FROM information_schema.TABLES
+      WHERE TABLE_SCHEMA='taskcompass_phase12_test') AS tablesRemaining,
+   (SELECT COUNT(*) FROM information_schema.ROUTINES
+      WHERE ROUTINE_SCHEMA='taskcompass_phase12_test') AS routinesRemaining,
+   (SELECT COUNT(*) FROM information_schema.TRIGGERS
+      WHERE TRIGGER_SCHEMA='taskcompass_phase12_test') AS triggersRemaining,
+   (SELECT COUNT(*) FROM information_schema.EVENTS
+      WHERE EVENT_SCHEMA='taskcompass_phase12_test') AS eventsRemaining;
+```
+
+After cleanup expect 0/0/0/0. The Stage 1B wrapper repeats empty-schema/encoding/grant/role/
+PUBLIC checks before delegation. Then:
+
+```bash
+cmake --build build --parallel 2
+scripts/phase12/04-integration-test.sh --approved --admin-sudo
+```
+
+DDL cleanup is not transactionally reversible. The recorded inspection preserves
+this fixture's metadata evidence; no new backup is proposed because it contains
+only disposable suite-generated baseline metadata and no task/history records.
+Once deletion is approved and succeeds, the suite creates a new synthetic dataset
+identity/history; this is not a restoration of the prior test Dataset UUID. The
+accepted Phase 1.1 datasets and backup evidence are unaffected.
+
+If any DROP/postcheck fails, stop and preserve remaining objects/output; partial
+cleanup requires another explicit review, not automatic retry or completion.
+Likewise a new unexpected suite failure preserves evidence and is not permission
+to reuse this five-table cleanup blindly. Authorization is requested, **not yet
+given or executed**. No live SQL was run by the agent in this continuation.
+
+### Files and source-only validation
+
+Changed this report/current status and docs/Roadmap.md; added the exact scoped
+cleanup SQL file. C++ source, migrations, diagrams, validation scripts and Phase 1.1
+history are unchanged. Static checks verify exactly the five fully qualified DROP
+TABLE statements in dependency order; local Markdown references/fences and
+git diff --check are validated. No database, build or CTest execution is necessary
+for this documentation/SQL-proposal-only change; prior fixed-source offline results
+remain 15 passed / 2 skipped and do not count as live validation.
+
+Validation result: proposal static SQL ordering/scope, Markdown references/fences and git diff --check passed; no SQL executed.
+
+## Reviewed Linux fixture cleanup/retry approved — 2026-11-16
+
+Owner replied “Sure” to the exact request to remove the five reviewed tables from
+taskcompass_phase12_test on Linux and retry Stage 1B with the corrected build.
+This authorizes the stated recovery on feledria / MariaDB 10.5.29 only, conditional
+on matching prechecks and no other writers/objects. All exclusions and failure
+handling in the preceding concrete request remain binding. No additional approval
+is needed for that exact operation. No cleanup/retry result has yet been reported.
+
+Added scripts/phase12/check-object-counts.sql containing the exact read-only
+object-count SELECT already shown in the recovery request. It makes the same
+pre/post check easy to run without an interactive SQL session. No application,
+migration, grant/account or cleanup SQL changes were needed. The owner executes
+the commands locally for private sudo/test authentication; the agent has not run
+live SQL or reset/retested the retained database.
+
+### Approved owner walkthrough — run each step separately
+
+Close all Phase 1.2 test writers. Stop on any error, unexpected result or changed
+inspection; do not continue or automatically retry.
+
+**1. Recheck the retained fixture.** Require the same five InnoDB tables, schema
+row 1/checksum, Dataset=1 and Task/CommandRecord/LocalChange=0. Object counts must
+be **5 / 0 / 0 / 0** (tables/routines/triggers/events).
+
+```bash
+sudo mariadb --no-defaults --protocol=SOCKET --user=root \
+   taskcompass_phase12_test < scripts/phase12/inspect-failure.sql
+sudo mariadb --no-defaults --protocol=SOCKET --user=root \
+   taskcompass_phase12_test < scripts/phase12/check-object-counts.sql
+```
+
+**2. Perform the approved five-table cleanup.** Only if step 1 matches:
+
+```bash
+sudo mariadb --no-defaults --protocol=SOCKET --user=root \
+   taskcompass_phase12_test < scripts/phase12/reset-reviewed-baseline.sql
+cleanupExitCode=$?
+printf 'Cleanup exit code: %s\n' "$cleanupExitCode"
+```
+
+Require exit 0; no command output otherwise is normal. Any failure means stop and
+preserve the remaining state. Do not run the cleanup file a second time blindly.
+
+**3. Verify empty state.** Require **0 / 0 / 0 / 0**:
+
+```bash
+sudo mariadb --no-defaults --protocol=SOCKET --user=root \
+   taskcompass_phase12_test < scripts/phase12/check-object-counts.sql
+```
+
+**4. Build and retry Stage 1B.** The retained database/account/grants remain, so
+do not rerun Stage 1A setup. Proceed only after successful steps 1–3:
+
+```bash
+cmake --build build --parallel 2
+scripts/phase12/04-integration-test.sh --approved --admin-sudo
+```
+
+If the build fails, stop before invoking tests. Type
+`TEST taskcompass_phase12_test WITH RUN-OWNED RESET` and enter the existing
+taskcompass_phase12_test password when requested. Sudo may ask for the Linux
+password. Share nonsecret output. A new unexpected failure needs a new review;
+this recovery is not blanket approval for resetting subsequent unknown states.
+
+Validation: static comparison confirms check-object-counts.sql is the same single
+SELECT in the approved proposal and refers only to the Phase 1.2 schema. Markdown
+links/fences and git diff --check passed. No build/tests or live SQL were run for
+this SQL-helper/documentation-only approval record. Existing source-fix build and
+offline results remain recorded above; live validation is pending, not passed.
+
+Current Roadmap status also updated to approved recovery/retry with execution/results pending; final git diff --check passed.
+
+
+## Corrected Linux Stage 1B passed — owner report, 2026-11-16
+
+### Approved recovery actually executed by owner
+
+Owner supplied the complete approved sequence on feledria:
+
+1. check-object-counts.sql returned **5 / 0 / 0 / 0**.
+2. reset-reviewed-baseline.sql completed with **cleanup exit code 0**.
+3. check-object-counts.sql then returned **0 / 0 / 0 / 0**.
+4. `cmake --build build --parallel 2 && scripts/phase12/04-integration-test.sh
+   --approved --admin-sudo` proceeded. Build reported `ninja: no work to do.`
+
+This is evidence of successful **owner-executed**, explicitly approved five-table
+fixture cleanup. The test database/account/grants were retained. The historical
+unexpected failure, its inspected metadata and all source-fix/recovery approvals
+above remain part of the record; they are not overwritten by this success.
+
+### Owner-reported Linux live validation
+
+Server: **feledria / 10.5.29-MariaDB / 3306**, platform **Linux / Linux**.
+Administrator Unix-socket/sudo preflight reported:
+
+```text
+PASS: empty fixed target, exact direct grants, no explicit roles, PUBLIC reviewed.
+```
+
+After authentication as taskcompass_phase12_test, the corrected suite reported:
+
+```text
+PASS: schema-1 preservation/upgrade, partial-migration refusal, typed commands/archive/history, atomic rollback, separate-connection lease timeout/loss/conflicting moves and restart. Phase 1.2 test schema left empty.
+Organization integration test exit code: 0
+```
+
+Record **Linux Stage 1B passed**, based on the owner's transcript. This validates
+the source-defined synthetic baseline/upgrade and deliberate interruption cases,
+SQL ownership/constraint/history checks, command/receipt/change atomicity and
+separate-connection scenarios on MariaDB 10.5.29. The connection-loss case is the
+controlled lease-holder connection-close fixture previously documented, not an
+unreported network-outage/uncertain-commit experiment. Restart is the repository's
+new-connection test, not interactive GUI restart acceptance.
+
+The suite reported its new Phase 1.2 schema empty at completion; no separate
+post-suite SQL query is claimed. The owner had independently confirmed an empty
+catalog immediately before the run. The agent executed no live SQL, cleanup,
+account/grant operation or integration test in this reporting continuation.
+
+### Current gates and next step
+
+- Linux Stage 1A provisioning: passed (owner reported).
+- Linux approved fixture recovery: passed (owner reported; pre/post counts and
+  cleanup exit 0 recorded).
+- Linux corrected Stage 1B synthetic integration: passed (owner reported; exit 0).
+- Windows Phase 1.2 build/CTest and MariaDB 13 isolated provisioning/integration:
+  **pending**, requiring the separate platform-specific live approval already
+  specified. Accepted Phase 1.1 Windows evidence does not validate Phase 1.2.
+- No development database upgrade/grant changes, actual-data backup/rehearsal,
+  persistent organizational GUI/manual/restart testing, expanded-schema restore,
+  Windows execution or milestone acceptance is authorized/implied by this result.
+- Preserve all accepted Phase 1.1 data/backups/restored databases. No Phase 1.3.
+
+Recommended next step: on Windows/UCRT64, run the database-free
+`scripts/phase12/01-build.sh` and report its result. Then separately approve the
+new Windows test target's provisioning and integration operations before live work.
+Both MariaDB 10.5 and 13 isolated validations must precede any development upgrade.
+
+### Documentation changes and validation
+
+Updated current status in this milestone and docs/Roadmap.md; updated stale
+source-only/not-yet-authorized wording in docs/TestingPhase1.2.md to distinguish
+completed Linux operations from pending Windows gates. No application, migration,
+scripts or SQL files changed. Markdown references/fences and git diff --check
+passed. Builds/CTest/live queries were not rerun for this documentation-only
+update; owner-executed results above remain clearly distinguished from agent checks.
+No commits, pushes, merges or tags.

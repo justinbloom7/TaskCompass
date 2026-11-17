@@ -17,6 +17,7 @@ public:
    void applyToVersion(int version);
    std::string verify(int requiredVersion = 0); // Read-only; returns the singleton dataset UUID.
    static QByteArray migrationSql(int version = 1);
+   static QStringList migrationStatements(int version);
    static QStringList tableNamesForVersion(int version);
    int verifiedVersion() const { return currentVersion; }
 

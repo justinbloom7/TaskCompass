@@ -137,10 +137,15 @@ int main(int argc, char **argv) {
       for (int failedStep = 0; failedStep <= 11; ++failedStep) {
          MigrationRunner(database).applyInitial();
          bool injected = false;
-         rejects([&]() {
+         try {
             MigrationRunner interrupted(database, [failedStep, &injected](int step) { if (step == failedStep) { injected = true; throw std::runtime_error("Injected migration interruption"); } });
             interrupted.applyToVersion(2);
-         });
+         } catch (const std::exception &error) {
+            if (!injected) {
+               QTextStream(stderr) << "Migration failed before requested injection " << failedStep << ": " << error.what() << '\n';
+               throw; // Preserve the original safe application diagnostic and partial state.
+            }
+         }
          check(injected, "Unexpected migration failure before injection; preserve state for explicit review.");
          rejects([&]() { MigrationRunner(database).verify(2); });
          rejects([&]() { MigrationRunner(database).applyToVersion(2); }); // Never resume/repair.

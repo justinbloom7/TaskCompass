@@ -48,6 +48,11 @@ int main(int argc, char **argv) {
       check(application.arguments().size() == 4);
       QFile source(application.arguments()[1]); check(source.open(QIODevice::ReadOnly));
       const auto sql2 = source.readAll(); check(sql2 == MigrationRunner::migrationSql(2));
+      QTextStream(stdout) << "Reviewed DDL statement counts: " << MigrationRunner::migrationStatements(1).size()
+                          << " / " << MigrationRunner::migrationStatements(2).size() << '\n';
+      check(MigrationRunner::migrationStatements(2).size() == 9);
+      check(MigrationRunner::migrationStatements(1).size() == 5);
+      for (const auto &statement : MigrationRunner::migrationStatements(2)) { check(!statement.trimmed().isEmpty()); }
       check(sql2.count(';') == 9 && sql2.contains("commandTargetV2") && sql2.contains("taskOwnerChoice"));
       rejects([&]() { MigrationRunner::migrationSql(3); });
       rejects([&]() { MigrationRunner::tableNamesForVersion(0); });

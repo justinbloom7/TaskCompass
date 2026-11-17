@@ -3,7 +3,8 @@
 # Phase 1.2 source review and isolated validation
 
 The [milestone record](milestones/Phase1.2.md) is authoritative for approvals and
-actual results. **Only source/offline work is authorized so far.** Do not execute
+actual results. **Linux Stage 1A and corrected Stage 1B passed (owner-reported);
+Windows live validation and development upgrades remain pending.** Do not execute
 steps 3 or 4 without separate approval for that step, platform and target. None of
 these steps upgrades taskcompass_dev. Preserve taskcompass_integration, all accepted
 Phase 1.1 records and private backups/exports. Do not use its old reset scripts here.
@@ -59,8 +60,9 @@ its default action is an offline build/test run.
 
 ## 3 — Provision a NEW Phase 1.2 test target (approval required)
 
-**Not authorized or executed yet.** Approve this separately on each intended host:
-CentOS/MariaDB 10.5 and Windows/MariaDB 13. The fixed target is:
+**Linux provisioning completed; Windows provisioning remains pending.** Approve
+this separately on each intended host; do not rerun setup on the existing Linux
+account/database. The fixed target is:
 
 | Setting | Value |
 | --- | --- |
@@ -144,8 +146,10 @@ reset or TCP fallback is needed. The helper does not start services automaticall
 
 ## 4 — Run disposable Phase 1.2 integration fixtures (separate approval required)
 
-**Not authorized or executed yet.** After provisioning, report/review its result
-before obtaining approval to run the suite. Then:
+**Corrected Linux suite passed after approved recovery; Windows suite remains
+pending.** These are the reusable commands, not authorization to repeat recovery
+or run on another host. After provisioning, report/review its result before
+obtaining approval to run the suite. Then:
 
 ```bash
 bash scripts/phase12/04-integration-test.sh --approved
@@ -194,6 +198,31 @@ run needs a separately reviewed recovery plan; never remove it just to rerun.
 Integration exit 0 is success, 1 is failure, 77 is skipped (not a pass). Record full
 nonsecret output, server/platform versions and exit code in the milestone. Both
 MariaDB 10.5 and 13 must pass before any development upgrade is considered.
+
+### Unexpected migration failure: preserve and inspect
+
+An unexpected failure stops the suite and preserves the new test schema. Do not
+rerun setup, rerun the suite, reset tables or apply migrations to repair it. The
+2026-11-16 Linux failure exposed a source bug in counting trailing whitespace as a
+DDL statement; the fix is offline-tested but the retained database still needs
+review before cleanup/retry approval.
+
+For the socket-authenticated Linux administrator, this command executes **read-only
+inspection SQL** and prints metadata/counts without task text or credentials:
+
+```bash
+sudo mariadb --no-defaults --protocol=SOCKET --user=root \
+   taskcompass_phase12_test < scripts/phase12/inspect-failure.sql
+```
+
+Share its nonsecret output. It lists server/database identity, tables/types/engines,
+migration metadata and original-table row counts. If any query fails, share that
+error and stop. It does not query an absent MigrationAttempt table or modify any
+objects. The expected retained baseline for the statement-count failure is five
+schema-1 tables, migration row 1, Dataset count 1 and Task/CommandRecord/LocalChange
+counts zero; this is a source-based expectation pending actual inspection. Any
+different state requires review. Concrete cleanup SQL and permission to rerun must
+be approved separately after the retained state is reviewed.
 
 ## Later gates — not authorized by steps 3/4
 

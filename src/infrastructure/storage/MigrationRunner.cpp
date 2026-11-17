@@ -7,6 +7,7 @@
 #include <QDateTime>
 #include <QFile>
 #include <QSqlQuery>
+#include <QSqlError>
 #include <QStringList>
 #include <QUuid>
 #include <QVariant>
@@ -69,6 +70,17 @@ QByteArray MigrationRunner::migrationSql(int version) {
    QFile file(version == 1 ? ":/migrations/001.sql" : ":/migrations/002.sql");
    require(file.open(QIODevice::ReadOnly), "Embedded migration SQL is unavailable.");
    return file.readAll();
+}
+
+QStringList MigrationRunner::migrationStatements(int version) {
+   // These reviewed migrations contain simple DDL, no quoted semicolons/programs.
+   // SkipEmptyParts alone retains a whitespace-only suffix after the final ';'.
+   QStringList result;
+   for (const auto &part : QString::fromUtf8(migrationSql(version)).split(';', Qt::SkipEmptyParts)) {
+      const auto statement = part.trimmed();
+      if (!statement.isEmpty()) { result.append(statement); }
+   }
+   return result;
 }
 
 QStringList MigrationRunner::tableNamesForVersion(int version) {
@@ -329,7 +341,7 @@ void MigrationRunner::applyToVersion(int target) {
    const auto baseline = fingerprint(1);
    const auto sql = migrationSql(2);
    const auto checksum = QCryptographicHash::hash(sql, QCryptographicHash::Sha256).toHex();
-   const auto statements = QString::fromUtf8(sql).split(';', Qt::SkipEmptyParts);
+   const auto statements = migrationStatements(2);
    require(statements.size() == 9, "Migration 002 statement manifest changed; explicit review required.");
    const auto startedAt = QDateTime::currentMSecsSinceEpoch();
    bool attempted = false;
@@ -337,7 +349,13 @@ void MigrationRunner::applyToVersion(int target) {
    try {
       for (int step = 0; step < statements.size(); ++step) {
          QSqlQuery query(database);
-         require(query.exec(statements[step]), "Migration 002 DDL failed; explicit review required. Preserve partial state; no resume/reset/repair.");
+         if (!query.exec(statements[step])) {
+            bool validCode = false;
+            const auto code = query.lastError().nativeErrorCode().toInt(&validCode);
+            // Report only step/numeric code, never raw driver text or SQL data.
+            throw std::runtime_error(QString("Migration 002 DDL step %1 failed (MariaDB code %2); preserve state for explicit review, no resume/reset/repair.")
+               .arg(step + 1).arg(validCode ? QString::number(code) : QString("unavailable")).toStdString());
+         }
          if (step == 0) {
             if (afterStep) { afterStep(0); } // Bootstrap interruption before journal INSERT.
             query.prepare("INSERT INTO MigrationAttempt (version,checksum,baselineFingerprint,startedAt,completedAt,lastCompletedStep,attemptState) VALUES (2,?,?,?,NULL,1,'running')");
