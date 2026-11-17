@@ -19,8 +19,9 @@ are prepared and offline-mock-tested (Linux 17/17 tests). B7.2 capture/sealing a
 owner-confirmed private SQL review passed on both platforms on 2026-11-17. Retained
 paths/digests and all earlier failures are in the milestone. B7.3 exact-snapshot
 isolated restore/rehearsal is approved for owner execution; [numbered scripts](Phase1.2B73.md)
-are prepared and Linux offline tests passed (18/18). Actual restore results pending;
-no import executed by the agent.
+are prepared and Linux offline tests passed (18/18). Linux B7.3 restore/schema1/
+full-data-and-DDL preservation passed (owner-reported); retain its populated clone.
+Windows B7.3 remains approved/results pending; no import executed by the agent.
 Narrow-role rehearsal, development upgrade, GUI and schema2 backup/restore remain
 pending and separately gated.
 Phase 1.2 is not accepted.** See the

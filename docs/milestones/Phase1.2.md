@@ -2,7 +2,7 @@
 
 # Phase 1.2 — Organizational Management
 
-**Status: Stage 1B isolated integration, B7.1 read-only development preflight and B7.2 populated schema-1 backup/evidence capture plus private SQL review passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported, 2026-11-17). Retained artifact paths/hashes and all earlier failures/approvals are preserved below. B7.3 exact-snapshot isolated restore/rehearsal approved for owner execution on both platforms; numbered guarded scripts prepared and offline-tested. No live restore executed by agent; operator results pending. No live database procedure performed by agent. Narrow-role rehearsal, development upgrade, GUI/restart and expanded backup/restore gates remain pending and separately gated. Phase 1.2 is not accepted.**
+**Status: Stage 1B isolated integration, B7.1 read-only development preflight and B7.2 populated schema-1 backup/evidence capture plus private SQL review passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported, 2026-11-17). Retained artifact paths/hashes and all earlier failures/approvals are preserved below. B7.3 exact-snapshot isolated restore/rehearsal approved for owner execution on both platforms; numbered guarded scripts prepared and offline-tested. Linux B7.3 preflight/import/full preservation checks passed (owner-reported, 2026-11-17); populated clone retained. Windows B7.3 remains approved with results pending. No live restore executed by agent. No live database procedure performed by agent. Narrow-role rehearsal, development upgrade, GUI/restart and expanded backup/restore gates remain pending and separately gated. Phase 1.2 is not accepted.**
 Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
 Only this document and the roadmap were changed by Step A. Its designs/SQL were
 proposals. Step A itself authorized no SQL; the dated Step B reports below record
@@ -4457,3 +4457,92 @@ for review. B7.4's narrow migration/runtime role changes and migration002 need
 separate concrete approval after populated restoration/preservation passes on both
 servers. Development upgrade/GUI acceptance/schema2 recovery and final acceptance
 remain later, separately gated work. No Phase1.3 begins.
+
+
+## 2026-11-17 — Linux B7.3 populated restore/preservation passed
+
+### Actual owner-reported stage results
+
+Owner ran all three approved numbered B7.3 scripts on Linux:
+
+```bash
+scripts/phase12/b73/01-preflight.sh --approved
+scripts/phase12/b73/02-import.sh --approved
+scripts/phase12/b73/03-compare.sh --approved
+```
+
+Step01 verified all reviewed package and private B7.2 evidence checksums, the exact
+approved Linux dump digest and sealed native-client metadata. Read-only root
+preflight reported feledria/10.5.29-MariaDB, empty fixed test target, exact six
+scoped grants and no roles/extras/PUBLIC authority. These are operator-script
+assertions reported by the owner, not agent-executed SQL/catalog inspection.
+The reused B7.2 `Stage 04/04` banner is the evidence-check-only helper, not a new
+interactive private review or any backup recreation.
+
+Step02 accepted both `RESTORE taskcompass_phase12_test` and
+`DUMP REVIEWED; WRITERS CLOSED`. The existing Linux test account authenticated on
+attempt1/3. Fresh automatic root preflight again passed empty-target/grant guards
+immediately before import, and all snapshot checks were repeated. Reported:
+
+```text
+PASS: one-shot import exit 0. Next run 03-compare.sh; do not run integration/reset tests.
+```
+
+No database reset, account or grant change, migration002 or dev write was part of
+these scripts. The approved dump alone was imported under the existing test account.
+
+Step03 repeated private source-evidence checks, authenticated the same test account
+on attempt1/3 and reported:
+
+```text
+Schema 1 verified; dataset 21be9da7-b767-4578-b972-cc9a35122ddb
+rehearsal1.hex.tsv: OK
+rehearsal1.ddl.txt: OK
+b73-import-attempt.txt: OK
+b73-import-success.txt: OK
+PASS: B7.3 schema1/UUID/all legacy columns and history/counts/DDL match exact snapshot.
+Preserve populated clone; no reset, migration or grant changes authorized.
+```
+
+**Linux B7.3 passed (owner-reported).** This proves recovery of this exact populated
+schema1 snapshot on the approved Linux server, with guarded schema/fingerprint/FK/
+UUID verification, all 38 original columns/counts/history/payload bytes/tombstones
+and same-platform DDL equality against the sealed source evidence. Clone UUID
+intentionally remains the source UUID. Baseline source counts preserved by the
+full comparison: Dataset1, SchemaMigration1, Task4, CommandRecord28, LocalChange28;
+no separate per-table numeric query was pasted in this run. Native import exit0
+was explicitly reported; other stage success is evidenced by their PASS output.
+No new backup/schema2/narrow-role/migration acceptance is implied.
+
+### Retained targets and artifacts
+
+- Passive populated clone: taskcompass_phase12_test on feledria/10.5.29, local
+  TCP127.0.0.1:3306; existing taskcompass_phase12_test@127.0.0.1.
+- Snapshot/evidence directory remains
+  /home/justin/temp/TaskCompassBackups/Phase1.2-schema1-linux-20261117-013703.
+- Unchanged approved after-gui.sql digest:
+  83ae094ed33865bba0c22e39174f2977a49cc014de3f669115300105eec2bd26.
+- New private import attempt/success markers, rehearsal1.hex.tsv/rehearsal1.ddl.txt
+  and b73-comparison.sha256 retained. Export/checksum contents are private and
+  were not supplied to or read by the agent.
+
+**Do not rerun preflight/import/comparison on the completed Linux stage or run
+reset-capable integration tests against this populated clone.** Preserve every
+source snapshot, new evidence, all Phase1.1 artifacts and original restored
+integration databases. No cleanup is authorized. B7.4 requires separate exact SQL/
+privilege/migration approval before changing this clone.
+
+### Remaining approved platform check and reporting validation
+
+Windows B7.3 is still approved for owner-only execution using its own pinned
+snapshot and database/server. Run the same three scripts there one at a time;
+stop on failure, use Windows test account password and report outputs. Never use
+the Linux snapshot/UUID/digest for Windows. No new B7.3 approval required for the
+existing exact Windows scope; B7.4+ remains separately gated after both pass.
+
+Updated current milestone/Roadmap/TestingPhase1.2 status and appended this evidence.
+Markdown local-reference/fence checks and git diff --check passed. No code, script,
+SQL, migration, private file or database operation performed by the agent; no
+application build/CTest rerun for reporting-only changes. All live observations
+above are owner-reported, distinct from prior agent offline tests. No commit,
+push, merge, tag, dependency install, Phase1.3 or acceptance claim.
