@@ -2,7 +2,7 @@
 
 # Phase 1.2 — Organizational Management
 
-**Status: Stage 1B isolated integration, B7.1 read-only development preflight, B7.2 populated schema-1 capture/private review and B7.3 populated restore/full preservation checks passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported, 2026-11-17). All exact source snapshots/evidence are retained; Linux rehearsal clone is now schema2 and Windows rehearsal clone remains schema1. B7.4a narrow-migrator grant transition and clone-only migration002 approved for operator execution on both platforms (2026-11-17); Linux all four stages passed (owner-reported, 2026-11-17); Windows B7.4a remains pending. No live database procedure performed by agent. Runtime-role rehearsal, development upgrade, GUI/restart and schema2 backup/restore remain pending and separately gated. Phase 1.2 is not accepted.**
+**Status: Stage 1B isolated integration, B7.1 read-only development preflight, B7.2 populated schema-1 capture/private review and B7.3 populated restore/full preservation checks passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported, 2026-11-17). All exact source snapshots/evidence are retained; both populated rehearsal clones are now schema2. B7.4a narrow-migrator grant transition and clone-only migration002 approved for operator execution on both platforms (2026-11-17); all four stages passed on Linux and Windows (owner-reported, 2026-11-17). No live database procedure performed by agent. Runtime-role rehearsal, development upgrade, GUI/restart and schema2 backup/restore remain pending and separately gated. Phase 1.2 is not accepted.**
 Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
 Only this document and the roadmap were changed by Step A. Its designs/SQL were
 proposals. Step A itself authorized no SQL; the dated Step B reports below record
@@ -4888,3 +4888,60 @@ scripts, private artifacts or databases changed by agent. Application tests/buil
 not rerun because this update only records owner evidence; prior 19/19 offline
 results remain historical. Documentation link/fence checks and `git diff --check`
 are performed below as the final reporting checks. No commit/push/merge/tag.
+
+## 2026-11-17 — Windows B7.4a passed; both populated narrow-role rehearsals passed
+
+### Owner-reported execution and results
+
+Owner supplied successful native Windows/UCRT64 output for all four commands:
+
+```bash
+scripts/phase12/b74a/01-preflight.sh --approved
+scripts/phase12/b74a/02-grants.sh --approved
+scripts/phase12/b74a/03-migrate.sh --approved
+scripts/phase12/b74a/04-preservation.sh --approved
+```
+
+Target was `taskcompass_phase12_test` on feldria-w10/MariaDB13.0.2, dataset
+`457bb52b-fea4-4347-9c47-675c6b035c90`. Stage01 rejected the first test-account
+password and accepted attempt2/3 using the bounded read-only authentication probe;
+no backup/export was attempted by that rejected probe. The remaining stages
+completed without reported failure. Password-option notices explicitly reported
+unchanged TLS settings; no TLS workaround was applied.
+
+- Preflight validated the exact sealed snapshot/B7.3 receipts, schema1/UUID/
+  fingerprint, all original values and raw DDL, native server identity and exact
+  original broad grants with no unexpected authority/sessions.
+- Grants stage freshly revalidated the baseline, applied the approved narrow
+  transition and verified narrow grants plus unchanged schema1 data.
+- Migration stage repeated baseline/narrow-role checks, applied migration002 once
+  and independently verified schema2. Both runner outputs retained dataset
+  `457bb52b-fea4-4347-9c47-675c6b035c90`.
+- Preservation stage verified schema2/narrow grants, unchanged original data/
+  history/metadata, empty new ownership and zero CHECK/FK health violations.
+  All eight new receipt/export files reported OK. Final result:
+  `PASS: B7.4a narrow-role schema2 clone; all original data/history/metadata preserved, new owners empty and every CHECK/FK health rule zero.`
+
+Retain the populated Windows schema2 clone and all evidence in
+`/c/Users/justin/TaskCompassBackups/Phase1.2-schema1-windows-20261117-064917`.
+The original snapshot digest remains
+`6588eb9ebc30b63b36b33f2abbc4a0de9da31b252c41a3fd585b8b060073fe50`.
+The directory name reflects the original schema1 capture and must not imply that
+its now-migrated rehearsal database remains schema1. Preserve all earlier Linux,
+Windows and Phase1.1 artifacts and historical results. Do not rerun mutation or
+reset tests against either populated schema2 clone.
+
+### Current gate and reporting scope
+
+B7.4a passed on both approved platforms (owner-reported); this is not Phase1.2
+acceptance. B7.4b runtime-role/probe is the next separately gated rehearsal;
+B7.5 development migration, GUI acceptance and Phase1.3 remain unauthorized.
+No new live operation or privilege change is requested or performed here.
+
+Changed only this milestone, `docs/Roadmap.md` and `docs/TestingPhase1.2.md` to
+record evidence and update current pointers. Earlier pending statements remain
+historical and are superseded by this entry. No code/SQL/scripts, private artifacts,
+databases or accounts accessed or modified by agent. Build/CTest not repeated for
+this documentation-only report; prior actual offline results remain preserved.
+Markdown references/fences and `git diff --check` are the reporting validation.
+No commit, push, merge or tag.

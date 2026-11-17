@@ -24,8 +24,8 @@ full-data-and-DDL preservation passed on both platforms (owner-reported); retain
 both populated clones and exact source artifacts. B7.4a narrow-migrator grant
 transition and clone-only migration002 are approved for operator execution on both
 platforms; [four numbered scripts](Phase1.2B74a.md) are prepared with offline mocks.
-Linux B7.4a all four stages passed (owner-reported, 2026-11-17), preserving original
-data/history in the schema2 clone; Windows B7.4a remains pending. Nothing executed by the agent. Runtime-role rehearsal, development upgrade, GUI and schema2 backup/
+B7.4a all four stages passed on Linux and Windows (owner-reported, 2026-11-17),
+preserving original data/history in both schema2 clones. Nothing executed by the agent. Runtime-role rehearsal, development upgrade, GUI and schema2 backup/
 restore remain pending and separately gated.
 Phase 1.2 is not accepted.** See the
 [scripted Windows sequence](WindowsPhase1.1.md). Live provisioning, grants and
