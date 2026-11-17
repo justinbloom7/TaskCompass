@@ -12,8 +12,9 @@ B7.2 capture/sealing and owner-confirmed private SQL review passed on both platf
 on 2026-11-17; retained paths/hashes and historical failures are in the milestone.
 B7.3 populated exact-snapshot isolated restore is approved for owner execution
 using [three numbered scripts](Phase1.2B73.md); Linux offline suite18/18 passed.
-Linux B7.3 populated restore/schema1/full preservation passed (owner-reported);
-Windows B7.3 remains approved/results pending. No live procedure was performed by the agent. Development upgrades and subsequent
+B7.3 populated restore/schema1/full preservation passed on both platforms
+(owner-reported); both populated clones must be retained. B7.4a narrow-migrator
+grant/clone migration approval is requested, not executed. No live procedure was performed by the agent. Development upgrades and subsequent
 privilege/GUI/backup gates remain pending and require separate approval.** Do not execute
 steps 3 or 4 without separate approval for that step, platform and target. None of
 these steps upgrades taskcompass_dev. Preserve taskcompass_integration, all accepted

@@ -2,7 +2,7 @@
 
 # Phase 1.2 — Organizational Management
 
-**Status: Stage 1B isolated integration, B7.1 read-only development preflight and B7.2 populated schema-1 backup/evidence capture plus private SQL review passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported, 2026-11-17). Retained artifact paths/hashes and all earlier failures/approvals are preserved below. B7.3 exact-snapshot isolated restore/rehearsal approved for owner execution on both platforms; numbered guarded scripts prepared and offline-tested. Linux B7.3 preflight/import/full preservation checks passed (owner-reported, 2026-11-17); populated clone retained. Windows B7.3 remains approved with results pending. No live restore executed by agent. No live database procedure performed by agent. Narrow-role rehearsal, development upgrade, GUI/restart and expanded backup/restore gates remain pending and separately gated. Phase 1.2 is not accepted.**
+**Status: Stage 1B isolated integration, B7.1 read-only development preflight, B7.2 populated schema-1 capture/private review and B7.3 populated restore/full preservation checks passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported, 2026-11-17). Both populated schema-1 rehearsal clones and all exact source snapshots/evidence are retained. B7.4a narrow-migrator grant transition and clone-only migration002 approval requested; not executed. No live database procedure performed by agent. Runtime-role rehearsal, development upgrade, GUI/restart and schema2 backup/restore remain pending and separately gated. Phase 1.2 is not accepted.**
 Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
 Only this document and the roadmap were changed by Step A. Its designs/SQL were
 proposals. Step A itself authorized no SQL; the dated Step B reports below record
@@ -4546,3 +4546,181 @@ SQL, migration, private file or database operation performed by the agent; no
 application build/CTest rerun for reporting-only changes. All live observations
 above are owner-reported, distinct from prior agent offline tests. No commit,
 push, merge, tag, dependency install, Phase1.3 or acceptance claim.
+
+
+## 2026-11-17 — Windows B7.3 passed; populated recovery gate complete
+
+### Actual owner-reported native Windows results
+
+Owner ran all three B7.3 stages in UCRT64 on feldria-w10:
+
+```bash
+scripts/phase12/b73/01-preflight.sh --approved
+scripts/phase12/b73/02-import.sh --approved
+scripts/phase12/b73/03-compare.sh --approved
+```
+
+Step01 passed reviewed-file and full private-source evidence checks, exact pinned
+snapshot/native-client binding, and read-only root preflight:
+
+```text
+PASS: feldria-w10 / 13.0.2-MariaDB; empty fixed target, exact six grants, no roles/extras/PUBLIC writes.
+```
+
+The reused B7.2 review banner is evidence-check-only mode, explicitly not another
+pager/SQL review. Source after-gui.sql digest remained
+6588eb9ebc30b63b36b33f2abbc4a0de9da31b252c41a3fd585b8b060073fe50, in
+/c/Users/justin/TaskCompassBackups/Phase1.2-schema1-windows-20261117-064917.
+
+Step02 accepted both restore/writers-reviewed confirmations. Windows
+taskcompass_phase12_test authenticated on attempt1/3; fresh root metadata preflight
+and snapshot checks passed again before import. Reported native import exit0:
+
+```text
+PASS: one-shot import exit 0. Next run 03-compare.sh; do not run integration/reset tests.
+```
+
+Step03 authenticated the same test account on attempt1/3 and reported:
+
+```text
+Schema 1 verified; dataset 457bb52b-fea4-4347-9c47-675c6b035c90
+rehearsal1.hex.tsv: OK
+rehearsal1.ddl.txt: OK
+b73-import-attempt.txt: OK
+b73-import-success.txt: OK
+PASS: B7.3 schema1/UUID/all legacy columns and history/counts/DDL match exact snapshot.
+Preserve populated clone; no reset, migration or grant changes authorized.
+```
+
+**Windows B7.3 passed (owner-reported).** Guarded Qt schema1/fingerprint/FK/index/
+UUID checks and all 38 original columns/counts/audit payload bytes/history/timestamps/
+tombstones plus raw same-platform DDL matched the sealed Windows source. Baseline
+counts preserved through full comparison are Dataset1/SchemaMigration1/Task2/
+CommandRecord16/LocalChange16; no fresh numeric row-count query was separately
+pasted. Import exit0 was explicit; remaining stages' PASS/normal return is the
+reported result, without a separate numeric wrapper exit code.
+
+Native password-option notices appeared but did not prevent success. No TLS option
+was changed and actual negotiated TLS remains unmeasured. No failed import/retry,
+reset, grant change or metadata repair was reported. All observations above are
+owner-executed results; agent did not access a server or private export/dump.
+
+### Both populated schema-1 rehearsals retained
+
+B7.3 is now passed on **both supported servers**, proving recovery of each exact
+reviewed populated schema1 baseline. Retain both taskcompass_phase12_test clones,
+original source snapshot/evidence directories, new import markers and rehearsal1
+comparison exports/manifests unchanged. Both clone UUIDs intentionally match their
+respective source, not each other. Linux dump digest remains
+83ae094ed33865bba0c22e39174f2977a49cc014de3f669115300105eec2bd26. All prior failures,
+approvals and Phase1.1 restored databases/artifacts remain preserved. No reset-
+capable integration tests or repeated B7.3 import/comparison on populated clones.
+This is not narrow-role migration validation, development upgrade or final acceptance.
+
+### Approval Requested — B7.4a narrow-migrator populated clone upgrade only
+
+Request new **operator-only B7.4a** authorization on both exact existing clones:
+
+| Platform | Host / server | Database and account | Current expected UUID / version |
+| --- | --- | --- | --- |
+| Linux | feledria / 10.5.29-MariaDB / local127.0.0.1:3306 | taskcompass_phase12_test / taskcompass_phase12_test@127.0.0.1 | 21be9da7-b767-4578-b972-cc9a35122ddb / schema1 |
+| Windows | feldria-w10 / 13.0.2-MariaDB / local127.0.0.1:3306 | taskcompass_phase12_test / taskcompass_phase12_test@127.0.0.1 | 457bb52b-fea4-4347-9c47-675c6b035c90 / schema1 |
+
+Full reviewed operator procedure: [B7.4a](../Phase1.2B7.md#b74a-migration-role).
+Source-only preparation/numbered scripts can follow the existing operator-script
+pattern; no agent live execution. Before any grants: stop all writers, revalidate
+all exact snapshot/import/comparison evidence, current schema1/checksum/fingerprint/
+dataset and all legacy values against the sealed source, and root metadata for
+unchanged host/version/charset/objects and exactly the current six schema privileges,
+with no roles/column/table/global/PUBLIC extras. Baseline drift stops for review.
+Do not overwrite existing B7.3 exports or assume an old PASS is fresh state proof.
+
+Exact proposed privilege transition, unchanged
+[rehearsal-migration-grants.sql](../../scripts/phase12/b7/rehearsal-migration-grants.sql):
+
+```sql
+-- SPDX-License-Identifier: GPL-3.0-or-later
+-- B7 review package only: execution requires the matching explicit approval.
+-- Only after approved snapshot import and verified exact six existing schema grants.
+REVOKE SELECT, INSERT, UPDATE, CREATE, DROP, ALTER ON `taskcompass\_phase12\_test`.* FROM 'taskcompass_phase12_test'@'127.0.0.1';
+GRANT SELECT ON `taskcompass\_phase12\_test`.* TO 'taskcompass_phase12_test'@'127.0.0.1';
+GRANT CREATE ON taskcompass_phase12_test.Pillar TO 'taskcompass_phase12_test'@'127.0.0.1';
+GRANT CREATE ON taskcompass_phase12_test.Project TO 'taskcompass_phase12_test'@'127.0.0.1';
+GRANT CREATE ON taskcompass_phase12_test.Objective TO 'taskcompass_phase12_test'@'127.0.0.1';
+GRANT CREATE, INSERT, UPDATE ON taskcompass_phase12_test.MigrationAttempt TO 'taskcompass_phase12_test'@'127.0.0.1';
+GRANT ALTER ON taskcompass_phase12_test.Task TO 'taskcompass_phase12_test'@'127.0.0.1';
+GRANT ALTER ON taskcompass_phase12_test.CommandRecord TO 'taskcompass_phase12_test'@'127.0.0.1';
+GRANT ALTER ON taskcompass_phase12_test.LocalChange TO 'taskcompass_phase12_test'@'127.0.0.1';
+GRANT INSERT ON taskcompass_phase12_test.SchemaMigration TO 'taskcompass_phase12_test'@'127.0.0.1';
+```
+
+This removes the broad six test-schema rights and retains schema SELECT plus the
+8 narrowly scoped table grants. No password/account/authentication change, global
+rights, GRANT OPTION, table DROP or standalone INDEX privilege. ALTER itself can
+perform more than this migration, so it is strictly maintenance-only. Validate
+this exact role set before invoking migration; if any GRANT/REVOKE fails or creates
+an unexpected partial set, stop/inspect and request exact recovery, not broaden it.
+Granting CREATE for absent new tables and these minima remain **unproven on the
+populated servers**; this gate exists to establish them on both, not assume success.
+
+Exact actual migration SQL is
+[002_OrganizationalManagement.sql](../../migrations/mariadb/002_OrganizationalManagement.sql),
+SHA256 **7de311935843e4fc04cbca74d025d9f38986a4154d70bdd29b35a2820f87b736**,
+all nine reviewed DDL statements (four CREATE TABLE, five ALTER TABLE). Migration001
+is not edited or reapplied. The runner journals the step/state/checksum/baseline,
+validates shape and unchanged legacy digest, and records migration row2 only under
+its controlled protocol. Never execute the SQL suffix/file manually or rewrite
+SchemaMigration/MigrationAttempt to force verification.
+
+Under the test account with explicit approved TASKCOMPASS_PHASE12_TEST_DB_* config,
+the existing CLI operation sequence proposed is:
+
+```bash
+"$taskCompassMigrate" --verify --phase12-test --to-version 1 &&
+"$taskCompassMigrate" --apply --phase12-test --to-version 2 &&
+"$taskCompassMigrate" --verify --phase12-test --to-version 2
+```
+
+No --integration, dev credentials or root migration. Expected intentional changes:
+five-table schema1 becomes nine-table schema2, four new tables (MigrationAttempt,
+Pillar, Project, Objective), optional Task owner columns and typed history targets/
+constraints/index changes from actual 002. Existing UUIDs, all 38 original columns,
+counts, task timestamps/lifecycle/tombstones and raw historical payloadVersion1
+JSON/audit/compensation data remain unchanged. Row1 metadata tuple unchanged; one
+completed version2 attempt at step9 and schema row2/checksum/fingerprint verified;
+new organizational tables empty and old new-owner/target columns NULL as specified.
+
+After successful migration, approval includes new private rehearsal2-legacy.hex.tsv
+and rehearsal2.ddl.txt exports (no overwrite), comparison to sealed baseline, and
+read-only upgrade-postconditions.sql / schema2-health.sql checks: zero violations
+for every actual CHECK/20 FKs and zero unexpected legacy owner/target values.
+All guards/checks must pass before any further role swap or runtime work. This
+approves no domain record edits or SQL runtime permission probe yet.
+
+Backup/recovery: exact schema1 dumps and comparison evidence on both platforms are
+retained and have now been successfully restored; leave them and every Phase1.1
+artifact untouched. DDL/grants are not one reversible transaction. Any unexpected
+or interrupted/uncertain grant/DDL/journal/final commit/verification is a hard stop:
+preserve partial clone/attempt/schema history and diagnostics, no resume, suffix
+execution, reset, overwrite, down migration or metadata repair. Read-only failure
+inspection uses the fixed-target metadata procedure; actual-state-specific recovery
+requires new explicit approval. A fresh schema1 recovery target or in-place clone
+restore is **not** authorized here; no generic DROP/reimport plan is safe before
+knowing the failure state. The original backup is preserved regardless of outcome.
+
+B7.4a intentionally upgrades the two populated **rehearsal** clones while preserving
+all original domain/audit data. It does not upgrade taskcompass_dev, change its
+accounts/grants, affect original restored taskcompass_integration, provision a new
+user/database, run destructive tests or cleanup, launch GUI, or start Phase1.3.
+B7.4b runtime-equivalent role/probe is a separate later approval after this gate.
+B7.5 development grants/migration remains separately gated after both populated
+narrow-role rehearsals succeed. No final milestone acceptance is implied.
+
+### Reporting changes and validation
+
+Updated milestone/Roadmap/TestingPhase1.2 status and appended owner Windows evidence/
+next concrete SQL/procedure approval request. Markdown local links/fences and git
+diff --check passed. No script/code/SQL/migration/diagram/private-artifact change,
+agent live query/grant/migration/backup/restore/reset or dependency installation.
+Build/CTest not rerun for this reporting-only update; prior actual offline evidence
+remains preserved. No commit, push, merge or tag. Await owner approval for B7.4a.
