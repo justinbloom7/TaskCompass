@@ -37,7 +37,7 @@ authenticate() {
          continue
       fi
       if authOutput=$(printf '%s\n' 'SELECT DATABASE(),CURRENT_USER();' |
-         LC_ALL=C MYSQL_PWD="$accountPassword" "$clientPath" --no-defaults --protocol=TCP \
+         LC_ALL=C MYSQL_PWD="$accountPassword" "$clientPath" --no-defaults --skip-reconnect --protocol=TCP \
             --host=127.0.0.1 --port=3306 --user="$user" --connect-timeout=5 \
             --default-character-set=utf8mb4 --batch --raw --skip-column-names \
             --database="$CREDENTIAL_DATABASE" 2>&1); then authStatus=0; else authStatus=$?; fi

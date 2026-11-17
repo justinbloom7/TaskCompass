@@ -134,6 +134,8 @@ import pathlib, re, sys
 source = re.sub(r'^--.*$', '', pathlib.Path(sys.argv[1]).read_text(), flags=re.M)
 assert all(statement.strip().startswith('SELECT ') for statement in source.split(';') if statement.strip())
 READONLY
+# Reusable offline-only fixture factory; never a production script bypass.
+if [[ "${TASKCOMPASS_OPERATOR_FIXTURES_ONLY:-0}" == 1 ]]; then return 0; fi
 fixture 'linux snapshot'
 for stage in 01-preflight 02-import 03-compare; do
    run "$stage" --help >/dev/null
