@@ -2,7 +2,7 @@
 
 # Phase 1.2 — Organizational Management
 
-**Status: isolated migration/integration validation passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported). Development upgrade, narrow runtime/migrator privilege validation, real GUI/restart and backup/restore gates remain pending. Phase 1.2 is not accepted.**
+**Status: isolated migration/integration validation passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported). B7.1 read-only preflight approved; Linux metadata/grants and corrected schema-1 verification passed (owner-reported, 2026-11-17). SHOW CREATE compatibility correction built with 16/16 offline tests passing. Windows rebuild/revalidation and B7.1 preflight remain pending. No B7 database mutations authorized. Populated narrow-role rehearsal, development upgrade, GUI/restart and expanded backup/restore gates remain pending. Phase 1.2 is not accepted.**
 Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
 Only this document and the roadmap were changed by Step A. Its designs/SQL were
 proposals. Step A itself authorized no SQL; the dated Step B reports below record
@@ -2407,3 +2407,740 @@ evidence. No source/migration/scripts/schema/permissions or database contents we
 changed by the agent. Markdown local-link/code-fence checks and git diff --check
 passed. No build/test/live queries were rerun for this reporting-only update;
 owner-reported live results are distinguished above. No commit/push/merge/tag.
+
+
+## 2026-11-16 — B7 development migration and acceptance review package
+
+### Status, scope and authorization
+
+**Prepared for review only.** The owner confirmed both Stage 1B isolated platform
+passes and requested preparation of B7. No B7 live SQL, connection, provisioning,
+grant change, backup/export capture, restore or migration was executed by the
+agent. No such operation is authorized by this package. Phase 1.2 remains pending
+validation and owner acceptance; Phase 1.3 is excluded. All previous reports,
+failures, approvals and platform evidence above remain historical evidence.
+
+The detailed operator procedures are in [Phase1.2B7.md](../Phase1.2B7.md).
+This milestone remains the authoritative approval/result ledger. Each later
+approval must identify platform/host, exact database/account, SQL/hash/artifact,
+expected changes, stop conditions and recovery scope. Nothing below approves a
+combined end-to-end run or a cleanup/reset.
+
+### Inspected infrastructure and design findings
+
+Reviewed existing Phase 1.1 provisioning/validation/backup/restore wrappers and
+scripts; Phase 1.2 setup, integration preflight and identity guards;
+DatabaseConfig/Connection, migration CLI/runner, migrations 001/002, structural
+manifest and cumulative diagrams; persistent application identity/schema guards.
+The authoritative design remains Requirements/Architecture/DataModel/Interactions
+and Roadmap; no organizational cardinality, application behavior or schema changes.
+
+- The current runner supports a populated 1→2 upgrade, explicit target version,
+  migration/mutation locks, immutable migration-001 history, preservation checks and
+  step journal. Any incomplete/uncertain attempt requires explicit review; no
+  automatic suffix execution, reset, resume or metadata repair is proposed.
+- Schema-1 verification must explicitly use `--verify --to-version 1` under the
+  existing read-only migrator. Diagnostic credentials are valid for native
+  SELECT/dumps, not Qt's guarded migration config. GUI requires schema 2 and the
+  real runtime account on taskcompass_dev. These restrictions remain unchanged.
+- Existing Phase 1.1 `09-backup.sh` can capture a new private **schema-1** baseline
+  with Windows ACLs and five-table comparisons. Old setup/migration scripts expect
+  empty development databases, and old restore/compare scripts use the retained
+  original integration database: do not run them here. The old backup/export
+  implementation does not validate all nine schema-2 tables.
+- Both Stage 1B suites used six schema-wide privileges on synthetic data. They
+  do **not** prove the proposed narrower roles or a real populated upgrade. The
+  package adds a separately approved populated snapshot import and narrow-role
+  rehearsal on taskcompass_phase12_test before any development DDL.
+- The normal GUI cannot target that clone. Do not weaken its identity guard.
+  Rehearsal runtime SQL checks roll back and are permission tests, not application
+  command/history or GUI acceptance. Those real checks occur on development only
+  after separately approved upgrade and runtime grants.
+- A proposed new CLI-only taskcompass_phase12_restore target preserves both the
+  populated rehearsal and the old restored taskcompass_integration. Its validation
+  is nine-table data/DDL equality against an already Qt-verified source plus all
+  FK/CHECK checks; no unsupported Qt verification is claimed there.
+
+### Proposed stages and exact review material
+
+| Stage | Deliverable and prerequisite | Separate approval / expected result |
+| --- | --- | --- |
+| B7.1 | Read-only development preflight on both known servers | First request below; schema 1/five tables, current checksums/fingerprint, dataset/counts and reviewed effective grants. |
+| B7.2 | Fresh private populated schema-1 dump and canonical evidence | After preflight; new external path, stopped writers, dump exit 0/hash/private inspection and unchanged before/after data. Preserve all old artifacts. |
+| B7.3 | Exact-file schema-1 restore into empty phase12 test target | Exact local dump hash, import SQL review and empty-target/grant preflight; same UUID and every legacy value/DDL definition. Retain clone. |
+| B7.4a | Populated clone migration with narrowly scoped grants | Exact grant swap and unchanged 002; both MariaDB 10.5.29 and 13.0.2 must verify 2 and preserve all legacy data before dev upgrade. |
+| B7.4b | Narrow runtime-equivalent clone role | Exact role swap plus rollback-only probe; exact grants, Qt read verification, full nine-table equality before/after probe. |
+| B7.5 | Development temporary grants and 1→2 | Both rehearsals passed; fresh baseline and backup/hash revalidation. Explicit host-specific approval for exact grants and migration 002, stop on any drift. |
+| B7.6 | Runtime extension and temporary migrator revocation | Preservation passed first; final 19 runtime table privileges, migrator/diagnostic SELECT only, runtime migration guard rejection. |
+| B7.7 | Persistent GUI acceptance on both platforms | Deliberate labeled QA records; organizational/task ownership, archive inheritance/restoration, history/conflicts and restart checklist. |
+| B7.8 | New private schema-2 populated snapshot | Fresh path/quiescence approval, all nine tables/85 columns and DDL evidence before/after capture. |
+| B7.9 | Fresh CLI-only restore target and exact schema-2 import | Separate account/database provisioning, exact-artifact restore and later read-only grant conversion approvals. Full data/DDL equality and zero FK/CHECK violations. |
+| B7.10 | Final review and owner acceptance | All actual platform/runtime/recovery results recorded. No automatic acceptance, cleanup, reset or next milestone. |
+
+The runbook contains exact Bash invocations for Linux socket/sudo and Windows
+UCRT64 password-authenticated administration, native clients/dump tools, existing
+Qt CLI flags and scoped runtime GUI launch. Passwords are terminal prompts or
+session-only Qt environment values, never saved. SQL templates contain no secrets.
+The proposal SQL files do not execute automatically and have no new runner hook.
+
+Exact migration grant delta (existing schema-wide SELECT retained), in
+[migration-dev-grants.sql](../../scripts/phase12/b7/migration-dev-grants.sql):
+CREATE on Pillar/Project/Objective; CREATE/INSERT/UPDATE on MigrationAttempt;
+ALTER on Task/CommandRecord/LocalChange; INSERT on SchemaMigration. Eight GRANT
+statements, no DROP, global/grant-option rights or audit payload UPDATE. CREATE and
+ALTER cover indexes embedded in their DDL; no standalone CREATE INDEX is run.
+Support for grants on absent tables and the narrow minima must be proved during
+both populated rehearsals, not assumed. Any denial stops for review, not broadening.
+
+Exact final runtime delta and matching migration revocations are in
+[runtime-dev-grants-and-revoke.sql](../../scripts/phase12/b7/runtime-dev-grants-and-revoke.sql).
+App gains SELECT/INSERT/UPDATE on each new organizational table and SELECT on
+MigrationAttempt. Its final table privileges total 19: four mutable tables with
+SELECT/INSERT/UPDATE, two append-only history tables with SELECT/INSERT, three
+metadata tables with SELECT. Diagnostic and migrator retain their existing
+SELECT-only schema grants/passwords. No existing account is recreated or reset.
+Rehearsal role swaps model the same boundaries; new CLI-only restore account is
+proposed with SELECT/INSERT/CREATE only, then separately revoke INSERT/CREATE.
+
+### Preservation, recovery and acceptance criteria
+
+Legacy export uses all **38 original columns**, including task IDs/owners (old
+schema has no owner fields), lifecycle/tombstones, timestamps/revisions, Dataset
+name/UUID, the entire migration-1 tuple and every CommandRecord/LocalChange column.
+HEX/type/NULL-tagged output preserves raw JSON bytes, property order, whitespace,
+Unicode, empty versus NULL and compensation/reapply links. Stable ID/version order
+and all-row counts avoid misleading active-only or SELECT-* comparisons. New
+organizational tables must be empty, all new legacy owner/target fields NULL,
+payloads still version 1 and attempt 2 completed at step 9 before GUI activity.
+The complete schema-2 export covers all **85 columns/nine tables**, both migration
+rows and MigrationAttempt; matching same-server raw DDL proves indexes/constraints
+alongside the runner fingerprint. Health SQL covers 20 FKs and every actual CHECK.
+
+Backups require quiescence, fresh nonoverwriting external directories and verified
+private permissions/Windows ACLs before data files. Same-platform native client/
+server version is used; no cross-version dump editing or portability claim. New
+schema-1 and schema-2 directory variables remain distinct. Every artifact/hash,
+exit/result, actual dataset/count and effective grant observation must be recorded
+privately or summarized without disclosing task data. A checksum alone is not a
+SQL safety review or successful recovery test.
+
+MariaDB DDL/grants are not a rollback bundle. Import/grant/migration failures may
+leave partial state; stop, preserve it and obtain exact state-specific recovery
+approval. Do not resume, overwrite backups or reset any target. A populated clone
+restore proves recoverability without touching dev. Any actual in-place fallback
+would require fresh forensic capture and separate destructive-operation approval
+for the observed state and exact backup; no universal DROP/down migration is
+prepared or authorized. Keep an accepted schema-1 build for any approved fallback;
+the new GUI cannot run on schema 1. If schema-2 work exists, preserve it before
+considering fallback. Table rebuild time/free-space requirements remain unmeasured.
+
+GUI acceptance in the runbook covers legal ownership and parent-aware edits,
+deep navigation, subtree moves/cycle rejection, views sharing UUIDs, explicit versus
+inherited archive flags/locating archived ancestors, restore without child-flag
+rewrites, chronological undo/redo and conflict rejection, original task behavior,
+restart persistence and empty session undo history with durable receipts retained.
+No completion/deletion lifecycle for organizations or Phase 1.3 controls are added.
+
+### Files created or modified
+
+- New [B7 operator review package](../Phase1.2B7.md), including all commands,
+  exact SQL links, platform differences, checklist and stop/recovery matrix.
+- New `scripts/phase12/b7/` with 19 **proposed** SQL files:
+  `preflight-dev.sql`, `preflight-dev-grants.sql`, `preflight-rehearsal.sql`,
+  `preflight-restore.sql`, `preflight-clone-grants.sql`, `public-grants.sql`;
+  `legacy-export.sql`, `schema2-export.sql`, `ddl1-export.sql`, `ddl2-export.sql`,
+  `schema2-health.sql`, `upgrade-postconditions.sql`;
+  `migration-dev-grants.sql`, `runtime-dev-grants-and-revoke.sql`,
+  `rehearsal-migration-grants.sql`, `rehearsal-runtime-grants.sql`,
+  `runtime-probe.sql`, `restore-account.template.sql`, `restore-account-readonly.sql`.
+- New [ReviewChecksums.sha256](../../scripts/phase12/b7/ReviewChecksums.sha256)
+  pins the runbook/19 SQL files. From root, verification is read-only and offline.
+- Updated this milestone's current status and append-only report,
+  [Roadmap](../Roadmap.md) and [TestingPhase1.2](../TestingPhase1.2.md) pointers.
+- No application source, migrations, schema diagrams, existing validation scripts,
+  protected Phase 1.1 report, live database or private artifact was changed.
+
+### Agent-executed offline validation and limitations
+
+Commands from repository root:
+
+```bash
+python3 tests/DatabaseSchemaTests.py
+python3 docs/diagrams/GenerateDatabaseSchema.py --check
+sha256sum --check scripts/phase12/b7/ReviewChecksums.sha256
+sha256sum migrations/mariadb/001_PersistentTaskFoundation.sql \
+   migrations/mariadb/002_OrganizationalManagement.sql docs/milestones/Phase1.1.md
+git diff --check
+```
+
+Results: all **5 schema tests passed**; cumulative artifacts/manifest consistent
+(9 tables, 85 columns, 20 SQL FKs, 2 logical references). All 20 review checksum
+entries passed. Protected hashes unchanged:
+001 `bb901d7580398893b5c04ee263f813b9d05873eb4bae08e0daf377faf73b0ea0`;
+002 `7de311935843e4fc04cbca74d025d9f38986a4154d70bdd29b35a2820f87b736`;
+Phase1.1.md `ffbf123937642a3478662d817a4f522377bb0ae6271fec51810e5b735bc34bde`.
+Markdown local links/fences and diff whitespace checks passed.
+
+The additional offline structural review below was executed as
+`python3 /tmp/taskcompass-b7-review.py`; its complete source is provided for
+reproduction without a retained temporary file. It checks export column coverage,
+all FK/CHECK coverage, proposed grant counts, balanced SQL statements and preflight/
+probe statement boundaries, Bash syntax only (`bash -n`, never execution), and
+Markdown references. An initial checker inventory assertion expected 20 SQL files;
+the actual inventory is 19. Corrected that review-check bookkeeping and reran:
+**PASS, 19 SQL files, 38/85 columns, 20 FKs/all CHECKs, 36 Bash blocks parse**.
+This is structural/syntax review, not MariaDB SQL parsing or live permissions proof.
+
+```bash
+python3 - <<'PY'
+from pathlib import Path
+import importlib.util, json, re, subprocess
+spec = importlib.util.spec_from_file_location('schema', 'docs/diagrams/GenerateDatabaseSchema.py')
+schema = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(schema)
+manifest = json.loads(Path('migrations/mariadb/SchemaManifest.json').read_text(encoding='utf-8'))
+base = Path('scripts/phase12/b7')
+assert len(list(base.glob('*.sql'))) == 19
+for version, name, expected in [('1', 'legacy-export.sql', 38), ('2', 'schema2-export.sql', 85)]:
+   source = (base / name).read_text(encoding='utf-8')
+   actual = []
+   for statement in schema.splitSql(source, ';'):
+      if not re.search(r"SELECT '\w+' AS tableName", statement):
+         continue
+      table = re.search(r'FROM (\w+)', statement)[1]
+      columns = re.findall(r"IF\((\w+) IS NULL", statement)
+      assert columns == [c['name'] for c in manifest[version][table]['columns']], table
+      actual.extend((table, column) for column in columns)
+   assert len(actual) == len(set(actual)) == expected
+migration = (base / 'migration-dev-grants.sql').read_text(encoding='utf-8')
+assert len(re.findall(r'^GRANT ', migration, re.M)) == 8
+runtime = (base / 'rehearsal-runtime-grants.sql').read_text(encoding='utf-8')
+assert sum(len(rights.split(',')) for rights in re.findall(r'^GRANT (.*?) ON', runtime, re.M)) == 19
+health = (base / 'schema2-health.sql').read_text(encoding='utf-8')
+for table, value in manifest['2'].items():
+   for name, *_ in value['foreignKeys']:
+      assert f"'{name}' AS ruleName" in health
+   for name, expression in value['checks']:
+      assert f"'{table}.{name}' AS ruleName" in health and f'NOT ({expression})' in health
+assert sum(len(t['foreignKeys']) for t in manifest['2'].values()) == 20
+for path in base.glob('*.sql'):
+   text = re.sub(r'^--.*$', '', path.read_text(encoding='utf-8'), flags=re.M)
+   statements = schema.splitSql(text, ';')
+   if path.name.startswith('preflight-') or path.name == 'public-grants.sql':
+      assert all(re.match(r'^(SELECT|SHOW)\b', s) for s in statements), path
+   assert 'GRANT OPTION' not in text and 'ON *.*' not in text
+   if path.name == 'runtime-probe.sql':
+      assert any(s == 'ROLLBACK' for s in statements)
+      assert not any(re.match(r'^(COMMIT|CREATE|ALTER|DROP|DELETE|GRANT|REVOKE)\b', s) for s in statements)
+      assert set(re.findall(r'\b(taskcompass_\w+)\.', text)) == {'taskcompass_phase12_test'}
+runbook = Path('docs/Phase1.2B7.md').read_text(encoding='utf-8')
+blocks = re.findall(r'^```bash\n(.*?)^```\s*$', runbook, re.M | re.S)
+for block in blocks:
+   subprocess.run(['bash', '-n'], input=block, text=True, check=True)
+for path in [Path(p) for p in ['docs/Phase1.2B7.md', 'docs/milestones/Phase1.2.md', 'docs/Roadmap.md', 'docs/TestingPhase1.2.md']]:
+   text = path.read_text(encoding='utf-8')
+   assert len(re.findall(r'^```', text, re.M)) % 2 == 0, path
+   text = re.sub(r'^```[^\n]*\n.*?^```\s*$', '', text, flags=re.M | re.S)
+   for target in re.findall(r'\]\(([^)]+)\)', text):
+      if '://' not in target and not target.startswith('#'):
+         assert (path.parent / target.split('#')[0]).exists(), (path, target)
+print(f'PASS: 19 SQL files structurally reviewed; 38/85 columns, 20 FKs/all CHECKs, readonly preflight, rollback-only probe; {len(blocks)} Bash blocks parse; Markdown links/fences.')
+PY
+```
+
+No C++/CMake behavior changed, so compilation/full CTest were not rerun for this
+review-only package. No Windows shell, PowerShell ACL execution, actual populated
+snapshot, narrow-role grant, new restore target, GUI or migration was tested by
+the agent. Existing owner-reported Stage 1B evidence is preserved, not relabeled as
+new B7 results. Official MariaDB references and tool-version constraints are linked
+in the runbook. No dependency installation, commit/push/merge/tag occurred.
+
+### Approval Requested — B7.1 read-only preflight only
+
+Request explicit approval for **both separately identified development servers**:
+
+- Linux `feledria`, MariaDB 10.5.29, local 127.0.0.1:3306, taskcompass_dev.
+- Windows `feldria-w10`, MariaDB 13.0.2, local 127.0.0.1:3306, taskcompass_dev.
+
+Scope: run exactly [preflight-dev.sql](../../scripts/phase12/b7/preflight-dev.sql)
+and [preflight-dev-grants.sql](../../scripts/phase12/b7/preflight-dev-grants.sql)
+under local socket/sudo root on Linux or native password-prompt root on Windows;
+Windows additionally [public-grants.sql](../../scripts/phase12/b7/public-grants.sql).
+These are SELECT/SHOW only, scoped to TaskCompass metadata/grants; no authentication
+hashes or task titles/notes are selected. Then existing SELECT-only migrator runs
+`TaskCompassMigrate --verify --to-version 1` with the runbook's explicit dev env.
+Qt connection setup uses session-only settings/locks; no persistent mutation or DDL.
+
+Expected: known server/schema1/five InnoDB tables, no stored code, no other target
+writers, checksum/fingerprint verified, one dataset, all counts recorded and exact
+Phase 1.1 account rights/no unexpected effective PUBLIC/role authority. All values
+are **unobserved for this new preflight**. Stop on discrepancy, connection failure,
+unknown privilege or version mismatch and report; do not repair or rerun writes.
+Recovery for this stage is inspection/reporting only because no database mutation
+is proposed. Keep credentials private and redact sensitive diagnostic snippets.
+
+This first approval does **not** include backup/export creation, imports, grant
+changes, provisioning, migration, GUI writes, test resets or cleanup. After the
+observations are reviewed, request B7.2 separately with a fresh private directory;
+subsequent stages bind exact file hashes and targets when those artifacts exist.
+No live B7 operation may begin until the matching explicit approval is received.
+
+
+## 2026-11-16 — B7.1 approved; Linux operator authentication required
+
+### Owner decision and current scope
+
+Owner response "Yes, go ahead" approves the immediately preceding B7.1 request
+for Linux and Windows read-only preflight. No new approval is required to finish
+that exact stage. B7.2 backups, all later grants/provisioning/migrations/restores,
+GUI writes and cleanup remain unauthorized. The earlier "Approval Requested"
+section is the historical request; this entry records its approval.
+
+### Agent-executed checks and failed connection attempt
+
+`sha256sum --check scripts/phase12/b7/ReviewChecksums.sha256` passed all 20 entries.
+`command -v mariadb` returned `/usr/bin/mariadb`; `hostname` returned `feledria`.
+Attempted exactly:
+
+```bash
+sudo -n -- mariadb --no-defaults --protocol=SOCKET --user=root \
+   --default-character-set=utf8mb4 --batch --raw --database=taskcompass_dev \
+   < scripts/phase12/b7/preflight-dev.sql
+```
+
+The sandbox initially rejected sudo with `The "no new privileges" flag is set`.
+The same approved read-only command was retried outside the sandbox through the
+execution approval mechanism; sudo exited 1 with `sudo: a password is required`.
+**Neither attempt connected or executed SQL.** No administrator password was
+requested through chat, captured or stored. No alternate credentials were sought.
+The grants query and Qt schema-1 verification were not attempted because the
+metadata preflight did not run. Windows is unavailable in this Linux session.
+
+### Next operator action within approved B7.1
+
+On Linux, close TaskCompass clients/writers and run from repository root:
+
+```bash
+sudo -v
+cat scripts/phase12/b7/preflight-dev.sql scripts/phase12/b7/preflight-dev-grants.sql |
+   sudo -n -- mariadb --no-defaults --protocol=SOCKET --user=root \
+      --default-character-set=utf8mb4 --batch --raw --database=taskcompass_dev
+```
+
+Enter the Linux OS password only at sudo's local terminal prompt. Stop on any
+error or unexpected output; share nonsecret results for review. This runs only
+the two approved SELECT/SHOW files. It creates no export/backup and changes no
+accounts, grants or schema. Do not include task contents or credentials in output.
+After metadata/grants pass review, finish the already approved explicit
+`--verify --to-version 1` block in [B7.1](../Phase1.2B7.md#b71--read-only-preflight-first-approval-requested)
+with the existing taskcompass_migrate password entered privately. No --apply.
+Windows uses the corresponding B7.1 UCRT64 block, including PUBLIC review; do not
+run that MariaDB 13 PUBLIC query on Linux 10.5.
+
+### Files, validation and remaining work
+
+Updated this milestone status/history and Roadmap current status only. Existing
+review package, SQL, source, migrations and private artifacts are unchanged.
+Markdown local references/fences and `git diff --check` passed; no application build
+or CTest was rerun for this status-only change. Linux preflight, Qt fingerprint
+verification and all Windows preflight results remain pending, not failed database
+validation. No database write, backup, restore, reset, commit, merge, tag or push.
+Do not request or execute B7.2 until actual B7.1 results are reviewed.
+
+
+## 2026-11-16 — B7.1 Linux metadata/grants reviewed (owner-reported)
+
+Owner executed the approved `sudo -v` and combined preflight-dev.sql /
+preflight-dev-grants.sql invocation recorded above, then supplied its output.
+This supersedes the pending Linux metadata observation, not the historical agent
+sudo failure. No agent-executed live SQL is claimed. No explicit CLI exit code
+was supplied; the transcript reaches the final expected runtime privilege rows
+without a displayed SQL error.
+
+| Observation | Owner-reported value / review |
+| --- | --- |
+| Server / selected database | feledria, 10.5.29-MariaDB, port 3306, taskcompass_dev |
+| Administrator / server settings | root@localhost, lower_case_table_names=0, FK/CHECK enforcement both 1 |
+| Encoding | utf8mb4 / utf8mb4_unicode_ci |
+| Objects | Exactly five BASE TABLE/InnoDB: SchemaMigration, Dataset, Task, CommandRecord, LocalChange |
+| Stored code / other sessions | No routine/trigger/event or other selected-target session rows displayed |
+| Migration | Only version 1; checksum bb901d7580398893b5c04ee263f813b9d05873eb4bae08e0daf377faf73b0ea0 |
+| Stored fingerprint | 6b3bd320ea92630b21909de0bd7cd38ea3bc3f644a69ba1fd249db43e656a343; actual current fingerprint still requires Qt verification |
+| Migration appliedAt | 1794627756442 |
+| Dataset | 21be9da7-b767-4578-b972-cc9a35122ddb, createdAt 1794627756441; count 1 |
+| Counts | SchemaMigration 1; Dataset 1; Task 4; CommandRecord 28; LocalChange 28 |
+| Task breakdown | 2 active/non-tombstoned; 1 active/tombstoned; 1 completed/non-tombstoned |
+| Account hosts | app, diagnostic and migrator each only 127.0.0.1 in scoped report |
+| Global / schema privileges | Each global USAGE, not grantable; diagnostic and migrator each exact escaped-schema SELECT only |
+| Runtime table privileges | Exactly 9 rows: Task SELECT/INSERT/UPDATE; CommandRecord and LocalChange SELECT/INSERT; Dataset and SchemaMigration SELECT; none grantable |
+| Extra columns / roles | No column privilege or role assignment rows displayed |
+
+Supplied SHOW CREATE definitions match the expected schema-1 columns, keys,
+constraints, engines and collations on inspection. This is not a replacement for
+runner fingerprint verification. No unexpected privilege, data count or schema
+object is apparent. The populated baseline includes a tombstoned task and 28
+historical receipts/outbox rows; all must remain in subsequent exact comparisons.
+No PUBLIC query is needed on this MariaDB 10.5 server. No mutation/grant/backup
+approval follows from the metadata result.
+
+### Next approved check and remaining work
+
+Run from Linux repository root using the **existing taskcompass_migrate password**,
+not root or the diagnostic password. This standalone form does not depend on the
+runbook's shell variables and performs verification only:
+
+```bash
+(
+   set +x
+   export TASKCOMPASS_DB_HOST=127.0.0.1 TASKCOMPASS_DB_PORT=3306
+   export TASKCOMPASS_DB_NAME=taskcompass_dev TASKCOMPASS_DB_USER=taskcompass_migrate
+   export TASKCOMPASS_DB_ISOLATED=1
+   IFS= read -r -s -p 'taskcompass_migrate password: ' TASKCOMPASS_DB_PASSWORD
+   printf '\n'
+   export TASKCOMPASS_DB_PASSWORD
+   ./build/TaskCompassMigrate --verify --to-version 1
+   verificationExitCode=$?
+   unset TASKCOMPASS_DB_PASSWORD
+   printf 'Verification exit code: %s\n' "$verificationExitCode"
+   exit "$verificationExitCode"
+)
+```
+
+Expected schema 1 / dataset 21be9da7-b767-4578-b972-cc9a35122ddb / exit 0.
+Stop and report any failure; do not run --apply. Windows B7.1 metadata/grants/PUBLIC
+and Qt verification remain pending. B7.2 and later operations are not authorized.
+Updated this milestone and Roadmap status; Markdown reference/fence checks and
+`git diff --check` passed. Build/CTest not rerun for reporting-only edits; source,
+SQL review package, migrations and all database/backup artifacts unchanged by the
+agent. No commit/push/merge/tag or Phase 1.3 work.
+
+
+## 2026-11-16 — B7.1 stopped: CHECK constraint verification failure
+
+### Actual owner-reported result
+
+Owner ran the exact read-only migrator verification block recorded above using
+`taskcompass_migrate` against taskcompass_dev. Output:
+
+```text
+CHECK constraints differ from registered migration.
+Verification exit code: 1
+```
+
+**Linux B7.1 has not passed.** No backup, migration, grant or other repair is
+approved by this failure. Windows preflight remains pending. Previously supplied
+root SHOW CREATE and privilege observations remain preserved; they do not override
+this failed verification. No agent-executed live SQL occurred during this review.
+
+### Source-only investigation
+
+Reviewed `MigrationRunner::requireShape` in MigrationRunner.cpp. This exact error
+compares the sorted CHECK **names** returned by information_schema.TABLE_CONSTRAINTS
+under the connected account against the embedded version-1 SchemaManifest. It
+occurs before successful verification of the current DDL fingerprint. It is not
+proof that a CHECK expression itself changed or that existing task data is invalid.
+
+Offline manifest inspection shows 12 schema-1 CHECKs: CommandRecord commandPayload /
+commandKind; Dataset datasetIdFormat / datasetCreatedAt; LocalChange changePayload /
+changeState; Task taskIdFormat / taskTitle / taskNotes / taskLifecycle / taskTimes /
+taskRevision; none on SchemaMigration. Those names all appear in the owner's prior
+root SHOW CREATE output. Need compare TABLE_CONSTRAINTS visibility under root and
+the SELECT-only migrator before diagnosing schema drift versus visibility or
+verifier behavior. Neither cause is established. Do not add grants, weaken the
+validator, edit migration history/fingerprints or reapply DDL speculatively.
+
+### Proposed next read-only diagnostic (operator review)
+
+The following adds no schema or data operation; it compares only selected-database
+identity and CHECK-name catalog rows under the two known local accounts. It is
+additional investigation of the B7.1 discrepancy, not a migration/recovery step.
+Run from the Linux terminal and share both nonsecret result sets:
+
+```bash
+inspectionSql="SELECT DATABASE() AS selectedDatabase,CURRENT_USER() AS authenticatedAccount;
+SELECT TABLE_NAME,CONSTRAINT_NAME,CONSTRAINT_TYPE
+FROM information_schema.TABLE_CONSTRAINTS
+WHERE CONSTRAINT_SCHEMA=DATABASE() AND CONSTRAINT_TYPE='CHECK'
+ORDER BY TABLE_NAME,CONSTRAINT_NAME;"
+
+sudo mariadb --no-defaults --protocol=SOCKET --user=root \
+   --database=taskcompass_dev --batch --execute="$inspectionSql"
+
+env -u MYSQL_PWD mariadb --no-defaults --protocol=TCP \
+   --host=127.0.0.1 --port=3306 --user=taskcompass_migrate --password \
+   --database=taskcompass_dev --batch --execute="$inspectionSql"
+unset inspectionSql
+```
+
+The second password prompt is the existing taskcompass_migrate database password;
+sudo uses the OS password if needed. No password is saved or printed. Stop on any
+query error. Record whether both lists show exactly the same 12 CHECKs, and their
+authenticatedAccount values; do not treat a missing list as permission to repair.
+After these observations, propose a narrowly scoped source correction only if
+supported by evidence; any new live privilege change remains separately gated.
+
+### Files, validation and remaining work
+
+Updated this milestone and Roadmap current status, preserving earlier observations.
+Manifest inspection was offline Python reading SchemaManifest.json; no schema,
+application source, SQL procedure, database or backup artifact was changed.
+Markdown references/fences and `git diff --check` passed. No build/full CTest was
+rerun because these are documentation-only updates. Investigation pending; no B7.2
+approval requested, no Phase 1.3 or commit/push/merge/tag.
+
+
+## 2026-11-17 — CHECK catalog visibility difference confirmed
+
+### Owner-reported evidence and conclusion
+
+Owner ran the proposed identity/CHECK-name SELECTs. Root reported selected database
+`taskcompass_dev`, authenticated account `root@localhost` and all 12 expected CHECKs:
+
+| Table | CHECK names visible to root |
+| --- | --- |
+| CommandRecord | commandKind, commandPayload |
+| Dataset | datasetCreatedAt, datasetIdFormat |
+| LocalChange | changePayload, changeState |
+| Task | taskIdFormat, taskLifecycle, taskNotes, taskRevision, taskTimes, taskTitle |
+
+The TCP account reported the same selected database and authenticated account
+`taskcompass_migrate@127.0.0.1`, followed by **no CHECK rows** and no displayed SQL
+error. No explicit CLI exit code was supplied. These are owner observations, not
+agent-executed SQL. They confirm a difference in catalog visibility under the
+approved SELECT-only account, sufficient to explain the verifier's failed CHECK
+name comparison. Missing catalog rows must not be interpreted as missing actual
+constraints; root's SHOW CREATE and CHECK-name results show the expected names.
+Full DDL fingerprint verification still has not passed, so no blanket schema/data
+integrity or migration-readiness claim is made.
+
+Source review also found FK-name checks using TABLE_CONSTRAINTS, FK-column checks
+using KEY_COLUMN_USAGE, and index checks using STATISTICS. Merely bypassing the
+CHECK comparison could conceal drift or fail at the next catalog. No bypass,
+extra privileges or fingerprint rewrite is acceptable. The proposed correction
+should obtain authoritative structural information accessible to least-privilege
+accounts (potentially SHOW CREATE TABLE), retain exact registered shape/FK endpoint
+checks and the unchanged full DDL fingerprint, and fail closed for inaccessible,
+malformed or unexpected definitions. Need confirm that account's SHOW CREATE and
+remaining catalog visibility before choosing the smallest safe source correction.
+No architectural change or source patch has been implemented in this report.
+
+### Next read-only inspection, no new database authority
+
+One TCP prompt under the same read-only migrator can collect those metadata facts:
+
+```bash
+env -u MYSQL_PWD mariadb --no-defaults --protocol=TCP \
+   --host=127.0.0.1 --port=3306 --user=taskcompass_migrate --password \
+   --database=taskcompass_dev --batch --execute="
+SELECT DATABASE(),CURRENT_USER();
+SHOW CREATE TABLE CommandRecord;
+SELECT TABLE_NAME,CONSTRAINT_NAME,COLUMN_NAME,REFERENCED_TABLE_SCHEMA,
+       REFERENCED_TABLE_NAME,REFERENCED_COLUMN_NAME,ORDINAL_POSITION
+FROM information_schema.KEY_COLUMN_USAGE
+WHERE CONSTRAINT_SCHEMA=DATABASE()
+ORDER BY TABLE_NAME,CONSTRAINT_NAME,ORDINAL_POSITION;
+SELECT TABLE_NAME,INDEX_NAME,COLUMN_NAME,NON_UNIQUE,SEQ_IN_INDEX
+FROM information_schema.STATISTICS
+WHERE TABLE_SCHEMA=DATABASE()
+ORDER BY TABLE_NAME,INDEX_NAME,SEQ_IN_INDEX;"
+```
+
+This selects schema metadata only, no task/history payloads or secrets. Enter only
+the existing taskcompass_migrate password at its local prompt; stop on errors.
+Do not run --apply, any GRANT or recovery operation. Subsequent source regression
+coverage must include metadata hidden from SELECT-only accounts and rejection of
+missing/extra/changed constraints, FK endpoints and fingerprint drift. Broader
+synthetic integration passes did not test this read-only visibility condition.
+
+### Reporting and remaining work
+
+Updated milestone current status/history and Roadmap to reflect confirmed
+visibility rather than speculative missing constraints. No source, schema,
+privilege, database, backup or proposed SQL file was modified. Markdown references/
+fences and `git diff --check` passed; application build/CTest not rerun for these
+reporting-only edits. B7.1 remains blocked; Windows preflight and B7.2 onward pending.
+No live agent SQL, commit/push/merge/tag or Phase 1.3 work.
+
+
+## 2026-11-17 — least-privilege verifier compatibility correction
+
+### Owner metadata evidence
+
+The owner supplied the requested TCP metadata inspection under the existing
+SELECT-only migrator. SHOW CREATE TABLE CommandRecord succeeded and included the
+expected commandTask FK and commandPayload/commandKind CHECKs. KEY_COLUMN_USAGE
+returned primary/unique keys and ordered FK columns/endpoints within
+taskcompass_dev; STATISTICS returned the expected primary, unique and secondary
+index columns/uniqueness. This supports using SHOW CREATE for constraint names
+without adding grants. The CHECK-name catalog remains empty for that account as
+previously reported. Output is owner-reported; no new CLI exit code was provided.
+
+### Implemented source-only correction within Step B authorization
+
+- MigrationRunner now obtains sorted named CHECK/FK constraints from SHOW CREATE
+  TABLE via a focused storage-adapter helper instead of relying on the
+  privilege-filtered TABLE_CONSTRAINTS catalog. No empty-result bypass or fallback
+  to accepting missing constraints. Expected names must still match exactly.
+- New SchemaConstraints helper accepts the observed MariaDB quoted, one-definition-
+  per-line output; duplicate names, unsupported kinds/formatting or absent DDL
+  fail closed. Identifier escapes and CRLF are supported. This deliberately does
+  not implement a general SQL parser or rewrite expressions. Unsupported output
+  on another server must stop for review, not be ignored.
+- Existing registered column/type/nullability/charset, FK endpoint/order/schema,
+  index, migration checksum/history/journal and full DDL fingerprint checks remain
+  unchanged. CHECK expressions remain covered by the unchanged complete DDL
+  fingerprint; extracting names alone is not expression equivalence checking.
+- No domain/application/GUI changes, new dependencies, privilege broadening,
+  schema/migration edits or identity allowlist changes. Same MariaDB storage
+  adapter architecture; this corrects read-only inspection compatibility, not
+  an architectural or milestone scope expansion.
+
+### Files created or modified in this correction
+
+- Modified CMakeLists.txt: helper source and offline SchemaConstraintsTests target.
+- Modified src/infrastructure/storage/MigrationRunner.cpp: SHOW CREATE name source.
+- New src/infrastructure/storage/SchemaConstraints.h and SchemaConstraints.cpp.
+- New tests/SchemaConstraintsTests.cpp: observed-style CommandRecord DDL, CHECK/FK
+  names and composite FK, CRLF, missing/extra/renamed names, duplicate/malformed
+  rejection, empty/unsupported input, escaped identifiers and no-CHECK table.
+  Source-derived SHOW CREATE-style fixtures cover all nine CREATE definitions
+  in embedded migrations (35 CREATE CHECKs / 12 CREATE FKs; these include historical
+  definitions, not the cumulative schema-2 counts). No SQL connection is created.
+- Updated docs/Building.md troubleshooting, current Roadmap status and this report.
+  Earlier B7 proposal files/checksum manifest and historical reports are unchanged.
+
+### Actual agent-executed validation
+
+```bash
+cmake --build build --parallel 2
+ctest --test-dir build -R '^SchemaConstraintsTests$' --output-on-failure
+ctest --test-dir build --output-on-failure \
+   -E '^(MariaDbIntegrationTests|OrganizationIntegrationTests)$'
+git diff --check
+sha256sum migrations/mariadb/001_PersistentTaskFoundation.sql \
+   migrations/mariadb/002_OrganizationalManagement.sql docs/milestones/Phase1.1.md
+```
+
+Build succeeded. Initial offline suite: 15 passed / 1 new test failed with
+`Unsupported SHOW CREATE TABLE constraint formatting; operator review required.`
+The fixture had passed wrapped migration-source expressions into an intentionally
+one-line SHOW CREATE reader. Fixed **fixture rendering only** to join the source's
+continuation lines; production parser remained fail-closed. Fixture inventory was
+also checked against actual source (9 / 35 / 12) before final assertions.
+Focused rerun passed 1/1; final offline suite passed **16/16**, exit 0, 6.65 seconds.
+Both live integration executables were explicitly excluded, not run or relabeled
+as current passes. Both live-test CMake options remain OFF in the existing build.
+No live database connection, SQL, grants, backup/restore or reset was executed.
+
+Protected SHA-256s remain unchanged: 001
+`bb901d7580398893b5c04ee263f813b9d05873eb4bae08e0daf377faf73b0ea0`;
+002 `7de311935843e4fc04cbca74d025d9f38986a4154d70bdd29b35a2820f87b736`;
+accepted Phase1.1.md
+`ffbf123937642a3478662d817a4f522377bb0ae6271fec51810e5b735bc34bde`.
+Markdown local references/fences, changed-file whitespace and git diff --check
+passed. No schema diagram regeneration required: schema SQL is unchanged.
+
+### Remaining work / next approved operator step
+
+The Linux binary has been rebuilt here. Rerun the same password-prompt
+`./build/TaskCompassMigrate --verify --to-version 1` block from the 2026-11-16
+"Linux metadata/grants reviewed" entry, using taskcompass_migrate and the explicit
+local dev configuration. Expect schema 1 / dataset
+21be9da7-b767-4578-b972-cc9a35122ddb / exit 0. This is still the approved read-only
+B7.1 step, not --apply. Stop/report a failure; do not change privileges to make it
+pass. Actual live success with the corrected binary is **pending**.
+
+Windows must rebuild/run offline checks with the correction and finish B7.1 under
+its own account/server; neither is verified by this Linux build or CRLF fixture.
+Prior synthetic integration results remain historical and unchanged. Any repeat
+live integration/narrow-role execution requires its matching explicit approval.
+B7.2 capture and all grants/migrations/restore/GUI writes remain unauthorized;
+request the next checkpoint only after B7.1 results are reviewed. No commit, push,
+merge, tag, Phase 1.3 or acceptance claim.
+
+
+## 2026-11-17 — verification invocation needs full temporary configuration
+
+Owner ran `build/TaskCompassMigrate --verify --to-version 1` alone and reported:
+
+```text
+Explicit isolated database configuration and a valid port are required. See docs/Building.md.
+```
+
+This is configuration rejection before connection, not a new schema validation
+result. The earlier environment/password exports existed only inside a subshell;
+they do not survive its exit. Prior response showed the executable invocation but
+should have repeated the complete standalone block. No credential should be put
+on the command line or saved to address this. Use the full approved read-only
+block from repository root:
+
+```bash
+(
+   set +x
+   export TASKCOMPASS_DB_HOST=127.0.0.1 TASKCOMPASS_DB_PORT=3306
+   export TASKCOMPASS_DB_NAME=taskcompass_dev TASKCOMPASS_DB_USER=taskcompass_migrate
+   export TASKCOMPASS_DB_ISOLATED=1
+   IFS= read -r -s -p 'taskcompass_migrate password: ' TASKCOMPASS_DB_PASSWORD
+   printf '\n'
+   export TASKCOMPASS_DB_PASSWORD
+   ./build/TaskCompassMigrate --verify --to-version 1
+   verificationExitCode=$?
+   unset TASKCOMPASS_DB_PASSWORD
+   printf 'Verification exit code: %s\n' "$verificationExitCode"
+   exit "$verificationExitCode"
+)
+```
+
+Enter the existing migrator password locally. Expected schema 1 / dataset
+21be9da7-b767-4578-b972-cc9a35122ddb / exit 0; stop/report any failure. Corrected
+binary live verification remains pending. No new source or database operation in
+this reporting step; B7.2 and later mutations remain unauthorized. Milestone-only
+edit; Markdown fences and `git diff --check` passed. Build/tests not rerun for
+this clarification. No commit/push/merge/tag.
+
+
+## 2026-11-17 — Linux B7.1 read-only preflight passed
+
+### Actual owner-reported verification
+
+Owner reran the complete temporary-configuration/password-prompt block above,
+using the rebuilt TaskCompassMigrate, taskcompass_migrate@127.0.0.1:3306 and
+explicit taskcompass_dev configuration. Reported output:
+
+```text
+Schema 1 verified; dataset 21be9da7-b767-4578-b972-cc9a35122ddb
+Verification exit code: 0
+```
+
+**Linux B7.1 passed (owner-reported).** Combined with the earlier root metadata/
+grants report, this completes the Linux baseline check: known MariaDB 10.5.29
+server, five InnoDB tables, one dataset, exact migration-1 checksum, current schema
+shape and DDL fingerprint verified, and reviewed SELECT-only migrator/diagnostic
+plus narrowly scoped runtime grants. The verified dataset matches the accepted
+Phase 1.1 dataset. Reported baseline counts remain Task 4 (including one tombstone
+and one completed task), CommandRecord 28 and LocalChange 28; this verification
+is not a fresh all-value data export or a backup.
+
+The SHOW CREATE compatibility correction now has an actual owner-reported live
+read-only success on Linux; prior catalog failure, configuration error and offline
+fixture failure remain preserved above. This does not establish Windows runtime
+success with the correction or narrow migration-role write coverage. No source or
+privilege workaround was needed beyond the documented source-only correction.
+
+### Remaining gates and authority
+
+Windows must rebuild/offline-test the corrected source and finish its approved
+B7.1 metadata/grants/PUBLIC and pinned schema-1 verification. Keep observations,
+dataset IDs and evidence separate per host. Next capture requires a separate
+B7.2 approval identifying the platform/new private external directory and stopped
+writers. Repeat fresh preflight if state changes; today's observations do not
+allow later use of stale data/privilege assumptions.
+
+No B7.2 backup/export, account/grant change, populated clone import, migration,
+GUI write, restore, reset or cleanup is authorized or performed by this report.
+Phase 1.2 remains unaccepted; no Phase 1.3 work. Agent changed milestone/Roadmap/
+TestingPhase1.2 status only, executed no live SQL, and made no source/migration or
+private artifact changes. Markdown local-reference/fence checks and git diff
+--check passed. Build/CTest were not rerun for this reporting-only update; the
+16/16 offline result above remains the actual source-correction test evidence.
+No commit, push, merge or tag.

@@ -90,6 +90,7 @@ add_library(TaskStorage STATIC
             src/infrastructure/storage/DatabaseConnection.cpp
             src/infrastructure/storage/DatabaseConfig.cpp
             src/infrastructure/storage/MigrationRunner.cpp
+            src/infrastructure/storage/SchemaConstraints.cpp
             src/infrastructure/storage/MutationLease.cpp
             src/infrastructure/storage/MariaDbTaskRepository.cpp
             src/infrastructure/storage/MariaDbWorkspaceRepository.cpp
@@ -161,6 +162,9 @@ if(BUILD_TESTING)
 endif()
 
 if(BUILD_TESTING)
+   add_executable(SchemaConstraintsTests tests/SchemaConstraintsTests.cpp)
+   target_link_libraries(SchemaConstraintsTests PRIVATE TaskStorage)
+   add_test(NAME SchemaConstraintsTests COMMAND SchemaConstraintsTests)
    add_executable(StorageSafetyTests tests/StorageSafetyTests.cpp)
    add_executable(WorkspaceCodecTests tests/WorkspaceCodecTests.cpp)
    target_link_libraries(WorkspaceCodecTests PRIVATE TaskStorage)

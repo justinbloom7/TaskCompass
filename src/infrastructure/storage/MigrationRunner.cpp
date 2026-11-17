@@ -1,6 +1,7 @@
 #include "MigrationRunner.h"
 #include "DatabaseConfig.h"
 #include "MutationLease.h"
+#include "SchemaConstraints.h"
 #include "domain/Task.h"
 
 #include <QCryptographicHash>
@@ -150,14 +151,14 @@ void MigrationRunner::requireShape(int version) {
          }
       }
       require(!columns.next(), "Unexpected schema column.");
+      // MariaDB can hide TABLE_CONSTRAINTS CHECK rows from SELECT-only accounts.
+      // SHOW CREATE remains available without granting runtime/migrator writes.
+      QSqlQuery definition(database);
+      require(definition.exec("SHOW CREATE TABLE `" + table + "`") && definition.next(),
+              "Cannot inspect migration constraints with SHOW CREATE TABLE.");
+      const auto ddl = definition.value(1).toString();
       auto namesOfConstraints = [&](const QString &kind) {
-         QSqlQuery query(database);
-         query.prepare("SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=DATABASE() AND LOWER(TABLE_NAME)=LOWER(?) AND CONSTRAINT_TYPE=? ORDER BY CONSTRAINT_NAME");
-         query.addBindValue(table); query.addBindValue(kind);
-         require(query.exec(), "Cannot inspect schema constraints.");
-         QStringList names;
-         while (query.next()) { names.append(query.value(0).toString()); }
-         names.sort(); return names;
+         return SchemaConstraints::namesFromDdl(ddl, kind);
       };
       QStringList expectedChecks;
       for (const auto &check : descriptor["checks"].toArray()) { expectedChecks.append(check.toArray()[0].toString()); }

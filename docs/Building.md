@@ -418,6 +418,17 @@ changes or global grants. The diagnostic's existing exit codes remain documented
 in its source: 0 skipped/success, 2 missing plugin, 3 bad configuration, 4 connection
 failure, 5 query failure. Read the text to distinguish skipped from connected.
 
+### Phase 1.2 read-only constraint verification
+
+On the observed Linux MariaDB 10.5.29 installation, SELECT-only taskcompass_migrate
+could read SHOW CREATE TABLE, FK columns and indexes, but TABLE_CONSTRAINTS exposed
+no CHECK rows. The Phase 1.2 verifier now reads named constraints from SHOW CREATE
+and retains registered-shape/FK checks and the full unchanged DDL fingerprint.
+Do not grant write privileges or edit migration metadata to fix catalog visibility.
+Rebuild before repeating the explicit `--verify --to-version 1` preflight; any
+remaining mismatch stops the upgrade for review. See the dated evidence and
+pending live/platform checks in [Phase1.2.md](milestones/Phase1.2.md).
+
 ### MariaDB client warnings are diagnostics, not query rows
 
 The helper keeps SQL results on stdout and forwards sanitized client stderr

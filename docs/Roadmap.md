@@ -9,7 +9,13 @@ Linux Stage 1A and corrected Stage 1B passed (owner-reported), including approve
 fixture cleanup. Windows compilation/offline checks passed across the original
 run plus focused portability retest (owner-reported). Windows Stage 1A provisioning
 and Windows Stage 1B also passed (owner-reported). Both isolated platform gates
-are met; development-upgrade/narrow-privilege/GUI/backup gates remain pending.
+are met. The [B7 review package](Phase1.2B7.md) is prepared; read-only development
+preflight is approved. Linux B7.1 passed on 2026-11-17 (owner-reported), including
+schema-1 verification with the SHOW CREATE compatibility correction; its Linux
+build and 16/16 offline tests passed. Earlier catalog/configuration failures remain
+recorded in the milestone. Windows rebuild/revalidation and B7.1 remain pending.
+Populated rehearsal, narrow-privilege,
+development-upgrade, GUI and expanded backup/restore gates remain pending.
 Phase 1.2 is not accepted.** See the
 [scripted Windows sequence](WindowsPhase1.1.md). Live provisioning, grants and
 migrations remain behind their specific approval checkpoints. Phase 0.1 is accepted on owner
