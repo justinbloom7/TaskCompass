@@ -101,7 +101,7 @@ TCP account at 127.0.0.1:3306 in every case; only administrator transport differ
 Optional `--client '/path with spaces/mariadb.exe'` and `--admin-user NAME` remain
 available. UCRT64 auto-detects MariaDB's Program Files client if PATH lacks it;
 multiple candidates require `--client`. Type the exact prompted phrase
-`CREATE taskcompass_phase12_test`. Then enter and repeat a **distinct 20+ character
+`CREATE taskcompass_phase12_test`. Then enter and repeat a **distinct 12+ character
 password for taskcompass_phase12_test** from your password manager. This is a new
 test-account password, not the Linux/sudo or MariaDB administrator password.
 
@@ -118,6 +118,30 @@ MariaDB 13 client warnings may still appear, redacted. TLS verification is uncha
 No migrations or tests run in this step. Existing diagnostic, runtime, migration
 and Phase 1.1 integration accounts/grants are unchanged.
 
+### Linux socket connection error before provisioning
+
+If the first administrator query reports `ERROR 2002 ... mysql.sock (2)`, the
+socket path does not exist. Check the service before retrying:
+
+```bash
+systemctl is-active mariadb
+```
+
+If it reports `inactive`, start the existing service, then check again:
+
+```bash
+sudo systemctl start mariadb
+systemctl is-active mariadb
+```
+
+Expect `active`. Then rerun the approved Stage 1A command with `--admin-sudo`.
+Failure on the first connection occurs before CREATE DATABASE/USER/GRANT, so that
+attempt performed no provisioning. If service startup fails, inspect
+`systemctl status mariadb --no-pager` and stop; do not initialize a new data directory
+or change authentication. If the service is active but the socket is still absent,
+review its actual socket configuration before retrying; do not assume a password
+reset or TCP fallback is needed. The helper does not start services automatically.
+
 ## 4 — Run disposable Phase 1.2 integration fixtures (separate approval required)
 
 **Not authorized or executed yet.** After provisioning, report/review its result
@@ -127,13 +151,23 @@ before obtaining approval to run the suite. Then:
 bash scripts/phase12/04-integration-test.sh --approved
 ```
 
+For the CentOS socket-authenticated administrator, after **Stage 1B approval** use:
+
+```bash
+bash scripts/phase12/04-integration-test.sh --approved --admin-sudo
+```
+
 Optional `--client PATH` and `--build-dir PATH` are supported. Type exactly
-`TEST taskcompass_phase12_test WITH RUN-OWNED RESET`. Enter the administrator
-password for **read-only preflight** (catalog/grant/role/PUBLIC checks). This step
-currently supports TCP administrator authentication only; the Stage 1A socket
-options are not yet supported here. For a socket-only administrator, stop for a
-source update before Stage 1B rather than changing root authentication. Enter the
-new test-account password when prompted. They are different accounts/passwords.
+`TEST taskcompass_phase12_test WITH RUN-OWNED RESET`. The administrator preflight
+(catalog/grant/role/PUBLIC checks) is read-only. With --admin-sudo, sudo may request
+your OS password; only the administrator client uses sudo/socket. An OS account
+already authorized for direct socket login can use --admin-socket. Windows keeps
+the original TCP/password command and rejects socket options. Default TCP mode
+prompts for the MariaDB administrator password.
+
+Enter the **taskcompass_phase12_test password you created in Stage 1A** at the test
+password prompt. The test executable always runs as your normal OS user using the
+fixed TCP test account, regardless of administrator authentication method.
 The test password is exported only to the test subprocess; it is unset on exit.
 Conflicting pre-existing TASKCOMPASS_PHASE12_TEST_DB_* settings stop the wrapper.
 It sets HOST=127.0.0.1, PORT=3306, NAME/USER=taskcompass_phase12_test and ISOLATED=1.

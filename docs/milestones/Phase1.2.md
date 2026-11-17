@@ -1393,3 +1393,180 @@ it can also be exercised by future UCRT64 CTest runs; actual Windows execution
 was not performed here. No real sudo or database client was executed. The only
 files changed are the shared provisioning helper, its Phase 1.2 mock test, the
 Phase 1.2 testing guide and this milestone report.
+
+
+## Stage 1A first connection failure — 2026-11-16
+
+Owner attempted the socket/sudo provisioning command and reported:
+
+```text
+ERROR 2002 (HY000): Can't connect to local MySQL server through socket '/var/lib/mysql/mysql.sock' (2)
+Administrator command failed. Check service/authentication; if provisioning began, preserve evidence and inspect before retrying.
+```
+
+The error occurred at the first server-identity connection, before the fresh-name
+inspection, new-account password prompts or provisioning SQL. **This attempt
+created no database/account and changed no privileges.** This conclusion concerns
+this reported attempt only, not an assertion that the target is absent from every
+possible prior operation.
+
+Agent read-only investigation: local server configuration specifies
+`socket=/var/lib/mysql/mysql.sock`; no socket was present at that path. The first
+sandboxed systemctl read could not access the system bus (`Operation not permitted`).
+After tool approval, executed outside the sandbox:
+
+```bash
+systemctl is-active mariadb
+```
+
+Result: **inactive**, exit code **3**. No SQL/client connection, sudo invocation,
+service start/restart, database provisioning, repair or cleanup was executed by the
+agent. Existing databases/artifacts and authentication remain untouched.
+
+Recommended owner action: `sudo systemctl start mariadb`, then
+`systemctl is-active mariadb` (expect active), then retry the approved Stage 1A
+command. If startup fails, inspect service status and stop; do not initialize a
+new database directory. If active but the socket remains absent, investigate socket
+configuration before retrying. No source fix or authentication change is indicated
+by the observed inactive service. This does not authorize agent provisioning or
+Stage 1B testing.
+
+Files modified: docs/TestingPhase1.2.md (service/socket troubleshooting) and this
+milestone report. Application, scripts, SQL, schema diagrams and Phase 1.1 historical
+reports are unchanged. Documentation-only validation: local Markdown references,
+fence balance and git diff --check; results recorded below. No build/CTest rerun is
+needed because executable source and test inputs did not change.
+
+Validation result: modified Markdown references/fences passed; git diff --check passed.
+
+## Owner-approved test password minimum — 2026-11-16
+
+Owner explicitly requested lowering the fresh test-account password minimum to
+12 characters. The prior 20-character threshold was a helper implementation
+policy, not a MariaDB requirement. This decision supersedes earlier 20+ character
+instructions/placeholders in the historical reports above.
+
+Changed scripts/provision-integration.sh to use MIN_PASSWORD_LENGTH=12, with
+matching prompt/error text. Because this is the shared fresh integration-account
+helper, both fixed Phase 1.1 and Phase 1.2 presets use 12. No root/sudo password
+policy, existing stored password, account, grant, target, approval or preflight rule
+changed. Updated docs/TestingPhase1.2.md and added mock boundary tests to
+tests/Phase12ValidationScripts.test.sh: exactly 12 succeeds; 11 stops before any
+provisioning SQL reaches the mock. Existing-resource refusal remains unchanged.
+
+Validation executed:
+
+```bash
+bash -n scripts/provision-integration.sh tests/Phase12ValidationScripts.test.sh
+ctest --test-dir build -R '^(Phase12ValidationScripts|IntegrationDatabaseScripts|Phase11ValidationScripts)$' --output-on-failure
+git diff --check
+```
+
+Syntax passed; all three offline mock suites passed (1.54 seconds). Markdown
+reference/fence checks and final whitespace check passed. No live client/sudo/SQL,
+provisioning, password reset or database changes were executed. C++/migration files
+are unaffected, so compilation/full application testing was not repeated. No commit
+or push. The prior service troubleshooting edits remain preserved in the working
+tree; the earlier Stage 1A live approval/review checkpoints still apply.
+
+
+## Linux Stage 1A owner-reported success — 2026-11-16
+
+Owner supplied successful output from:
+
+```bash
+scripts/phase12/03-setup-test.sh --apply --approved --admin-sudo
+```
+
+Reported server: **feledria / 10.5.29-MariaDB / port 3306**, platform **Linux /
+Linux**. The exact target confirmation was entered. The helper requested a new
+12+ character integration password twice and reported:
+
+```text
+Created the isolated integration database/account with six scoped privileges.
+No migrations/tests ran. Review grants and inherited policy before running tests.
+```
+
+Record Stage 1A Linux provisioning as **owner-reported successful**, not an
+agent-executed operation. Target/account are taskcompass_phase12_test and
+taskcompass_phase12_test@127.0.0.1 respectively. No migrations or integration
+execution are reported. Exact grants, inherited authority and empty catalog still
+require the independent Stage 1B preflight; this transcript is not that validation.
+Windows Stage 1A remains pending. Existing Phase 1.1 databases/backups/restores are
+outside this operation and remain preserved. Do not rerun setup on this existing
+resource expecting repair; it is intentionally refused.
+
+### Stage 1B socket administrator preflight prepared (source only)
+
+The earlier Stage 1B TCP-only limitation is now superseded. Within existing
+source-only authorization, extended scripts/phase12/04-integration-test.sh with
+--admin-socket and --admin-sudo for the read-only administrator preflight. It follows
+the reviewed Stage 1A pattern: validate sudo only after explicit approval and typed
+confirmation, elevate only the MariaDB client, use --protocol=SOCKET, remove
+MYSQL_PWD, use sudo -n to fail closed, no password capture or fallback. Windows
+continues using TCP/password and rejects socket options.
+
+The integration executable is **never elevated** and retains its own fixed TCP
+configuration/test credentials. Empty catalog, exact six direct schema grants,
+no unexpected global/table/column grants/roles/PUBLIC authority, fixed host/port,
+identity, explicit flags and run-owned cleanup safeguards are unchanged. No
+provisioning/account/grant/schema SQL was added or executed by the agent.
+
+tests/Phase12ValidationScripts.test.sh now exercises both socket administrator
+modes with fake sudo/client, verifies the test binary still uses the ordinary TCP
+account, and blocks test delegation on sudo denial/expiry, nonempty schema, extra
+grants, unsafe PUBLIC rights and Windows socket invocation. No real sudo or
+client was run. docs/TestingPhase1.2.md now documents the runnable Linux route.
+
+### Approval Requested — Stage 1B Linux isolated integration tests
+
+Stage 1A's success does not authorize Stage 1B. Request approval for **only**:
+
+- Host feledria, MariaDB 10.5.29, local TCP **127.0.0.1:3306** for the test account;
+  administrator read-only checks use the local Unix socket via sudo.
+- Database/account **taskcompass_phase12_test**, account host **127.0.0.1**.
+- Administrator read-only preflight, then the synthetic migration/transaction/
+  ownership/history/lease suite described in the Stage 1B preview above.
+- Actual migration 001 and 002 SQL and hashes are unchanged from that preview.
+  Its nine fully qualified DROP statements apply only to run-owned fixtures after
+  empty-start proof. Twelve intentional interruption fixtures may be cleaned up
+  only when the exact injected failure was reached; unexpected failure preserves
+  evidence and requires separate review/recovery. No pre-existing data is adopted.
+
+After approval, operator command:
+
+```bash
+scripts/phase12/04-integration-test.sh --approved --admin-sudo
+```
+
+Type `TEST taskcompass_phase12_test WITH RUN-OWNED RESET`. Supply the Linux/sudo
+password if asked, then the **test-account password created in Stage 1A**. No MariaDB
+root password is requested. Successful suite exit is 0 and the new schema is left
+empty; failure stops without automatic repair/retry/reset. Preserve output and
+partial state on failure; use reviewed recovery SQL only after further approval.
+This request includes no development migration, change to any existing account/
+privilege, retained taskcompass_integration database, backup/restore or Windows
+execution. Both MariaDB platforms must still pass before development upgrade.
+
+### Offline validation
+
+Commands/results follow after final execution. No live database queries or tests
+were executed by the agent. C++/migration code is unchanged, so no rebuild is
+required for this shell/documentation-only continuation.
+
+Executed validation commands:
+
+```bash
+bash -n scripts/phase12/04-integration-test.sh tests/Phase12ValidationScripts.test.sh
+ctest --test-dir build -R '^(Phase12ValidationScripts|IntegrationDatabaseScripts|Phase11ValidationScripts)$' --output-on-failure
+scripts/phase12/04-integration-test.sh --help
+scripts/phase12/04-integration-test.sh --print-plan
+sha256sum migrations/mariadb/001_PersistentTaskFoundation.sql migrations/mariadb/002_OrganizationalManagement.sql
+git diff --check
+```
+
+Results: all three offline mock suites passed (1.73 seconds); syntax, no-connection
+help/preview, Markdown link/fence consistency and whitespace checks passed. Both
+live CMake options remain OFF. Migration hashes equal the approved-source preview
+values above. No real sudo/client, live preflight, integration tests or database
+changes were performed by the agent. Stop for Stage 1B Linux approval.

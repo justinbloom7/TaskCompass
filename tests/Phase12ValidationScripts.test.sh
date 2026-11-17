@@ -72,6 +72,22 @@ if printf '%s\n' 'CREATE taskcompass_phase12_test' 'admin-fixture' | bash "$help
 unset MOCK_EXISTING
 printf 'PASS: fixed fresh target provisioning and existing-resource refusal.\n'
 
+originalPassword=$MOCK_PASSWORD
+for length in 11 12; do
+   export MOCK_PASSWORD=${originalPassword:0:length}
+   : > "$temporaryDirectory/calls"
+   if result=$(printf '%s\n' 'CREATE taskcompass_phase12_test' 'admin-fixture' "$MOCK_PASSWORD" "$MOCK_PASSWORD" |
+      bash "$helperDirectory/03-setup-test.sh" --apply --approved --client "$client" 2>&1); then
+      [[ "$length" == 12 && $(tail -1 "$temporaryDirectory/calls") == create ]]
+   else
+      [[ "$length" == 11 && $(cat "$temporaryDirectory/calls") != *create* && "$result" == *'at least 12 characters'* ]]
+   fi
+done
+export MOCK_PASSWORD=$originalPassword
+unset originalPassword
+printf 'PASS: 12-character minimum accepts exactly 12 and rejects 11 before provisioning.\n'
+
+
 # Fake sudo only; neither real privilege escalation nor live SQL is permitted here.
 export MOCK_CLIENT="$client"
 cat > "$temporaryDirectory/sudo" <<'SUDO'
@@ -138,6 +154,33 @@ done
 : > "$temporaryDirectory/calls"
 if TASKCOMPASS_PHASE12_TEST_DB_NAME=taskcompass_dev runTest >/dev/null 2>&1; then exit 1; fi
 [[ ! -s "$temporaryDirectory/calls" ]]
+
+# Socket elevation applies only to the read-only administrator preflight.
+# The integration executable still runs unprivileged with the fixed TCP test account.
+export MOCK_SOCKET=1
+for mode in --admin-socket --admin-sudo; do
+   : > "$temporaryDirectory/calls"
+   result=$(printf '%s\n' 'TEST taskcompass_phase12_test WITH RUN-OWNED RESET' "$MOCK_PASSWORD" |
+      MYSQL_PWD=inherited-fixture-password PATH="$temporaryDirectory:$PATH" \
+      bash "$helperDirectory/04-integration-test.sh" --approved "$mode" --client "$client" --build-dir "$temporaryDirectory/build with spaces" 2>&1)
+   [[ $(tail -1 "$temporaryDirectory/calls") == test && "$result" == *'exit code: 0'* ]]
+   [[ "$result" != *'MariaDB administrator password (read-only preflight):'* && "$result" != *"$MOCK_PASSWORD"* ]]
+done
+for scenario in MOCK_SUDO_FAIL MOCK_SUDO_EXPIRED MOCK_NONEMPTY MOCK_EXTRA_GRANTS MOCK_PUBLIC_UNSAFE; do
+   : > "$temporaryDirectory/calls"
+   export "$scenario=1"
+   if result=$(printf '%s\n' 'TEST taskcompass_phase12_test WITH RUN-OWNED RESET' "$MOCK_PASSWORD" |
+      PATH="$temporaryDirectory:$PATH" bash "$helperDirectory/04-integration-test.sh" --approved --admin-sudo \
+      --client "$client" --build-dir "$temporaryDirectory/build with spaces" 2>&1); then exit 1; fi
+   [[ $(cat "$temporaryDirectory/calls") != *test* && "$result" != *"$MOCK_PASSWORD"* ]]
+   unset "$scenario"
+done
+: > "$temporaryDirectory/calls"
+if MSYSTEM=UCRT64 PATH="$temporaryDirectory:$PATH" bash "$helperDirectory/04-integration-test.sh" --approved --admin-sudo >/dev/null 2>&1; then exit 1; fi
+[[ ! -s "$temporaryDirectory/calls" ]]
+unset MOCK_SOCKET
+printf 'PASS: socket administrator preflight preserves all validation gates; integration executable remains unprivileged/TCP, Windows unchanged.\n'
+
 for code in 1 77; do
    export MOCK_RESULT=$code
    set +e

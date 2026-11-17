@@ -9,12 +9,15 @@ approved=false
 clientPath=''
 buildDirectory=''
 adminPassword=''
+adminSocket=false
+adminSudo=false
+sudoPath=''
 accountPassword=''
 confirmation=''
 trap 'unset adminPassword accountPassword confirmation TASKCOMPASS_PHASE12_TEST_DB_PASSWORD MYSQL_PWD' EXIT
 fail() { printf 'STOP: %s\n' "$1" >&2; exit 1; }
 usage() {
-   printf 'Usage: bash scripts/phase12/04-integration-test.sh --approved [--client PATH] [--build-dir PATH]\nDefault/help/--print-plan: no connection. Obtain separate approval for live tests.\n'
+   printf 'Usage: bash scripts/phase12/04-integration-test.sh --approved [--client PATH] [--build-dir PATH] [--admin-socket|--admin-sudo]\nDefault/help/--print-plan: no connection. Obtain separate approval for live tests.\n'
 }
 [[ $# != 0 ]] || { usage; exit 0; }
 while [[ $# -gt 0 ]]; do
@@ -22,6 +25,8 @@ while [[ $# -gt 0 ]]; do
       --help|-h) usage; exit 0 ;;
       --print-plan) exec bash "$scriptDirectory/02-review-plan.sh" ;;
       --approved) approved=true; shift ;;
+      --admin-socket) adminSocket=true; shift ;;
+      --admin-sudo) adminSocket=true; adminSudo=true; shift ;;
       --client|--build-dir)
          [[ $# -ge 2 && -n "$2" ]] || fail "Missing value for $1"
          case "$1" in --client) clientPath=$2 ;; --build-dir) buildDirectory=$2 ;; esac
@@ -32,6 +37,7 @@ done
 "$approved" || fail 'Explicit live-test approval required; no connection made.'
 if [[ -n "${MSYSTEM:-}" ]]; then
    [[ "$MSYSTEM" == UCRT64 ]] || fail 'Use MSYS2 UCRT64.'
+   ! "$adminSocket" || fail 'Socket administrator options are for Linux only.'
    export MSYS2_ENV_CONV_EXCL="${MSYS2_ENV_CONV_EXCL:+$MSYS2_ENV_CONV_EXCL;}MYSQL_PWD;TASKCOMPASS_PHASE12_TEST_DB_PASSWORD"
 fi
 if [[ -z "$buildDirectory" ]]; then
@@ -56,11 +62,21 @@ if [[ -z "$clientPath" ]]; then
    fi
 fi
 [[ -x "$clientPath" ]] || fail 'Specify an executable MariaDB --client.'
+if "$adminSudo"; then
+   [[ "$(uname -s)" == Linux ]] || fail '--admin-sudo is for Linux only.'
+   sudoPath=$(command -v sudo || true)
+   [[ -x "$sudoPath" ]] || fail 'sudo not found; use --admin-socket from an authorized OS account.'
+fi
 IFS= read -r -p 'Type TEST taskcompass_phase12_test WITH RUN-OWNED RESET: ' confirmation || fail 'Cancelled.'
 [[ "$confirmation" == 'TEST taskcompass_phase12_test WITH RUN-OWNED RESET' ]] || fail 'Confirmation mismatch; no connection made.'
 unset confirmation
-IFS= read -r -s -p 'MariaDB administrator password (read-only preflight): ' adminPassword || fail 'Cancelled.'
-printf '\n' >&2
+if "$adminSudo"; then
+   printf 'Using sudo for the read-only administrator client over the Unix socket; sudo may request your OS password.\n' >&2
+   env -u MYSQL_PWD "$sudoPath" -v || fail 'sudo authorization failed; no database connection made.'
+elif ! "$adminSocket"; then
+   IFS= read -r -s -p 'MariaDB administrator password (read-only preflight): ' adminPassword || fail 'Cancelled.'
+   printf '\n' >&2
+fi
 redact() {
    local line=''
    while IFS= read -r line || [[ -n "$line" ]]; do
@@ -70,8 +86,18 @@ redact() {
 }
 adminQuery() {
    local output=''
-   output=$(printf '%s\n' "$1" | MYSQL_PWD="$adminPassword" "$clientPath" --no-defaults --protocol=TCP --host=127.0.0.1 --port=3306 \
-      --user=root --batch --raw --skip-column-names --connect-timeout=5 --default-character-set=utf8mb4 2> >(redact)) || fail 'Read-only preflight failed; no tests ran.'
+   local -a command=("$clientPath" --no-defaults --user=root --batch --raw --skip-column-names --connect-timeout=5 --default-character-set=utf8mb4)
+   if "$adminSocket"; then
+      command+=(--protocol=SOCKET)
+      if "$adminSudo"; then
+         command=(env -u MYSQL_PWD "$sudoPath" -n -- "${command[@]}")
+      else
+         command=(env -u MYSQL_PWD "${command[@]}")
+      fi
+   else
+      command+=(--protocol=TCP --host=127.0.0.1 --port=3306)
+   fi
+   output=$(printf '%s\n' "$1" | MYSQL_PWD="$adminPassword" "${command[@]}" 2> >(redact)) || fail 'Read-only preflight failed; no tests ran.'
    printf '%s' "${output//$'\r'/}"
 }
 server=$(adminQuery 'SELECT @@hostname,VERSION(),@@port;')

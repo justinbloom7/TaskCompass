@@ -21,6 +21,7 @@ case "$purpose" in
 esac
 readonly databaseName databaseUser templatePath entryPoint
 clientPath=''
+readonly MIN_PASSWORD_LENGTH=12
 adminUser=root
 adminSocket=false
 adminSudo=false
@@ -151,9 +152,9 @@ fi
 # Exact numeric output only; successful stderr warnings cannot become existence data.
 existing=$(runAdmin "SELECT @@port,(SELECT COUNT(*) FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='$databaseName'),(SELECT COUNT(*) FROM mysql.user WHERE User='$databaseUser');")
 [[ "$existing" == $'3306\t0\t0' ]] || fail 'Database/account exists, server port differs from 3306, or inspection was inconclusive. Nothing changed; review it rather than rerun setup.'
-IFS= read -r -s -p 'New integration password from your password manager (20+ characters): ' testPassword || fail 'Cancelled.'
+IFS= read -r -s -p "New integration password from your password manager (${MIN_PASSWORD_LENGTH}+ characters): " testPassword || fail 'Cancelled.'
 printf '\n' >&2
-[[ ${#testPassword} -ge 20 ]] || fail 'Use a distinct strong password of at least 20 characters.'
+[[ ${#testPassword} -ge "$MIN_PASSWORD_LENGTH" ]] || fail "Use a distinct strong password of at least $MIN_PASSWORD_LENGTH characters."
 IFS= read -r -s -p 'Repeat new integration password: ' confirmation || fail 'Cancelled.'
 printf '\n' >&2
 [[ "$testPassword" == "$confirmation" ]] || fail 'Passwords differ; nothing created.'
