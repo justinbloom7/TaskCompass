@@ -5,6 +5,7 @@ import importlib.util
 import json
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location('schema', ROOT / 'docs/diagrams/GenerateDatabaseSchema.py')
@@ -14,7 +15,7 @@ SPEC.loader.exec_module(SCHEMA)
 
 class DatabaseSchemaTests(unittest.TestCase):
    def setUp(self):
-      self.sources = [p.read_text() for p in SCHEMA.MIGRATIONS]
+      self.sources = [p.read_text(encoding="utf-8") for p in SCHEMA.MIGRATIONS]
       self.tables = SCHEMA.parseMigrations(self.sources)
 
    def testCumulativeKeysAndNullability(self):
@@ -38,13 +39,23 @@ class DatabaseSchemaTests(unittest.TestCase):
          SCHEMA.splitSql("CREATE TABLE Broken (name VARCHAR(2);", ';')
 
    def testRegistryMatchesBothSourceVersions(self):
-      sources = [path.read_text() for path in SCHEMA.MIGRATIONS]
+      sources = [path.read_text(encoding="utf-8") for path in SCHEMA.MIGRATIONS]
       expected = {str(version): SCHEMA.parseMigrations(sources[:version]) for version in [1, 2]}
-      self.assertEqual(json.loads((SCHEMA.MIGRATIONS[0].parent / 'SchemaManifest.json').read_text()), json.loads(json.dumps(expected)))
+      self.assertEqual(json.loads((SCHEMA.MIGRATIONS[0].parent / 'SchemaManifest.json').read_text(encoding="utf-8")), json.loads(json.dumps(expected)))
+
+   def testCheckIsIndependentOfWindowsDefaultEncoding(self):
+      readText = Path.read_text
+      def readWithLegacyDefault(path, *arguments, **options):
+         options.setdefault('encoding', 'cp1252')
+         return readText(path, *arguments, **options)
+      # Exercise the real checker with Windows-style implicit text decoding.
+      with patch.object(Path, 'read_text', readWithLegacyDefault), \
+           patch('sys.argv', ['GenerateDatabaseSchema.py', '--check']):
+         SCHEMA.main()
 
    def testArtifactsMatchCumulativeSource(self):
-      self.assertEqual((SCHEMA.DIRECTORY / 'DatabaseSchema.md').read_text(), SCHEMA.markdown(self.tables))
-      SCHEMA.validateArtifacts(self.tables, (SCHEMA.DIRECTORY / 'DatabaseSchema.svg').read_text())
+      self.assertEqual((SCHEMA.DIRECTORY / 'DatabaseSchema.md').read_text(encoding="utf-8"), SCHEMA.markdown(self.tables))
+      SCHEMA.validateArtifacts(self.tables, (SCHEMA.DIRECTORY / 'DatabaseSchema.svg').read_text(encoding="utf-8"))
 
 
 if __name__ == '__main__':

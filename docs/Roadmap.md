@@ -6,8 +6,9 @@ with persisted data intact. Preserve backups, exports and restored integration
 databases. **Phase 1.2 Step B source-only implementation was authorized on 2026-11-16
 and resumed after the owner-requested pause. Source/offline checks are delivered;
 Linux Stage 1A and corrected Stage 1B passed (owner-reported), including approved
-fixture cleanup. Windows validation and development-upgrade/GUI/backup gates
-remain pending; Phase 1.2 is not accepted.** See the
+fixture cleanup. Windows compilation succeeded, but two offline test failures
+await retesting after portability corrections. Windows live validation and
+development-upgrade/GUI/backup gates remain pending; Phase 1.2 is not accepted.** See the
 [scripted Windows sequence](WindowsPhase1.1.md). Live provisioning, grants and
 migrations remain behind their specific approval checkpoints. Phase 0.1 is accepted on owner
 reported Linux/Windows builds, GUI launches and MariaDB diagnostics; earlier dated

@@ -8,6 +8,17 @@ temporaryDirectory=$(mktemp -d)
 trap 'rm -rf -- "$temporaryDirectory"' EXIT
 export MOCK_DIRECTORY="$temporaryDirectory"
 export MOCK_PASSWORD="fixture-test-password-quote'\\&"
+reportFailure() {
+   local line=$1 status=$2 output=${result:-}
+   local secret=''
+   for secret in "${MOCK_PASSWORD:-}" 'admin-fixture' 'inherited-fixture-password'; do
+      [[ -z "$secret" ]] || output=${output//"$secret"/<redacted>}
+   done
+   printf 'FAIL: Phase12ValidationScripts line %s (exit %s); fake clients only.\n%s\n' "$line" "$status" "$output" >&2
+   exit "$status"
+}
+trap 'reportFailure "$LINENO" "$?"' ERR
+
 unset MSYSTEM TASKCOMPASS_PHASE12_TEST_DB_HOST TASKCOMPASS_PHASE12_TEST_DB_PORT TASKCOMPASS_PHASE12_TEST_DB_NAME TASKCOMPASS_PHASE12_TEST_DB_USER TASKCOMPASS_PHASE12_TEST_DB_ISOLATED TASKCOMPASS_PHASE12_TEST_DB_PASSWORD
 mkdir -p "$temporaryDirectory/build with spaces"
 client="$temporaryDirectory/mariadb"
@@ -107,36 +118,34 @@ shift 2
 exec "$@"
 SUDO
 chmod +x "$temporaryDirectory/sudo"
-# Simulate Linux for this branch even when CTest itself runs on UCRT64.
-cat > "$temporaryDirectory/uname" <<'UNAME'
-#!/usr/bin/env bash
-[[ "$*" == -s ]] || exit 1
-printf 'Linux\n'
-UNAME
-chmod +x "$temporaryDirectory/uname"
-export MOCK_SOCKET=1
-for mode in --admin-socket --admin-sudo; do
-   : > "$temporaryDirectory/calls"
-   result=$(printf '%s\n' 'CREATE taskcompass_phase12_test' "$MOCK_PASSWORD" "$MOCK_PASSWORD" |
-      MYSQL_PWD=inherited-fixture-password PATH="$temporaryDirectory:$PATH" \
-      bash "$helperDirectory/03-setup-test.sh" --apply --approved "$mode" --client "$client" 2>&1)
-   [[ $(cat "$temporaryDirectory/calls") == $'query\nquery\nquery\ncreate' ]]
-   [[ "$result" == *'Created the isolated'* && "$result" != *'MariaDB administrator password:'* && "$result" != *"$MOCK_PASSWORD"* ]]
-done
-[[ $(cat "$temporaryDirectory/sudo-calls") == $'authorize\nclient\nclient\nclient' ]]
-for scenario in MOCK_SUDO_FAIL MOCK_SUDO_EXPIRED; do
-   : > "$temporaryDirectory/calls"
-   export "$scenario=1"
-   if result=$(printf '%s\n' 'CREATE taskcompass_phase12_test' |
-      PATH="$temporaryDirectory:$PATH" bash "$helperDirectory/03-setup-test.sh" --apply --approved --admin-sudo --client "$client" 2>&1); then exit 1; fi
-   [[ ! -s "$temporaryDirectory/calls" && "$result" != *'MariaDB administrator password:'* ]]
-   unset "$scenario"
-done
+# Linux socket success cases run on Linux; TCP and Windows rejection run everywhere.
+if [[ "$(uname -s)" == Linux ]]; then
+   export MOCK_SOCKET=1
+   for mode in --admin-socket --admin-sudo; do
+      : > "$temporaryDirectory/calls"
+      result=$(printf '%s\n' 'CREATE taskcompass_phase12_test' "$MOCK_PASSWORD" "$MOCK_PASSWORD" |
+         MYSQL_PWD=inherited-fixture-password PATH="$temporaryDirectory:$PATH" \
+         bash "$helperDirectory/03-setup-test.sh" --apply --approved "$mode" --client "$client" 2>&1)
+      [[ $(cat "$temporaryDirectory/calls") == $'query\nquery\nquery\ncreate' ]]
+      [[ "$result" == *'Created the isolated'* && "$result" != *'MariaDB administrator password:'* && "$result" != *"$MOCK_PASSWORD"* ]]
+   done
+   [[ $(cat "$temporaryDirectory/sudo-calls") == $'authorize\nclient\nclient\nclient' ]]
+   for scenario in MOCK_SUDO_FAIL MOCK_SUDO_EXPIRED; do
+      : > "$temporaryDirectory/calls"
+      export "$scenario=1"
+      if result=$(printf '%s\n' 'CREATE taskcompass_phase12_test' |
+         PATH="$temporaryDirectory:$PATH" bash "$helperDirectory/03-setup-test.sh" --apply --approved --admin-sudo --client "$client" 2>&1); then exit 1; fi
+      [[ ! -s "$temporaryDirectory/calls" && "$result" != *'MariaDB administrator password:'* ]]
+      unset "$scenario"
+   done
+else
+   printf 'SKIP: Linux-only socket/sudo provisioning success fixtures on this host.\n'
+fi
 : > "$temporaryDirectory/calls"
 if MSYSTEM=UCRT64 PATH="$temporaryDirectory:$PATH" bash "$helperDirectory/03-setup-test.sh" --apply --approved --admin-sudo --client "$client" >/dev/null 2>&1; then exit 1; fi
 [[ ! -s "$temporaryDirectory/calls" ]]
 unset MOCK_SOCKET
-printf 'PASS: socket modes omit DB passwords, clear inherited MYSQL_PWD, elevate only client via fake sudo and fail closed on denied/expired sudo; Windows rejects socket elevation.\n'
+printf 'PASS: provisioning authentication checks for supported host modes and Windows socket rejection.\n'
 runTest() {
    printf '%s\n' 'TEST taskcompass_phase12_test WITH RUN-OWNED RESET' 'admin-fixture' "$MOCK_PASSWORD" |
       bash "$helperDirectory/04-integration-test.sh" --approved --client "$client" --build-dir "$temporaryDirectory/build with spaces"
@@ -157,36 +166,37 @@ if TASKCOMPASS_PHASE12_TEST_DB_NAME=taskcompass_dev runTest >/dev/null 2>&1; the
 
 # Socket elevation applies only to the read-only administrator preflight.
 # The integration executable still runs unprivileged with the fixed TCP test account.
-export MOCK_SOCKET=1
-for mode in --admin-socket --admin-sudo; do
-   : > "$temporaryDirectory/calls"
-   result=$(printf '%s\n' 'TEST taskcompass_phase12_test WITH RUN-OWNED RESET' "$MOCK_PASSWORD" |
-      MYSQL_PWD=inherited-fixture-password PATH="$temporaryDirectory:$PATH" \
-      bash "$helperDirectory/04-integration-test.sh" --approved "$mode" --client "$client" --build-dir "$temporaryDirectory/build with spaces" 2>&1)
-   [[ $(tail -1 "$temporaryDirectory/calls") == test && "$result" == *'exit code: 0'* ]]
-   [[ "$result" != *'MariaDB administrator password (read-only preflight):'* && "$result" != *"$MOCK_PASSWORD"* ]]
-done
-for scenario in MOCK_SUDO_FAIL MOCK_SUDO_EXPIRED MOCK_NONEMPTY MOCK_EXTRA_GRANTS MOCK_PUBLIC_UNSAFE; do
-   : > "$temporaryDirectory/calls"
-   export "$scenario=1"
-   if result=$(printf '%s\n' 'TEST taskcompass_phase12_test WITH RUN-OWNED RESET' "$MOCK_PASSWORD" |
-      PATH="$temporaryDirectory:$PATH" bash "$helperDirectory/04-integration-test.sh" --approved --admin-sudo \
-      --client "$client" --build-dir "$temporaryDirectory/build with spaces" 2>&1); then exit 1; fi
-   [[ $(cat "$temporaryDirectory/calls") != *test* && "$result" != *"$MOCK_PASSWORD"* ]]
-   unset "$scenario"
-done
+if [[ "$(uname -s)" == Linux ]]; then
+   export MOCK_SOCKET=1
+   for mode in --admin-socket --admin-sudo; do
+      : > "$temporaryDirectory/calls"
+      result=$(printf '%s\n' 'TEST taskcompass_phase12_test WITH RUN-OWNED RESET' "$MOCK_PASSWORD" |
+         MYSQL_PWD=inherited-fixture-password PATH="$temporaryDirectory:$PATH" \
+         bash "$helperDirectory/04-integration-test.sh" --approved "$mode" --client "$client" --build-dir "$temporaryDirectory/build with spaces" 2>&1)
+      [[ $(tail -1 "$temporaryDirectory/calls") == test && "$result" == *'exit code: 0'* ]]
+      [[ "$result" != *'MariaDB administrator password (read-only preflight):'* && "$result" != *"$MOCK_PASSWORD"* ]]
+   done
+   for scenario in MOCK_SUDO_FAIL MOCK_SUDO_EXPIRED MOCK_NONEMPTY MOCK_EXTRA_GRANTS MOCK_PUBLIC_UNSAFE; do
+      : > "$temporaryDirectory/calls"
+      export "$scenario=1"
+      if result=$(printf '%s\n' 'TEST taskcompass_phase12_test WITH RUN-OWNED RESET' "$MOCK_PASSWORD" |
+         PATH="$temporaryDirectory:$PATH" bash "$helperDirectory/04-integration-test.sh" --approved --admin-sudo \
+         --client "$client" --build-dir "$temporaryDirectory/build with spaces" 2>&1); then exit 1; fi
+      [[ $(cat "$temporaryDirectory/calls") != *test* && "$result" != *"$MOCK_PASSWORD"* ]]
+      unset "$scenario"
+   done
+else
+   printf 'SKIP: Linux-only socket/sudo preflight success fixtures on this host.\n'
+fi
 : > "$temporaryDirectory/calls"
 if MSYSTEM=UCRT64 PATH="$temporaryDirectory:$PATH" bash "$helperDirectory/04-integration-test.sh" --approved --admin-sudo >/dev/null 2>&1; then exit 1; fi
 [[ ! -s "$temporaryDirectory/calls" ]]
 unset MOCK_SOCKET
-printf 'PASS: socket administrator preflight preserves all validation gates; integration executable remains unprivileged/TCP, Windows unchanged.\n'
+printf 'PASS: preflight authentication checks for supported host modes; test execution remains unprivileged/TCP.\n'
 
 for code in 1 77; do
    export MOCK_RESULT=$code
-   set +e
-   runTest >/dev/null
-   result=$?
-   set -e
+   if runTest >/dev/null; then result=0; else result=$?; fi
    [[ "$result" == "$code" ]]
 done
 printf 'PASS: preflight blocks nonempty target/extra grants/PUBLIC writes/failure; unrelated PUBLIC test grants accepted; secret redaction and exit status preserved.\n'

@@ -324,8 +324,8 @@ def renderMermaid(tables):
       output = Path(temporary) / 'schema.svg'
       result = subprocess.run(['mmdc', '-i', '-', '-o', str(output), '-c', str(CONFIG),
                                '-I', 'TaskCompassSchema', '-t', 'neutral', '-b', 'white'],
-                              input=mermaidDiagram(tables), text=True, capture_output=True, check=True)
-      svg = output.read_text()
+                              input=mermaidDiagram(tables), text=True, encoding="utf-8", capture_output=True, check=True)
+      svg = output.read_text(encoding="utf-8")
       bounds = list(map(float, ET.fromstring(svg).attrib['viewBox'].split()))
       bounds = [bounds[0] - 80, bounds[1] - 80, bounds[2] + 160, bounds[3] + 160]
       end = svg.index('>', svg.index('<svg'))
@@ -348,28 +348,28 @@ def main():
    arguments = parser.parse_args()
    if set(MIGRATIONS[0].parent.glob('*.sql')) != set(MIGRATIONS):
       raise ValueError('Unknown migration; review cumulative reader.')
-   sources = [path.read_text() for path in MIGRATIONS]
+   sources = [path.read_text(encoding="utf-8") for path in MIGRATIONS]
    tables = parseMigrations(sources)
    manifestPath = MIGRATIONS[0].parent / 'SchemaManifest.json'
    expectedManifest = json.dumps({str(version): parseMigrations(sources[:version]) for version in [1, 2]}, indent=3, sort_keys=True) + '\n'
    if arguments.manifest_only:
       if arguments.check:
          raise ValueError('Choose check or manifest-only')
-      manifestPath.write_text(expectedManifest)
+      manifestPath.write_bytes(expectedManifest.encode("utf-8"))
       print('Generated structural manifest only; no renderer or database accessed.')
       return
    expectedMarkdown = markdown(tables)
    if arguments.check:
-      assert manifestPath.read_text() == expectedManifest, 'Stale structural registry JSON'
-      assert (DIRECTORY / 'DatabaseSchema.md').read_text() == expectedMarkdown, 'Stale Markdown'
-      svg = (DIRECTORY / 'DatabaseSchema.svg').read_text()
+      assert manifestPath.read_text(encoding="utf-8") == expectedManifest, 'Stale structural registry JSON'
+      assert (DIRECTORY / 'DatabaseSchema.md').read_text(encoding="utf-8") == expectedMarkdown, 'Stale Markdown'
+      svg = (DIRECTORY / 'DatabaseSchema.svg').read_text(encoding="utf-8")
    else:
       svg = renderMermaid(tables)
    validateArtifacts(tables, svg)
    if not arguments.check:
-      (DIRECTORY / 'DatabaseSchema.md').write_text(expectedMarkdown)
-      (DIRECTORY / 'DatabaseSchema.svg').write_text(svg)
-      manifestPath.write_text(expectedManifest)
+      (DIRECTORY / 'DatabaseSchema.md').write_bytes(expectedMarkdown.encode("utf-8"))
+      (DIRECTORY / 'DatabaseSchema.svg').write_bytes(svg.encode("utf-8"))
+      manifestPath.write_bytes(expectedManifest.encode("utf-8"))
    print(('Verified' if arguments.check else 'Generated') + ': ' + str(len(tables)) + ' tables, '
          + str(sum(len(table['columns']) for table in tables.values())) + ' columns, '
          + str(sum(len(table['foreignKeys']) for table in tables.values())) + ' SQL FKs, 2 logical references.')

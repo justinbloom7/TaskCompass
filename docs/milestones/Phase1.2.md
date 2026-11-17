@@ -2,7 +2,7 @@
 
 # Phase 1.2 — Organizational Management
 
-**Status: Linux Stage 1A and corrected Stage 1B passed (owner-reported). Approved fixture cleanup verified successful. Windows validation and all development-upgrade/GUI/backup gates remain pending; Phase 1.2 is not accepted.**
+**Status: Linux isolated validation passed (owner-reported). Windows compilation succeeded; two offline test failures have source corrections awaiting Windows retest. Windows live validation and development-upgrade/GUI/backup gates remain pending. Phase 1.2 is not accepted.**
 Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
 Only this document and the roadmap were changed by Step A. Its designs/SQL were
 proposals. Step A itself authorized no SQL; the dated Step B reports below record
@@ -1976,3 +1976,112 @@ scripts or SQL files changed. Markdown references/fences and git diff --check
 passed. Builds/CTest/live queries were not rerun for this documentation-only
 update; owner-executed results above remain clearly distinguished from agent checks.
 No commits, pushes, merges or tags.
+
+
+## Windows build succeeded; offline portability corrections — 2026-11-16
+
+### Owner-reported Windows result
+
+Owner ran scripts/phase12/01-build.sh under Windows UCRT64. Configure/generate
+completed and all 75 build steps completed, ending with WorkspaceCodecTests.exe.
+Record **Windows Phase 1.2 compilation passed**, not the complete offline gate.
+CTest: **13 passed, 2 failed, 2 deliberately skipped**, 17 total, 59.86 seconds.
+Failures: DatabaseSchemaTests and Phase12ValidationScripts. Both live integration
+executables skipped. Existing task/domain/organization/commands/storage/Widgets
+checks passed. No Windows live database operation was reported or authorized.
+
+DatabaseSchemaTests failed comparing checked-in Markdown with generated Markdown;
+the trace displayed em/en dashes inconsistently (replacement-character output).
+The generator/test used Path.read_text without an explicit encoding. Python source
+literals are UTF-8, but Windows file I/O can use a legacy locale code page. This
+can also make console-rendered assertion diffs misleading. The exact owner locale
+was not queried; a CP1252-default file-read simulation reproduced the same stale
+Markdown assertion in the actual generator checker on Linux.
+
+Phase12ValidationScripts stopped immediately after the 12-character boundary
+fixture, before its socket/sudo section completed. The old test attempted to fake
+a Linux uname on Windows and require Linux-only socket/sudo success there. Its
+captured failure had no useful diagnostic; the exact failing Windows command is
+not independently established. Native Linux-only positives do not belong in a
+foreign-kernel simulation. Production socket checks remain unchanged.
+
+### Source corrections and file inventory
+
+- docs/diagrams/GenerateDatabaseSchema.py: explicit UTF-8 for all text reads and
+  Mermaid subprocess text I/O. Generated Markdown/SVG/manifest writes use explicit
+  UTF-8 bytes, preserving LF without Windows locale/newline substitution. This
+  remains compatible with the existing Python 3.9 tooling; no new dependency.
+- tests/DatabaseSchemaTests.py: explicit UTF-8 reads and a fifth unittest exercising
+  the real `--check` path with CP1252 as the implicit default. It failed before
+  the fix (`AssertionError: Stale Markdown`) and passes afterward. This tests actual
+  comparison behavior rather than requiring a global PYTHONUTF8 workaround.
+- tests/Phase12ValidationScripts.test.sh: Linux socket/sudo positive fixtures run
+  only when the actual host reports Linux. Removed the in-test Linux uname spoof.
+  Windows continues running TCP/setup/preflight/target/grant/PUBLIC/password/error/
+  exit-code cases and explicit socket rejection; only unsupported Linux-positive
+  fixtures report SKIP. Fake sudo is still installed for all branches so the mock
+  suite cannot accidentally elevate a real command. Added safe line/exit/captured
+  diagnostic reporting with fixture-secret redaction and no raw shell-command echo.
+- docs/TestingPhase1.2.md: focused Windows rerun command and platform coverage note.
+- This milestone and docs/Roadmap.md: current Windows build/test status.
+
+The new ERR trap initially intercepted the deliberately tested exit-code 1 case.
+Replaced its old set +e pattern with an explicit if/else capture so expected
+nonzero statuses remain test data, while unexpected failures report their line.
+Final Linux and simulated non-Linux branches pass. This local development failure
+is corrected and does not change production script failure/approval behavior.
+
+No C++ application code, migration SQL, schema manifest, generated diagram artifact,
+production provisioning/testing script, permission or authentication policy changed.
+The standalone SVG/Markdown remain byte-for-byte unchanged, so no renderer/visual
+regeneration was needed. Actual Windows success after these fixes remains pending;
+local branch simulations are not Windows execution evidence.
+
+### Agent-executed validation
+
+```bash
+# Added CP1252 regression first: failed before fixing file encodings.
+python3 tests/DatabaseSchemaTests.py
+bash -n tests/Phase12ValidationScripts.test.sh
+bash tests/Phase12ValidationScripts.test.sh
+python3 docs/diagrams/GenerateDatabaseSchema.py --check
+scripts/phase12/01-build.sh
+git diff --check
+sha256sum migrations/mariadb/001_PersistentTaskFoundation.sql migrations/mariadb/002_OrganizationalManagement.sql docs/milestones/Phase1.1.md
+```
+
+After correction, all five Python unittests passed. Generator/manifest/diagram
+check passed (9/85/20/2). Native Linux shell mock suite passed. Additionally ran
+that same suite with a temporary PATH-first uname stub printing MINGW64_NT_mock;
+both Linux-positive sections reported SKIP and all remaining supported checks
+passed. The stub was created in a TemporaryDirectory by Python, inherited PATH
+was passed only to the test child, subprocess.run(check=True) verified exit 0,
+and the temporary fixture was removed. No SQL/client/sudo beyond fakes ran.
+
+The full numbered Linux build/offline route configured both live test flags OFF,
+built successfully (`ninja: no work to do`) and passed **15 tests, 2 intentionally
+skipped, 0 failed**, 6.68 seconds. Both integration binaries skipped; this does not
+rerun or replace the earlier owner-reported Linux live validation. Protected SQL
+001/002 and Phase1.1.md hashes match previous evidence. Final documentation link/
+fence and whitespace checks are recorded below. No live SQL, provisioning/reset,
+backup/restore, dependency installation, commit/push/merge/tag occurred.
+
+### Required owner Windows retest — offline only
+
+Update the Windows checkout with these source fixes. These two tests load Python/
+Bash source directly, so a C++ rebuild is not required for the focused retry:
+
+```bash
+ctest --test-dir build-ucrt64 -R '^(DatabaseSchemaTests|Phase12ValidationScripts)$' --output-on-failure
+```
+
+Share the nonsecret result. A full scripts/phase12/01-build.sh rerun is also valid.
+Do not proceed to Windows live provisioning/testing until the offline failures are
+resolved and the separate platform-specific approvals are given. Existing Linux
+approvals do not cover Windows; no development upgrade or milestone acceptance is
+implied. No unresolved organizational architecture decision was introduced here.
+
+Final consistency checks: all three modified Markdown files passed local-reference
+and code-fence validation; git diff --check passed. No schema artifacts or historical
+Phase 1.1 evidence were modified. Stop for the owner's focused Windows retest;
+no additional live operation is authorized by these portability corrections.

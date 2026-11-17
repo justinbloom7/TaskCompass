@@ -40,8 +40,21 @@ ctest --test-dir build --output-on-failure
 ```
 
 Windows: use `build-ucrt64` and the existing UCRT64 CMake prefix/toolchain setup.
-The wrapper sets CMAKE_PREFIX_PATH from `/ucrt64`. Windows Phase 1.2 results remain
-pending; accepted Phase 1.1 Windows results do not validate this new source.
+The wrapper sets CMAKE_PREFIX_PATH from `/ucrt64`. Windows Phase 1.2 compilation
+passed, but two offline failures need retesting after the UTF-8/test-platform fixes.
+With the updated checkout, rerun just those tests (no C++ rebuild needed):
+
+```bash
+ctest --test-dir build-ucrt64 -R '^(DatabaseSchemaTests|Phase12ValidationScripts)$' --output-on-failure
+```
+
+Schema tooling explicitly reads/writes UTF-8; no global locale/Python mode change
+is required. Linux socket/sudo positive mock fixtures run only on Linux; Windows
+still exercises TCP workflows, safety gates and rejection of socket options. A
+SKIP message for those Linux-only fixtures does not skip the whole shell suite.
+The two live integration executables still skip in ordinary CTest. Windows native
+retest/live validation remain pending; accepted Phase 1.1 results do not establish
+Phase 1.2 success.
 
 ## 2 — Review the source plan (safe now)
 
