@@ -4,8 +4,10 @@
 
 The [milestone record](milestones/Phase1.2.md) is authoritative for approvals and
 actual results. **Linux Stage 1A and corrected Stage 1B passed (owner-reported);
-Windows Stage 1A and Stage 1B also passed. Linux B7.1 read-only development
-preflight passed on 2026-11-17; Windows B7.1 remains pending. Development upgrades and subsequent
+Windows Stage 1A and Stage 1B also passed. B7.1 read-only development preflight,
+including corrected Qt schema-1 verification, passed on both platforms on
+2026-11-17 (owner-reported). B7.2 fresh schema-1 backup/export approval is requested;
+no capture performed. Development upgrades and subsequent
 privilege/GUI/backup gates remain pending and require separate approval.** Do not execute
 steps 3 or 4 without separate approval for that step, platform and target. None of
 these steps upgrades taskcompass_dev. Preserve taskcompass_integration, all accepted

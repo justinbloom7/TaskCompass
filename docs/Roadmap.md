@@ -10,11 +10,11 @@ fixture cleanup. Windows compilation/offline checks passed across the original
 run plus focused portability retest (owner-reported). Windows Stage 1A provisioning
 and Windows Stage 1B also passed (owner-reported). Both isolated platform gates
 are met. The [B7 review package](Phase1.2B7.md) is prepared; read-only development
-preflight is approved. Linux B7.1 passed on 2026-11-17 (owner-reported), including
-schema-1 verification with the SHOW CREATE compatibility correction; its Linux
-build and 16/16 offline tests passed. Earlier catalog/configuration failures remain
-recorded in the milestone. Windows rebuild/revalidation and B7.1 remain pending.
-Populated rehearsal, narrow-privilege,
+preflight passed on both platforms (owner-reported, 2026-11-17), including schema-1
+verification with existing SELECT-only migrators. Corrected-source offline checks
+passed on both platforms (16 tests each; Windows also reported 2 live skips).
+Earlier failures remain in the milestone. B7.2 fresh schema-1 backup/private export
+approval is requested; no capture performed. Populated narrow-role rehearsal,
 development-upgrade, GUI and expanded backup/restore gates remain pending.
 Phase 1.2 is not accepted.** See the
 [scripted Windows sequence](WindowsPhase1.1.md). Live provisioning, grants and

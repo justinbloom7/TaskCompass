@@ -2,7 +2,7 @@
 
 # Phase 1.2 — Organizational Management
 
-**Status: isolated migration/integration validation passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported). B7.1 read-only preflight approved; Linux metadata/grants and corrected schema-1 verification passed (owner-reported, 2026-11-17). SHOW CREATE compatibility correction built with 16/16 offline tests passing. Windows rebuild/revalidation and B7.1 preflight remain pending. No B7 database mutations authorized. Populated narrow-role rehearsal, development upgrade, GUI/restart and expanded backup/restore gates remain pending. Phase 1.2 is not accepted.**
+**Status: Stage 1B isolated integration and B7.1 read-only development preflight passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported). Corrected-source offline checks passed on both platforms (16 tests each; Windows also reported 2 live skips). B7.2 fresh schema-1 backup/export approval requested; not performed. No B7 database mutations authorized. Populated narrow-role rehearsal, development upgrade, GUI/restart and expanded backup/restore gates remain pending. Phase 1.2 is not accepted.**
 Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
 Only this document and the roadmap were changed by Step A. Its designs/SQL were
 proposals. Step A itself authorized no SQL; the dated Step B reports below record
@@ -3144,3 +3144,319 @@ private artifact changes. Markdown local-reference/fence checks and git diff
 --check passed. Build/CTest were not rerun for this reporting-only update; the
 16/16 offline result above remains the actual source-correction test evidence.
 No commit, push, merge or tag.
+
+
+## 2026-11-17 — standalone Windows B7.1 commands supplied
+
+Owner requested Windows commands. The following operator instructions are within
+existing B7.1 approval, not execution evidence. Windows results remain pending.
+Use the MSYS2 UCRT64 terminal from the Windows repository root with the latest
+source (including SchemaConstraints helper/tests and B7 SQL review files) copied
+through the owner's normal source-transfer workflow. No commit/push is performed
+or required by these instructions. Close all TaskCompass clients/writers first;
+keep MariaDB running. Stop after any failed command or unexpected schema/grant.
+
+### 1 — rebuild and offline checks
+
+```bash
+scripts/phase12/01-build.sh
+sha256sum --check scripts/phase12/b7/ReviewChecksums.sha256
+```
+
+Run the checksum command only after build/tests succeed. Expected 16 passing
+offline tests and 2 skipped live integration tests with the current sources; no
+live integration reset is requested. The build script explicitly disables both
+live-test registrations. All review checksums must match. These operations do not
+provision/migrate/connect to a live database. They are pending owner execution on
+Windows; the Linux results are not Windows evidence.
+
+### 2 — metadata, existing grants and PUBLIC (root database password)
+
+```bash
+(
+   set -o pipefail
+   cat scripts/phase12/b7/preflight-dev.sql \
+       scripts/phase12/b7/preflight-dev-grants.sql \
+       scripts/phase12/b7/public-grants.sql |
+      env -u MYSQL_PWD '/c/Program Files/MariaDB 13.0/bin/mariadb.exe' \
+         --no-defaults --protocol=TCP --host=127.0.0.1 --port=3306 \
+         --user=root --password --default-character-set=utf8mb4 \
+         --batch --raw --database=taskcompass_dev
+   preflightExitCode=$?
+   printf 'Windows preflight exit code: %s\n' "$preflightExitCode"
+   exit "$preflightExitCode"
+)
+```
+
+Enter MariaDB root password locally (not Windows login). The known native client
+path must match the actual trusted installation; stop if absent. Expect
+feldria-w10 / 13.0.2-MariaDB / port3306 / taskcompass_dev, schema1 and its five
+InnoDB tables, reviewed unchanged Phase1.1 grants and no PUBLIC write/DDL authority
+covering TaskCompass targets. Ignore only unrelated PUBLIC test/test_% grants as
+specified in the review package. Do not infer Linux counts/UUID apply to Windows.
+Share the nonsecret report and stop for review if anything is unexpected. No grant
+or schema changes, account credentials or task payloads are selected.
+
+### 3 — pinned schema verification (taskcompass_migrate password)
+
+```bash
+(
+   set +x
+   export MSYS2_ENV_CONV_EXCL="${MSYS2_ENV_CONV_EXCL:+$MSYS2_ENV_CONV_EXCL;}TASKCOMPASS_DB_PASSWORD"
+   export TASKCOMPASS_DB_HOST=127.0.0.1 TASKCOMPASS_DB_PORT=3306
+   export TASKCOMPASS_DB_NAME=taskcompass_dev TASKCOMPASS_DB_USER=taskcompass_migrate
+   export TASKCOMPASS_DB_ISOLATED=1
+   IFS= read -r -s -p 'taskcompass_migrate password: ' TASKCOMPASS_DB_PASSWORD
+   printf '\n'
+   export TASKCOMPASS_DB_PASSWORD
+   ./build-ucrt64/TaskCompassMigrate.exe --verify --to-version 1
+   verificationExitCode=$?
+   unset TASKCOMPASS_DB_PASSWORD
+   printf 'Windows verification exit code: %s\n' "$verificationExitCode"
+   exit "$verificationExitCode"
+)
+```
+
+Run the complete block after successful metadata review, not its final executable
+line alone. Password is the existing migrator account's, not root/diagnostic.
+Expected schema1 / same Windows dataset as step2 / exit0. No --apply or migration.
+B7.2 captures/grants/DDL/restores remain separately gated. Preserve all artifacts.
+
+### Reporting validation
+
+Milestone-only command documentation. All three groups' Bash syntax checked using
+`bash -n` without executing them; Markdown local links/fences and git diff --check
+passed. No build/CTest, live SQL, account change, backup/restore or Windows command
+was executed by the agent for this documentation step. No commit/push/merge/tag.
+
+
+## 2026-11-17 — Windows corrected build and B7.1 metadata/grants passed
+
+### Actual owner-reported commands and results
+
+Owner ran the standalone Windows sequence documented above in UCRT64 on
+feldria-w10 from C:/Users/justin/repo/TaskCompass:
+
+```bash
+scripts/phase12/01-build.sh
+sha256sum --check scripts/phase12/b7/ReviewChecksums.sha256
+```
+
+CMake configured/generated, the corrected SchemaConstraintsTests.exe linked,
+and CTest reported **16 passed, 2 skipped, 0 failed** out of 18 registered tests,
+70.85 seconds. SchemaConstraintsTests passed (0.07 seconds); the two live suites
+MariaDbIntegrationTests and OrganizationIntegrationTests were skipped as intended.
+This is Windows compilation/offline regression evidence for the compatibility
+correction, not a new live migration/integration run. All 20 review checksum entries
+(runbook and 19 proposed SQL files) reported OK.
+
+Owner then ran the exact root TCP metadata/grants/PUBLIC pipeline above. It
+completed with `Windows preflight exit code: 0` and supplied the following:
+
+| Observation | Actual owner-reported value / review |
+| --- | --- |
+| Server / database / identity | feldria-w10, 13.0.2-MariaDB, port 3306, taskcompass_dev, root@localhost |
+| Server settings | lower_case_table_names=1; FK and CHECK enforcement both 1 |
+| Encoding | utf8mb4 / utf8mb4_unicode_ci |
+| Objects | Exactly five BASE TABLE/InnoDB objects, lowercased on Windows: commandrecord, dataset, localchange, schemamigration, task |
+| Stored code / other target sessions | No routine, trigger, event or other selected-target session rows displayed |
+| Migration | Exactly version 1, checksum bb901d7580398893b5c04ee263f813b9d05873eb4bae08e0daf377faf73b0ea0; appliedAt 1794691232396 |
+| Stored fingerprint | 6b3bd320ea92630b21909de0bd7cd38ea3bc3f644a69ba1fd249db43e656a343; current fingerprint still requires Windows Qt verification |
+| Dataset | 457bb52b-fea4-4347-9c47-675c6b035c90; createdAt 1794691232396; count 1 |
+| Counts | SchemaMigration 1, Dataset 1, Task 2, CommandRecord 16, LocalChange 16 |
+| Task states | Both active and not tombstoned; no other lifecycle/tombstone groups displayed |
+| Scoped accounts | Diagnostic, migrator and app each at 127.0.0.1 only |
+| Direct grants | Each global USAGE only, not grantable; diagnostic/migrator each exact escaped taskcompass_dev schema SELECT; app exactly 9 approved table rights, all not grantable |
+| Extra columns / roles | No column-privilege or explicit-role rows displayed |
+| PUBLIC | Only database scopes `test` and `test\_%`; no TaskCompass/global/role grant displayed |
+
+PUBLIC's substantial DML/DDL rights are confined to unrelated test scopes. The
+escaped underscore in test\_% is literal; neither scope matches taskcompass_dev,
+taskcompass_phase12_test or proposed taskcompass_phase12_restore. These are not
+TaskCompass privilege failures and must not be changed. No privileged test-schema
+access was attempted. The supplied SHOW CREATE output matches expected schema-1
+structure on inspection; case-normalized Windows table names are expected.
+
+### Status and next approved check
+
+**Windows build/checksums and B7.1 metadata/grants passed (owner-reported).** Windows
+B7.1 is not fully passed until the corrected Qt verifier runs as the existing
+SELECT-only taskcompass_migrate account. Run the complete Windows password-prompt
+block from the preceding standalone command entry, including MSYS2_ENV_CONV_EXCL,
+explicit local dev environment and:
+
+```bash
+./build-ucrt64/TaskCompassMigrate.exe --verify --to-version 1
+```
+
+Do not run that line alone without its temporary environment. Expect schema 1 /
+dataset 457bb52b-fea4-4347-9c47-675c6b035c90 / exit 0. Stop on failure; no --apply,
+new grants, repair or backup. Linux B7.1 remains passed; keep platform counts and
+UUIDs separate. B7.2 and subsequent live stages still need explicit approval.
+
+### Reporting changes and agent validation
+
+Updated this milestone, Roadmap and TestingPhase1.2 current status, preserving
+prior results/failures. No source, migrations, SQL review artifacts or private
+evidence changed. Markdown local-reference/fence checks and git diff --check
+passed. No agent build/CTest or live SQL was executed for this reporting-only
+step; all Windows results above are owner-reported. No backup, restore, account/
+grant change, reset, Phase 1.3 or commit/push/merge/tag.
+
+
+## 2026-11-17 — Windows Qt connection-open failure
+
+Owner ran the complete Windows temporary-environment verification block. Output:
+
+```text
+Cannot open MariaDB. Check service/TCP availability, QMYSQL, account, password and grants.
+Windows verification exit code: 1
+```
+
+This is **connection-open failure before schema inspection**, not a CHECK/fingerprint
+failure or evidence of an interrupted migration. Source review of
+DatabaseConnection.cpp confirms this message is emitted only when QSqlDatabase::open
+fails; session initialization and identity/schema queries have not succeeded.
+The connection has a 5-second connect/read/write timeout and suppresses raw connector
+error text to avoid disclosing connection data/credentials. No cause is established.
+Wrong migrator password, availability/network or Qt/client loading remain possible;
+the earlier successful root TCP connection does not validate this account's password.
+No reset, password change, grant broadening or schema operation is appropriate yet.
+
+### Next read-only account check on Windows UCRT64
+
+Use the native MariaDB client and the same explicit TCP database/account to obtain
+a useful authentication/network error independently of Qt. Enter the existing
+**taskcompass_migrate** password (not root, diagnostic or Windows login):
+
+```bash
+env -u MYSQL_PWD '/c/Program Files/MariaDB 13.0/bin/mariadb.exe' \
+   --no-defaults --protocol=TCP --host=127.0.0.1 --port=3306 \
+   --user=taskcompass_migrate --password --database=taskcompass_dev \
+   --batch --execute='SELECT VERSION(),DATABASE(),CURRENT_USER();'
+```
+
+If this succeeds, expect 13.0.2-MariaDB, taskcompass_dev,
+taskcompass_migrate@127.0.0.1. Rerun the **complete** Qt verification block with a
+fresh hidden password entry; all other configuration remains unchanged. If that
+still fails, run the database-free Qt plugin listing for the next report:
+
+```bash
+./build-ucrt64/TaskCompassDbDiagnostic.exe
+```
+
+The diagnostic above has no --connect: it checks drivers only, not login or schema.
+If native login fails, stop and report the nonsecret client error instead of
+rerunning setup. Never print environment/password contents or paste credentials.
+No live operation was executed by the agent; these commands await operator results.
+
+### Status, changes and validation
+
+Windows build/offline checks, review checksum and root metadata/grant results remain
+passed; Windows B7.1 is **incomplete**. Linux B7.1 remains passed. Updated milestone
+and Roadmap current status, preserving all earlier evidence. Markdown references/
+fences and git diff --check passed. No source/migration/SQL review package/private
+artifact changes, no agent build/CTest/live SQL and no account/grant/backup/restore
+operation. B7.2 and all later live gates remain unauthorized. No commit, push,
+merge, tag or Phase 1.3 work.
+
+
+## 2026-11-17 — Windows verification passed; B7.1 complete on both platforms
+
+### Owner-reported result and diagnosis
+
+Owner identified that Windows uses a different migrator password from Linux and
+reran the complete approved Windows verification block with the Windows password:
+
+```text
+Schema 1 verified; dataset 457bb52b-fea4-4347-9c47-675c6b035c90
+Windows verification exit code: 0
+```
+
+**Windows B7.1 passed (owner-reported).** The prior connection-open failure is
+explained by the owner's password mix-up, followed by successful login/verification;
+no password reset, grant change or Qt connection workaround was needed. Do not
+record a native-client login or extra plugin diagnostic as executed: neither was
+reported. No credentials were shared or stored in this record.
+
+| B7.1 observation | Linux | Windows |
+| --- | --- | --- |
+| Server | feledria / MariaDB 10.5.29 | feldria-w10 / MariaDB 13.0.2 |
+| Approved local TCP target | taskcompass_dev, 127.0.0.1:3306 | taskcompass_dev, 127.0.0.1:3306 |
+| Verified schema / exit | 1 / 0 | 1 / 0 |
+| Verified dataset UUID | 21be9da7-b767-4578-b972-cc9a35122ddb | 457bb52b-fea4-4347-9c47-675c6b035c90 |
+| Metadata baseline counts | Task 4, CommandRecord 28, LocalChange 28 | Task 2, CommandRecord 16, LocalChange 16 |
+| Grants | Reviewed exact schema-1 rights | Reviewed exact schema-1 rights; unrelated PUBLIC test grants accepted |
+| Evidence source | Owner-reported live results; agent-executed Linux build/offline checks | Owner-reported build/offline/checksum and live results |
+
+The corrected verifier now has owner-reported read-only success on both supported
+servers with their existing least-privilege migrator accounts. Earlier errors,
+reports, SQL and all Phase 1.1 evidence remain preserved. Both B7.1 gates are met;
+this is not approval to back up, migrate, change privileges or write GUI data.
+Baseline counts are prior metadata observations, not new all-value snapshot exports.
+
+### Approval Requested — B7.2 fresh populated schema-1 backups and private exports
+
+Request separate approval for **B7.2 only on both above TaskCompass development
+databases**, following the exact [B7.2 operator procedure](../Phase1.2B7.md#b72--fresh-populated-schema-1-backup-and-evidence)
+and common definitions in the reviewed runbook. No schema/account/grant changes.
+Proposed **new external directories**, independently timestamped per platform:
+
+```text
+Linux:   $HOME/temp/TaskCompassBackups/Phase1.2-schema1-linux-<YYYYMMDD-HHMMSS>
+Windows: $HOME/TaskCompassBackups/Phase1.2-schema1-windows-<YYYYMMDD-HHMMSS>
+```
+
+Approval binds these fresh directory patterns and known hosts/databases. Choose
+a new path at execution, record its concrete value, reject an existing destination,
+and preserve every old backup/export/restored integration database. Stop all
+TaskCompass/SQL writers, repeat pinned schema-1 verification and confirm unchanged
+baseline/privileges before capture; any drift requires review before proceeding.
+Do not stop/reconfigure the MariaDB service.
+
+Exact approved-procedure command proposed (not yet executed):
+
+```bash
+scripts/phase11/09-backup.sh --backup-dir "$b7Schema1Directory" \
+   --client "$taskCompassClient" --dump "$taskCompassDump" --build-dir "$taskCompassBuild"
+```
+
+The runbook common definitions supply platform-specific trusted native client/dump
+paths and build directories. This existing helper is limited to the five-table
+schema-1 capture here. It verifies with taskcompass_app and dumps/exports with
+SELECT-only taskcompass_dev, not root; their **platform-specific** passwords are
+entered at local hidden prompts. No credential file is added. New directory
+privacy is checked before files (umask077 on Linux, protected owner ACL on Windows).
+If privacy cannot be established, stop without capturing data.
+
+Included scope: private after-gui.sql with exit/nonempty/hash checks, existing
+source.tsv/source-after.tsv/hash/server/dataset evidence, and the runbook's new
+38-legacy-column canonical before/after exports plus schema1 SHOW CREATE export
+and checksum manifest. These filenames identify a new pre-upgrade baseline; they
+do not overwrite Phase 1.1 artifacts. Require exact same-platform before/after
+rows and matching fresh dataset/schema checks. Canonical HEX remains private data.
+Owner privately reviews the full dump for only expected table DDL/INSERTs and
+normal session prologue/epilogue before its hash can be proposed for later restore.
+No exports/dumps are to be committed or pasted into conversation.
+
+Expected: exit0, nonempty fresh dump, all recorded hashes verified, no source drift,
+all five tables/all legacy columns/history/tombstones preserved, correct UUID and
+encoding, no unexpected dump SQL. No restore is included, so capture alone is
+**not** proof of recovery. Failure: preserve failed files/private evidence, stop;
+no overwrite, retry into the directory, cleanup or automatic repair. A replacement
+capture uses a fresh reviewed directory. B7.3 must later bind the actual privately
+reviewed dump hash and exact empty isolated target before any import.
+
+Excluded: all restores/provisioning/grant changes/migrations, integration resets,
+GUI writes, source database writes, modifying old artifact ACLs/content, deleting
+files or databases, Phase 1.3 and commit/push/merge/tag. This request is the explicit
+checkpoint required by the owner's B7 database-safety instructions; earlier B7.1
+approval does not authorize it. Await owner decision before any capture/export.
+
+### Reporting changes and agent validation
+
+Updated this milestone, Roadmap and TestingPhase1.2 status. Markdown local-reference/
+fence checks and git diff --check passed. No source/migration/SQL review package or
+private evidence changes; no agent live SQL, backup/export, restore, privilege or
+account operation. Build/CTest not rerun for this reporting-only update; the actual
+previous platform results are preserved above. Phase 1.2 remains unaccepted.
