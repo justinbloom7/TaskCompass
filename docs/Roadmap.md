@@ -15,15 +15,14 @@ verification with existing SELECT-only migrators. Corrected-source offline check
 passed on both platforms (16 tests each; Windows also reported 2 live skips).
 Earlier failures remain in the milestone. B7.2 fresh schema-1 backup/private exports
 are approved for owner execution on both platforms; [numbered operator scripts](Phase1.2B72.md)
-are prepared and offline-mock-tested (Linux 17/17 tests). Linux B7.2 passed on
-2026-11-17 (owner-reported), including targeted completion, checksum sealing and
-private SQL review; the retained directory/digest and failures are preserved in
-the milestone. Windows tools/preflight passed; the latest capture failed at
-runtime verification before artifact creation. B7.2 now provides bounded TaskCompass
-authentication-only retries and per-run credential reuse (Linux 17/17 offline tests);
-native Windows capture/review remains pending under existing approval;
-no live capture was performed by the agent. Populated narrow-role rehearsal,
-development-upgrade, GUI and expanded backup/restore gates remain pending.
+are prepared and offline-mock-tested (Linux 17/17 tests). B7.2 capture/sealing and
+owner-confirmed private SQL review passed on both platforms on 2026-11-17. Retained
+paths/digests and all earlier failures are in the milestone. B7.3 exact-snapshot
+isolated restore/rehearsal is approved for owner execution; [numbered scripts](Phase1.2B73.md)
+are prepared and Linux offline tests passed (18/18). Actual restore results pending;
+no import executed by the agent.
+Narrow-role rehearsal, development upgrade, GUI and schema2 backup/restore remain
+pending and separately gated.
 Phase 1.2 is not accepted.** See the
 [scripted Windows sequence](WindowsPhase1.1.md). Live provisioning, grants and
 migrations remain behind their specific approval checkpoints. Phase 0.1 is accepted on owner

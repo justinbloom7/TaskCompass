@@ -2,7 +2,7 @@
 
 # Phase 1.2 — Organizational Management
 
-**Status: Stage 1B isolated integration and B7.1 read-only development preflight passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported). Linux B7.2 schema-1 backup/evidence capture, targeted completion and private SQL review passed on 2026-11-17 (owner-reported); retained directory/hash recorded below. Windows B7.2 tool/preflight checks passed; latest capture stopped at runtime-account verification before directory/dump creation. B7.2 TaskCompass credential entry now supports bounded authentication-only retries and per-run memory reuse (offline-tested); Windows native execution/capture still pending. No live capture or database mutation performed by agent. Populated narrow-role rehearsal, development upgrade, GUI/restart and expanded backup/restore gates remain pending and separately gated. Phase 1.2 is not accepted.**
+**Status: Stage 1B isolated integration, B7.1 read-only development preflight and B7.2 populated schema-1 backup/evidence capture plus private SQL review passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported, 2026-11-17). Retained artifact paths/hashes and all earlier failures/approvals are preserved below. B7.3 exact-snapshot isolated restore/rehearsal approved for owner execution on both platforms; numbered guarded scripts prepared and offline-tested. No live restore executed by agent; operator results pending. No live database procedure performed by agent. Narrow-role rehearsal, development upgrade, GUI/restart and expanded backup/restore gates remain pending and separately gated. Phase 1.2 is not accepted.**
 Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
 Only this document and the roadmap were changed by Step A. Its designs/SQL were
 proposals. Step A itself authorized no SQL; the dated Step B reports below record
@@ -4160,3 +4160,300 @@ once accepted is not requested again during that run. If three entries fail or
 any operation fails, stop/report; no whole-operation loop or repair. Step04 only
 after final capture PASS. Linux evidence remains preserved, Windows B7.2 capture/
 review incomplete, B7.3 and all database mutations/restores still separately gated.
+
+
+## 2026-11-17 — Windows B7.2 capture/review passed; both baselines sealed
+
+### Owner-reported native Windows capture
+
+Owner ran the updated 03-capture.sh --approved under UCRT64 with the unchanged-
+baseline/writers-closed confirmations. All reviewed package checksums passed.
+Each Windows TaskCompass credential authenticated on attempt1/3; memory-only
+reuse succeeded through the existing helper, additional exports and final verify,
+with no late password re-entry. The authentication-denial retry branch is still
+mock-tested only; this run demonstrates native checked-credential/cache behavior,
+not an unreported Windows denied-login/re-entry experiment. Client password-option
+notices appeared as explained; no TLS settings changed or negotiated TLS claimed.
+
+Both pinned migrator verifications and the helper's app verification reported
+schema1/dataset457bb52b-fea4-4347-9c47-675c6b035c90. Helper reported backup exit0,
+nonempty dump/hash recorded and consistent source exports. All checksums passed
+for after-gui.sql, source.tsv, legacy-before.hex.tsv, legacy-after.hex.tsv,
+schema1.ddl.txt, source-after.tsv, dataset.txt, server.txt, client-version.txt and
+dump-version.txt. Final result:
+
+```text
+PASS: B7.2 capture, comparisons and checksums. Private SQL review still pending.
+Directory: /c/Users/justin/TaskCompassBackups/Phase1.2-schema1-windows-20261117-064917
+```
+
+### Wrong-parent guard and successful private review
+
+First 04-review invocation selected only `/c/Users/justin/TaskCompassBackups`, the
+parent directory. Read-only ACL validation rejected it with `Private capture ACL
+validation failed`. No private capture file, permission, hash or database was
+changed by that review action; inspection stopped before artifact checks/pager.
+This is an operator path-selection error, not evidence that capture's ACL was bad.
+No ACL repair or broadened access was performed or proposed.
+
+Owner then supplied the full newly created capture directory. ACL validation,
+all artifact checksums and comparisons succeeded; the same dump digest printed.
+Owner inspected the pager and entered `DUMP REVIEWED`, followed by:
+
+```text
+PASS: B7.2 checksums/comparisons and owner-confirmed private review.
+STOP: no restore/migration is authorized.
+```
+
+**Windows B7.2 passed (owner-reported)**. No separate numeric wrapper exit was
+printed; the supplied successful PASS messages and normal returns are the result
+evidence. Private SQL review is owner-confirmed; agent did not inspect the dump.
+Both Linux and Windows B7.2 are now complete, with all previous failures retained.
+This is not final Phase1.2 acceptance or proof of either new snapshot's restore.
+
+### Retained exact snapshots (do not alter)
+
+| Platform | Directory | after-gui.sql SHA-256 | Dataset |
+| --- | --- | --- | --- |
+| Linux | /home/justin/temp/TaskCompassBackups/Phase1.2-schema1-linux-20261117-013703 | 83ae094ed33865bba0c22e39174f2977a49cc014de3f669115300105eec2bd26 | 21be9da7-b767-4578-b972-cc9a35122ddb |
+| Windows | /c/Users/justin/TaskCompassBackups/Phase1.2-schema1-windows-20261117-064917 | 6588eb9ebc30b63b36b33f2abbc4a0de9da31b252c41a3fd585b8b060073fe50 | 457bb52b-fea4-4347-9c47-675c6b035c90 |
+
+Linux baseline counts Task4/CommandRecord28/LocalChange28; Windows Task2/16/16;
+each Dataset1/SchemaMigration1. All 38 original columns, history and tombstones
+are included in canonical evidence. Paths are private operator artifact references,
+not repository content. Preserve every capture/export/checksum/version file, all
+Phase1.1 reports/artifacts and original restored taskcompass_integration databases.
+Do not rerun capture/completion over these sealed directories or reuse them as
+scratch space. Future comparison exports require new filenames, never overwrites.
+
+### Approval Requested — B7.3 populated schema-1 isolated restore/rehearsal
+
+Now request **operator-only B7.3** for both exact local snapshots above, using the
+existing [B7.3 reviewed procedure](../Phase1.2B7.md#b73--populated-schema-1-recoveryrehearsal-clone).
+This is a new live database approval; B7.2 does not authorize it. Do not execute
+until owner approves the concrete targets/artifacts and procedure below.
+
+- Linux target: feledria/MariaDB10.5.29, local127.0.0.1:3306,
+  **taskcompass_phase12_test**, existing taskcompass_phase12_test@127.0.0.1.
+- Windows target: feldria-w10/MariaDB13.0.2, local127.0.0.1:3306,
+  **taskcompass_phase12_test**, existing same-named account@127.0.0.1.
+- Each uses only its own platform's reviewed after-gui.sql, bound to the exact
+  directory/digest above. No cross-platform/version import or dump edits.
+- Fresh root metadata-only preflight using preflight-rehearsal.sql and
+  preflight-clone-grants.sql; Windows additionally public-grants.sql. Require
+  correct server/encoding, **entirely empty target** (no tables/views/stored code/
+  unexpected sessions), exactly existing six schema-scoped test privileges and
+  no extra hosts/global/table/column/role/PUBLIC authority covering TaskCompass.
+  Verify all private artifact checksums and owner SQL review again before import.
+  Unknown/nonempty target or changed artifact/account/server stops; **no reset**.
+- Root only inspects metadata. Import uses the dedicated test account; no account,
+  password, authentication or grant changes. The import executes only the exact
+  privately reviewed dump's five CREATE TABLE definitions, INSERT rows and normal
+  session prologue/epilogue. No migration002 or new Dataset initialization. No
+  --force, --databases, source-qualified writes, DROP, repair or repeated import.
+
+Exact proposed Linux import (after preflight/checksum gates):
+
+```bash
+/usr/bin/mariadb --no-defaults --protocol=TCP --host=127.0.0.1 --port=3306 \
+   --user=taskcompass_phase12_test --password --default-character-set=utf8mb4 \
+   --database=taskcompass_phase12_test \
+   < /home/justin/temp/TaskCompassBackups/Phase1.2-schema1-linux-20261117-013703/after-gui.sql
+```
+
+Exact proposed Windows import (after its own preflight/checksum gates):
+
+```bash
+'/c/Program Files/MariaDB 13.0/bin/mariadb.exe' \
+   --no-defaults --protocol=TCP --host=127.0.0.1 --port=3306 \
+   --user=taskcompass_phase12_test --password --default-character-set=utf8mb4 \
+   --database=taskcompass_phase12_test \
+   < /c/Users/justin/TaskCompassBackups/Phase1.2-schema1-windows-20261117-064917/after-gui.sql
+```
+
+Approval would also include the runbook's post-import read-only verification and
+new private rehearsal1.hex.tsv/rehearsal1.ddl.txt exports in each snapshot directory
+(no overwrite), full 38-legacy-column/count/hash equality against its sealed capture,
+same-platform raw DDL equality, and guarded Qt `--verify --phase12-test --to-version 1`
+with explicit TASKCOMPASS_PHASE12_TEST_DB_* environment. Expect imported dataset
+UUID exactly the source UUID, original counts/history/payload bytes and schema1/
+fingerprint verified. Clones remain passive rehearsal copies, never sync clients.
+
+Risk/recovery: MariaDB DDL import is not a rollback bundle and may leave partial
+state. Stop immediately on any nonzero client status, metadata/hash/content mismatch
+or uncertain result; preserve dump, target and diagnostics for explicit review.
+Do not retry, reimport, reset, remove objects, rewrite history or broaden grants.
+No universal DROP/recovery SQL is authorized; actual-state-specific recovery would
+require a fresh review. Preserve populated clones afterward; never run the reset-
+capable 04-integration-test.sh suite against them.
+
+Excluded: all taskcompass_dev writes, original taskcompass_integration access/reset,
+provisioning/grant changes, migration002, narrow-role swaps, GUI writes, cleanup,
+B7.4+ and Phase1.3. B7.4 narrow-migrator/runtime rehearsal still needs separate
+approval after this populated recovery gate passes. No restore run by the agent.
+
+### Reporting validation
+
+Updated milestone/Roadmap/TestingPhase1.2 status only. Markdown local-reference/
+fence checks, digest-format checks and git diff --check passed. No application/
+script/SQL/migration/private-artifact change or agent database/backup/restore access.
+Build/CTest not rerun for reporting-only edits; actual earlier offline results
+remain preserved. No dependency installation, commit/push/merge/tag or cleanup.
+
+
+## 2026-11-17 — B7.3 approved; numbered restore/rehearsal scripts prepared
+
+### Explicit owner approval and execution boundary
+
+Owner answered **"yes"** to the preceding exact-artifact/target B7.3 approval
+request for both platforms. This authorizes only the documented owner-run schema1
+snapshot import into existing empty taskcompass_phase12_test, current grants /
+identity / checksum gates and full preservation verification. Both exact source
+paths/digests/dataset IDs remain the preceding table's immutable bindings.
+**No live SQL/private-artifact access or restore has been executed by the agent.**
+Prior owner instruction to provide operator commands rather than execute on their
+behalf persists. No B7.4 grant swap/migration, dev write, original integration access,
+provisioning, reset, cleanup, GUI write, Phase1.3 or commit/push/merge/tag permission.
+
+### Exact operator commands (one at a time, same on both platforms)
+
+Copy all changed scripts/shared helper into each checkout through owner's normal
+source workflow. From repository root, Linux Bash or Windows UCRT64, keep all
+writers stopped and leave MariaDB running:
+
+```bash
+scripts/phase12/b73/01-preflight.sh --approved
+scripts/phase12/b73/02-import.sh --approved
+scripts/phase12/b73/03-compare.sh --approved
+```
+
+Run step2 only after step1 PASS; step3 only after import PASS. A failure stops for
+review, not an automatic retry/reset or return to an earlier step. Detailed prompt,
+password, expected result and failure instructions: [Phase1.2B73.md](../Phase1.2B73.md).
+No setup variables or long pasted blocks needed. Defaults select the exact approved
+local snapshots/hosts/versions and fixed target/account. Actual owner results pending.
+
+Step1 validates private permissions and complete sealed capture through the existing
+B7.2 evidence checker in explicit checks-only mode, then the exact platform dump
+hash and native client version/path against sealed metadata. Root metadata checks
+are read-only: sudo/socket on Linux or native --password/TCP on Windows, no cached
+administrator credentials. Require expected selected target/root/server/version,
+case mode0/1 and FK/CHECK enforcement1, correct existing charset/collation, zero
+schema objects/stored code/other selected-target sessions, exact test account host,
+exact six schema grants and no global/table/column/role extras or PUBLIC write
+coverage of source/target. Nonempty/unknown/malformed output fails closed, never reset.
+
+Step2 binds the same pinned dump hash, requires `RESTORE taskcompass_phase12_test`
+and `DUMP REVIEWED; WRITERS CLOSED`, authenticates the exact test account (three
+login-only attempts with memory cache), repeats fresh root preflight, and rechecks
+snapshot. Before any import SQL it creates private **b73-import-attempt.txt** with
+the pinned digest using noclobber. Import runs once under test credentials against
+only taskcompass_phase12_test. No root import, --force, DDL reset or migration apply.
+On native exit0 only, creates **b73-import-success.txt** and prints PASS. Any prior
+attempt/success/comparison evidence blocks reimport. Do not delete/rename/copy
+around markers. Even an apparently empty target after uncertain import needs review.
+No new accounts or privileges; six test rights remain as previously provisioned.
+
+Step3 requires matching attempt/success markers, authenticates test account, runs
+Qt `--verify --phase12-test --to-version 1` with explicit approved test environment
+and expected source UUID, then creates only new rehearsal1.hex.tsv/rehearsal1.ddl.txt
+and b73-comparison.sha256. Full 38-original-column/count/immutable payload/tombstone/
+time/history/migration-row equality and raw same-platform DDL equality are required
+against sealed baseline, with verified comparison checksums. Qt preserves strict
+shape/FK endpoint/index/check/fingerprint and dataset guards. No existing capture
+file is modified. Failed/partial comparison remains for review; no automatic rerun.
+
+Expected outputs: preflight PASS for correct empty target/exact rights; import
+`PASS: one-shot import exit 0`; comparison schema1/source UUID and
+`PASS: B7.3 schema1/UUID/all legacy columns and history/counts/DDL match exact snapshot.`
+The clone intentionally shares its source dataset UUID as a passive rehearsal copy,
+not a syncing client. Preserve it and all evidence; never run reset-capable tests
+on the now-populated target. Restore failure may leave nontransactional partial
+DDL; stop, preserve state, request actual-state-specific recovery approval. No
+DROP/suffix-resume/repair permission follows from B7.3 approval.
+
+### Files, reuse and architecture decisions
+
+- New scripts/phase12/b73/01-preflight.sh, 02-import.sh, 03-compare.sh and run.sh.
+- New scripts/phase12/b73/preflight.sql: eight **SELECT-only** metadata assertions
+  over the authorized server/target/account; Windows additionally uses existing
+  public-grants.sql. Same approved preflight authority as the reviewed report files,
+  expressed as tagged scalar rows for automatic guards, no added SQL mutation scope.
+- New scripts/phase12/read-only-login.sh factors the existing bounded login/cache/
+  redaction functions shared with B7.2. Caller database/account pairs are hardcoded
+  to dev's existing three accounts or the exact phase12 test pair; no general
+  target/credential abstraction or admin-password capture. B7.2 behavior/guards
+  remain otherwise unchanged and regression tested.
+- Modified B7.2 run.sh to source that helper and add review-only --checks-only:
+  integrity/permissions/UUID checks without pager or a new SQL-safety assertion.
+  This cannot bypass import's reviewed-dump confirmation or pinned owner-reviewed
+  bytes. --checks-only on any live/capture action is rejected.
+- New tests/Phase12RestoreScripts.test.sh; CMake registers Phase12RestoreScripts
+  only when existing Bash/Python3 test prerequisites are available, with the existing
+  platform timeout and explicit detected Python interpreter for portable mocks.
+- Modified Phase12BackupScripts.test.sh covers checks-only; new docs/Phase1.2B73.md
+  and updated B7.2 guide, milestone/Roadmap/TestingPhase1.2 status/links.
+- No production C++/GUI/domain/application changes, migration SQL, diagrams,
+  DatabaseConfig allowlists, dependency installs or existing validation helper
+  grant/DDL behavior changes. Private comparison/attempt artifacts contain no secrets.
+
+New markers are private evidence/one-shot safety, not a schema/history change or
+a substitute for actual state checks. Script copies of identical snapshot bytes
+still cannot override pinned digest/server/target; a location change requires its
+own authorization. The agent's offline fixtures use simulated hashes via a fake
+hash utility; no production test bypass or digest override was introduced.
+
+### Actual agent-executed offline validation
+
+```bash
+bash -n scripts/phase12/read-only-login.sh
+bash -n scripts/phase12/b73/run.sh
+bash tests/Phase12BackupScripts.test.sh
+bash tests/Phase12RestoreScripts.test.sh
+cmake --build build --parallel 2
+ctest --test-dir build --output-on-failure \
+   -E '^(MariaDbIntegrationTests|OrganizationIntegrationTests)$'
+ctest --test-dir build --output-on-failure \
+   -R '^(Phase12BackupScripts|Phase12RestoreScripts)$'
+sha256sum --check scripts/phase12/b7/ReviewChecksums.sha256
+git diff --check
+```
+
+CMake/build succeeded. Full Linux offline suite **18/18 passed**, exit0,22.20sec;
+both live integration suites explicitly excluded, not run. After tightening native
+client-version/table-case/FK/CHECK preflight metadata and portable Python mock
+selection, final focused CTest **2/2 passed**,12.42sec (backup2.29/restore10.12).
+No test failures occurred during this B7.3 source preparation. All script syntax,
+Markdown links/fences/whitespace, 20 reviewed checksums and git diff --check passed.
+Protected migration001/002 and accepted Phase1.1.md SHA-256 values unchanged as
+recorded above; no diagram regeneration required for read-only tooling SQL.
+
+New four-group fake-executable harness covers no-approval/help/preview zero
+connections; native client mismatch, nonempty/wrong-server/extra-role rejection
+before marker/import; exact pinned snapshot/import/Qt/full comparison positive
+flow; attempt marker retention on partial failure; no reimport/reset/overwrite;
+tampered file and valid local checksum but wrong approved digest refusal; mocked
+Windows ACL/pinned snapshot/PUBLIC scope and restored UUID rejection. It asserts
+root preflight SQL is SELECT-only and fake clients reject other DB/account targets
+or --force; fake verifier accepts only verify1/phase12-test, never apply/run/reset.
+Actual hash utility behavior is simulated only for exact synthetic fixture bytes;
+real repository checksums are calculated normally by that test double. No private
+snapshot data or real server was used. Existing B7.2 seven-group harness still
+passes with the shared helper and new no-pager checks-only guard.
+
+Actual Windows shell/native-client/ACL/import and Linux live restore execution are
+**pending owner**, not established by mocks. Python is only for an existing-style
+offline test fixture, not the runtime operator scripts or a new installed dependency.
+No real database connection, backup/import/export, private-file inspection,
+provisioning/privilege or destructive operation was executed by the agent. Only
+harness-owned temporary fixtures were cleaned. No commit, push, merge or tag.
+
+### Remaining work and next checkpoint
+
+Owner runs/reports each stage separately per platform, preserves source snapshots,
+new evidence and populated clones. No automatic execution/resume or additional
+B7.3 approval needed for the already approved exact scope. Unexpected state stops
+for review. B7.4's narrow migration/runtime role changes and migration002 need
+separate concrete approval after populated restoration/preservation passes on both
+servers. Development upgrade/GUI acceptance/schema2 recovery and final acceptance
+remain later, separately gated work. No Phase1.3 begins.

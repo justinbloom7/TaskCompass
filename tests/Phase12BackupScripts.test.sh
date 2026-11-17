@@ -177,6 +177,8 @@ result=$(inputs | run 03-capture --approved --backup-dir "$capture" 2>&1)
 assertNoSecret
 [[ "$result" == *'PASS: B7.2 capture'* ]]
 [[ "$("$originalStat" -c %a "$capture")" == 700 || "$(uname -s)" != Linux ]]
+result=$(run 04-review --backup-dir "$capture" --checks-only 2>&1)
+[[ "$result" == *'evidence checks only'* && "$result" != *'Privately inspect every SQL statement'* ]]
 result=$(printf 'DUMP REVIEWED\n' | run 04-review --backup-dir "$capture" 2>&1)
 [[ "$result" == *'owner-confirmed private review'* ]]
 if result=$(inputs | run 03-capture --approved --backup-dir "$capture" 2>&1); then exit 1; fi

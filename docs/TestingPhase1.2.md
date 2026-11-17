@@ -8,12 +8,11 @@ Windows Stage 1A and Stage 1B also passed. B7.1 read-only development preflight,
 including corrected Qt schema-1 verification, passed on both platforms on
 2026-11-17 (owner-reported). B7.2 fresh schema-1 backup/exports are approved for
 owner execution only; [numbered operator scripts](Phase1.2B72.md) are prepared.
-Linux B7.2 passed after targeted completion and owner-confirmed private SQL review;
-retained path/hash are in the milestone. Windows tools/preflight passed; latest
-runtime verification failed before artifact creation. Updated B7.2 scripts allow
-bounded TaskCompass login retries and memory-only credential reuse; fresh native
-Windows capture/review remains pending under existing approval.
-No live capture was performed by the agent. Development upgrades and subsequent
+B7.2 capture/sealing and owner-confirmed private SQL review passed on both platforms
+on 2026-11-17; retained paths/hashes and historical failures are in the milestone.
+B7.3 populated exact-snapshot isolated restore is approved for owner execution
+using [three numbered scripts](Phase1.2B73.md); Linux offline suite18/18 passed,
+actual live restore results pending. No live procedure was performed by the agent. Development upgrades and subsequent
 privilege/GUI/backup gates remain pending and require separate approval.** Do not execute
 steps 3 or 4 without separate approval for that step, platform and target. None of
 these steps upgrades taskcompass_dev. Preserve taskcompass_integration, all accepted

@@ -10,13 +10,14 @@ cd -- "$repositoryDirectory"
 action=${1:-help}
 [[ $# == 0 ]] || shift
 approved=false
+checksOnly=false
 clientPath=''
 dumpPath=''
 buildDirectory=''
 backupDirectory=''
 accountPassword=''
-declare -A passwords=()
-readonly MAX_PASSWORD_ATTEMPTS=3
+readonly CREDENTIAL_DATABASE=taskcompass_dev
+source "$scriptDirectory/../read-only-login.sh"
 trap 'unset accountPassword passwords TASKCOMPASS_DB_PASSWORD MYSQL_PWD' EXIT
 fail() { printf 'STOP: %s Preserve evidence; no retry, cleanup or repair.\n' "$1" >&2; exit 1; }
 trap 'fail "B7.2 operation failed (exit $?)."' ERR
@@ -43,6 +44,7 @@ while [[ $# -gt 0 ]]; do
    case "$1" in
       --help|-h|--print-plan) usage; exit 0 ;;
       --approved) approved=true; shift ;;
+      --checks-only) checksOnly=true; shift ;;
       --client|--dump|--build-dir|--backup-dir)
          [[ $# -ge 2 && -n "$2" ]] || fail "Missing $1 value."
          case "$1" in
@@ -53,6 +55,7 @@ while [[ $# -gt 0 ]]; do
       *) fail "Unknown option $1." ;;
    esac
 done
+if "$checksOnly" && [[ "$action" != review ]]; then fail '--checks-only is review-only.'; fi
 if [[ "$action" == preflight || "$action" == capture || "$action" == finish ]]; then
    "$approved" || fail 'Use --approved only under the recorded B7.2 approval.'
 fi
@@ -83,70 +86,11 @@ confirm() {
    IFS= read -r -p "Type $1: " response || fail 'Cancelled.'
    [[ "$response" == "$1" ]] || fail 'Confirmation mismatch.'
 }
-redact() {
-   local line=''
-   while IFS= read -r line || [[ -n "$line" ]]; do
-      local secret=''
-      for secret in "${accountPassword:-}" "${passwords[@]}"; do
-         [[ -z "$secret" ]] || line=${line//"$secret"/<redacted>}
-      done
-      if [[ "$line" == 'WARNING: option --ssl-verify-server-cert is disabled, because of an insecure passwordless login.' ]]; then
-         printf 'MariaDB password-option notice; TLS settings unchanged.\n' >&2
-      else
-         printf '%s\n' "$line" >&2
-      fi
-   done
-}
 sameFiles() {
    local firstHash secondHash
    firstHash=$(sha256sum < "$1")
    secondHash=$(sha256sum < "$2")
    [[ "${firstHash%% *}" == "${secondHash%% *}" ]] || fail 'Evidence files differ.'
-}
-# Retry only this read-only login/identity probe and only native 1045/28000.
-# Once verified, cache in shell memory; never retry any subsequent operation.
-authenticate() {
-   local user=$1 attempt authOutput='' authStatus=0 line='' identity='' errors=0 unexpected=false
-   case "$user" in taskcompass_migrate|taskcompass_app|taskcompass_dev) ;; *) fail 'Unsupported credential account.' ;; esac
-   [[ ! -v "passwords[$user]" ]] || return 0
-   local expectedIdentity=$'taskcompass_dev\t'"$user@127.0.0.1"
-   for ((attempt=1; attempt<=MAX_PASSWORD_ATTEMPTS; attempt+=1)); do
-      IFS= read -r -s -p "[$platform] Password for $user (attempt $attempt/$MAX_PASSWORD_ATTEMPTS; Ctrl-D cancels): " accountPassword || fail 'Password entry cancelled.'
-      printf '\n' >&2
-      if [[ -z "$accountPassword" ]]; then
-         printf 'Empty password; enter it again.\n' >&2
-         continue
-      fi
-      if authOutput=$(printf '%s\n' 'SELECT DATABASE(),CURRENT_USER();' |
-         LC_ALL=C MYSQL_PWD="$accountPassword" "$clientPath" --no-defaults --protocol=TCP \
-            --host=127.0.0.1 --port=3306 --user="$user" --connect-timeout=5 \
-            --default-character-set=utf8mb4 --batch --raw --skip-column-names \
-            --database=taskcompass_dev 2>&1); then authStatus=0; else authStatus=$?; fi
-      identity=''; errors=0; unexpected=false
-      while IFS= read -r line || [[ -n "$line" ]]; do
-         line=${line%$'\r'}
-         if [[ "$line" == "$expectedIdentity" && -z "$identity" ]]; then identity=$line
-         elif [[ "$line" == 'WARNING: option --ssl-verify-server-cert is disabled, because of an insecure passwordless login.' ]]; then
-            printf 'MariaDB password-option notice; TLS settings unchanged.\n' >&2
-         elif [[ "$line" =~ ^ERROR\ 1045\ \(28000\):\ Access\ denied\ for\ user\  ]]; then errors=$((errors+1))
-         else unexpected=true; fi
-      done <<< "$authOutput"
-      if [[ "$authStatus" == 0 && "$identity" == "$expectedIdentity" && "$errors" == 0 ]] && ! "$unexpected"; then
-         passwords[$user]=$accountPassword
-         unset accountPassword authOutput
-         printf 'Credential checked: %s (memory only for this run).\n' "$user"
-         return 0
-      fi
-      # No raw error text is printed: errors may contain connection/secret data.
-      if [[ "$authStatus" != 0 && "$errors" == 1 && -z "$identity" ]] && ! "$unexpected"; then
-         unset accountPassword authOutput
-         printf 'Authentication rejected for %s; no backup/export was attempted by this probe.\n' "$user" >&2
-      else
-         unset accountPassword authOutput
-         fail "Login/identity check for $user failed for a reason other than a confirmed password rejection; not retried."
-      fi
-   done
-   fail "Password entry for $user exhausted $MAX_PASSWORD_ATTEMPTS attempts."
 }
 verifySchema1() {
    local output=''
@@ -231,6 +175,10 @@ if [[ "$action" == review ]]; then
    validateCaptureDirectory
    checkEvidence
    sha256sum "$backupDirectory/after-gui.sql"
+   if "$checksOnly"; then
+      printf 'PASS: evidence checks only; no new private SQL review performed.\n'
+      exit 0
+   fi
    printf 'Privately inspect every SQL statement; quit less with q. No SQL is executed.\n'
    printf 'Expect only the five schema-1 tables, INSERT data and normal session settings.\n'
    printf 'Reject database/account/grant statements, DROP/REPLACE/TRUNCATE, GLOBAL changes, stored code/DEFINER or redirected writes.\n'

@@ -197,3 +197,13 @@ path/ACL flow). Actual live script execution on both platforms remains pending;
 these are not new capture or recovery results. Earlier manual command design and
 its syntax validation remain historical in the milestone. No real procedure has
 been executed by the agent. Backup success is not restore proof.
+
+### Evidence-only reuse by B7.3
+
+`04-review.sh --checks-only --backup-dir PATH` performs only existing capture
+permission/manifest/hash/UUID comparisons, without opening the pager or asserting
+new SQL review. It is read-only and refused on capture/preflight actions. B7.3 uses
+this mode before its separate approved import; it cannot replace the previous
+owner review or explicit reviewed-dump confirmation. The shared fixed-pair
+read-only credential helper preserves B7.2's account-specific three-attempt cache;
+no password persistence or administrator credential handling change.
