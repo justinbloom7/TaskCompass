@@ -15,7 +15,9 @@ dumpPath=''
 buildDirectory=''
 backupDirectory=''
 accountPassword=''
-trap 'unset accountPassword TASKCOMPASS_DB_PASSWORD MYSQL_PWD' EXIT
+declare -A passwords=()
+readonly MAX_PASSWORD_ATTEMPTS=3
+trap 'unset accountPassword passwords TASKCOMPASS_DB_PASSWORD MYSQL_PWD' EXIT
 fail() { printf 'STOP: %s Preserve evidence; no retry, cleanup or repair.\n' "$1" >&2; exit 1; }
 trap 'fail "B7.2 operation failed (exit $?)."' ERR
 usage() {
@@ -31,6 +33,8 @@ Defaults select local platform tools; capture chooses a fresh external timestamp
 folder. Review prompts for its printed path, or accepts --backup-dir.
 --help / --print-plan never connects or captures. Missing --approved on 02/03
 cannot connect. Owner approved B7.2 only; no migration/restore/reset/GUI/grants.
+TaskCompass account entry: up to 3 authentication-only attempts; checked passwords
+stay in memory for this run. Backup/export/verify operations are never retried.
 USAGE
 }
 [[ "$action" != help ]] || { usage; exit 0; }
@@ -82,8 +86,15 @@ confirm() {
 redact() {
    local line=''
    while IFS= read -r line || [[ -n "$line" ]]; do
-      if [[ -n "${accountPassword:-}" ]]; then line=${line//"$accountPassword"/<redacted>}; fi
-      printf '%s\n' "$line" >&2
+      local secret=''
+      for secret in "${accountPassword:-}" "${passwords[@]}"; do
+         [[ -z "$secret" ]] || line=${line//"$secret"/<redacted>}
+      done
+      if [[ "$line" == 'WARNING: option --ssl-verify-server-cert is disabled, because of an insecure passwordless login.' ]]; then
+         printf 'MariaDB password-option notice; TLS settings unchanged.\n' >&2
+      else
+         printf '%s\n' "$line" >&2
+      fi
    done
 }
 sameFiles() {
@@ -92,16 +103,58 @@ sameFiles() {
    secondHash=$(sha256sum < "$2")
    [[ "${firstHash%% *}" == "${secondHash%% *}" ]] || fail 'Evidence files differ.'
 }
+# Retry only this read-only login/identity probe and only native 1045/28000.
+# Once verified, cache in shell memory; never retry any subsequent operation.
+authenticate() {
+   local user=$1 attempt authOutput='' authStatus=0 line='' identity='' errors=0 unexpected=false
+   case "$user" in taskcompass_migrate|taskcompass_app|taskcompass_dev) ;; *) fail 'Unsupported credential account.' ;; esac
+   [[ ! -v "passwords[$user]" ]] || return 0
+   local expectedIdentity=$'taskcompass_dev\t'"$user@127.0.0.1"
+   for ((attempt=1; attempt<=MAX_PASSWORD_ATTEMPTS; attempt+=1)); do
+      IFS= read -r -s -p "[$platform] Password for $user (attempt $attempt/$MAX_PASSWORD_ATTEMPTS; Ctrl-D cancels): " accountPassword || fail 'Password entry cancelled.'
+      printf '\n' >&2
+      if [[ -z "$accountPassword" ]]; then
+         printf 'Empty password; enter it again.\n' >&2
+         continue
+      fi
+      if authOutput=$(printf '%s\n' 'SELECT DATABASE(),CURRENT_USER();' |
+         LC_ALL=C MYSQL_PWD="$accountPassword" "$clientPath" --no-defaults --protocol=TCP \
+            --host=127.0.0.1 --port=3306 --user="$user" --connect-timeout=5 \
+            --default-character-set=utf8mb4 --batch --raw --skip-column-names \
+            --database=taskcompass_dev 2>&1); then authStatus=0; else authStatus=$?; fi
+      identity=''; errors=0; unexpected=false
+      while IFS= read -r line || [[ -n "$line" ]]; do
+         line=${line%$'\r'}
+         if [[ "$line" == "$expectedIdentity" && -z "$identity" ]]; then identity=$line
+         elif [[ "$line" == 'WARNING: option --ssl-verify-server-cert is disabled, because of an insecure passwordless login.' ]]; then
+            printf 'MariaDB password-option notice; TLS settings unchanged.\n' >&2
+         elif [[ "$line" =~ ^ERROR\ 1045\ \(28000\):\ Access\ denied\ for\ user\  ]]; then errors=$((errors+1))
+         else unexpected=true; fi
+      done <<< "$authOutput"
+      if [[ "$authStatus" == 0 && "$identity" == "$expectedIdentity" && "$errors" == 0 ]] && ! "$unexpected"; then
+         passwords[$user]=$accountPassword
+         unset accountPassword authOutput
+         printf 'Credential checked: %s (memory only for this run).\n' "$user"
+         return 0
+      fi
+      # No raw error text is printed: errors may contain connection/secret data.
+      if [[ "$authStatus" != 0 && "$errors" == 1 && -z "$identity" ]] && ! "$unexpected"; then
+         unset accountPassword authOutput
+         printf 'Authentication rejected for %s; no backup/export was attempted by this probe.\n' "$user" >&2
+      else
+         unset accountPassword authOutput
+         fail "Login/identity check for $user failed for a reason other than a confirmed password rejection; not retried."
+      fi
+   done
+   fail "Password entry for $user exhausted $MAX_PASSWORD_ATTEMPTS attempts."
+}
 verifySchema1() {
    local output=''
-   IFS= read -r -s -p 'Password for taskcompass_migrate (this platform): ' accountPassword || fail 'Cancelled.'
-   printf '\n' >&2
-   [[ -n "$accountPassword" ]] || fail 'Empty migrator password.'
+   authenticate taskcompass_migrate
    output=$(TASKCOMPASS_DB_HOST=127.0.0.1 TASKCOMPASS_DB_PORT=3306 \
       TASKCOMPASS_DB_NAME=taskcompass_dev TASKCOMPASS_DB_USER=taskcompass_migrate \
-      TASKCOMPASS_DB_ISOLATED=1 TASKCOMPASS_DB_PASSWORD="$accountPassword" \
-      "$executable" --verify --to-version 1 2> >(redact)) || fail 'Read-only schema-1 verification failed.'
-   unset accountPassword
+      TASKCOMPASS_DB_ISOLATED=1 TASKCOMPASS_DB_PASSWORD="${passwords[taskcompass_migrate]}" \
+      "$executable" --verify --to-version 1 2> >(redact)) || fail 'Read-only schema-1 verification failed; no operation retry.'
    output=${output//$'\r'/}
    printf '%s\n' "$output"
    [[ "$output" == "Schema 1 verified; dataset $expectedDataset" ]] || fail 'Unexpected verified schema/dataset.'
@@ -109,13 +162,13 @@ verifySchema1() {
 exportReadOnly() {
    local sqlFile=$1 outputFile=$2
    shift 2
+   authenticate taskcompass_dev
    [[ ! -e "$outputFile" && ! -L "$outputFile" ]] || fail 'Export already exists.'
-   printf 'Password for taskcompass_dev (this platform), export %s:\n' "$(basename -- "$outputFile")" >&2
    (set -o noclobber
-    env -u MYSQL_PWD "$clientPath" --no-defaults --protocol=TCP \
-       --host=127.0.0.1 --port=3306 --user=taskcompass_dev --password \
+    MYSQL_PWD="${passwords[taskcompass_dev]}" "$clientPath" --no-defaults --protocol=TCP \
+       --host=127.0.0.1 --port=3306 --user=taskcompass_dev \
        --default-character-set=utf8mb4 --batch --skip-column-names \
-       --database=taskcompass_dev "$@" < "$sqlFile" > "$outputFile")
+       --database=taskcompass_dev "$@" < "$sqlFile" > "$outputFile" 2> >(redact))
 }
 checkManifest() {
    local manifest=$1 expected=$2 line='' name='' names=''
@@ -239,11 +292,12 @@ if [[ "$action" == finish ]]; then
    [[ "$(tr -d '\r\n' < "$backupDirectory/dataset.txt")" == "$expectedDataset" ]] || fail 'Captured dataset differs.'
    sameFiles "$backupDirectory/source.tsv" "$backupDirectory/source-after.tsv"
    sameFiles "$backupDirectory/legacy-before.hex.tsv" "$backupDirectory/legacy-after.hex.tsv"
-   printf 'Password for taskcompass_dev: read-only current-data hash comparison (no export file).\n' >&2
-   currentHash=$(env -u MYSQL_PWD "$clientPath" --no-defaults --protocol=TCP \
-      --host=127.0.0.1 --port=3306 --user=taskcompass_dev --password \
+   authenticate taskcompass_dev
+   printf 'Checking current-data hash with cached diagnostic credentials (no export file).\n'
+   currentHash=$(MYSQL_PWD="${passwords[taskcompass_dev]}" "$clientPath" --no-defaults --protocol=TCP \
+      --host=127.0.0.1 --port=3306 --user=taskcompass_dev \
       --default-character-set=utf8mb4 --batch --skip-column-names \
-      --database=taskcompass_dev < "$sqlDirectory/legacy-export.sql" | sha256sum)
+      --database=taskcompass_dev < "$sqlDirectory/legacy-export.sql" 2> >(redact) | sha256sum)
    capturedHash=$(sha256sum < "$backupDirectory/legacy-before.hex.tsv")
    [[ "${currentHash%% *}" == "${capturedHash%% *}" ]] || fail 'Current data differs from reviewed capture.'
    verifySchema1
@@ -257,8 +311,15 @@ backupDirectory=${backupDirectory:-"$defaultParent/Phase1.2-schema1-$platform-$(
 [[ ! -e "$backupDirectory" && ! -L "$backupDirectory" ]] || fail 'Destination exists; never overwrite.'
 printf 'Fresh destination: %s\n' "$backupDirectory"
 verifySchema1
-bash "$repositoryDirectory/scripts/phase11/09-backup.sh" --backup-dir "$backupDirectory" \
-   --client "$clientPath" --dump "$dumpPath" --build-dir "$buildDirectory"
+authenticate taskcompass_app
+authenticate taskcompass_dev
+confirm 'ALL TASKCOMPASS WRITERS CLOSED'
+printf 'Reusing checked app/diagnostic credentials for the backup helper; no password re-entry is needed.\n'
+# Forward only the explicitly entered confirmation and memory-cached passwords
+# over an anonymous pipe; no secrets in arguments, files, history or stdout.
+builtin printf 'ALL TASKCOMPASS WRITERS CLOSED\n%s\n%s\n' "${passwords[taskcompass_app]}" "${passwords[taskcompass_dev]}" |
+   bash "$repositoryDirectory/scripts/phase11/09-backup.sh" --backup-dir "$backupDirectory" \
+      --client "$clientPath" --dump "$dumpPath" --build-dir "$buildDirectory"
 [[ -d "$backupDirectory" && ! -L "$backupDirectory" ]] || fail 'Private helper directory missing.'
 [[ "$(tr -d '\r\n' < "$backupDirectory/dataset.txt")" == "$expectedDataset" ]] || fail 'Backup helper dataset mismatch.'
 test -s "$backupDirectory/after-gui.sql"

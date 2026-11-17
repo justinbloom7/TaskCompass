@@ -22,11 +22,13 @@ set -euo pipefail
 [[ " $* " == *' --no-defaults '* ]]
 for arg in "$@"; do [[ "$arg" != *"$MOCK_SECRET"* ]] || exit 90; done
 if [[ " $* " == *' --version '* ]]; then printf 'MariaDB fixture-version\n'; exit 0; fi
-[[ " $* " == *' --user=root '* || " $* " == *' --user=taskcompass_dev '* ]] || exit 91
+user=''
+for arg in "$@"; do [[ "$arg" != --user=* ]] || user=${arg#*=}; done
+case "$user" in root|taskcompass_migrate|taskcompass_app|taskcompass_dev) ;; *) exit 91 ;; esac
 [[ " $* " != *'--database=taskcompass_integration'* ]]
 if [[ " $* " == *' --user=root '* ]]; then
    if [[ "${MSYSTEM:-}" == UCRT64 ]]; then
-      [[ " $* " == *' --protocol=TCP '* && " $* " == *' --password '* ]]
+      [[ " $* " == *' --protocol=TCP '* && " $* " == *' --password '* && ! -v MYSQL_PWD ]]
    else
       [[ " $* " == *' --protocol=SOCKET '* && " $* " != *' --password '* ]]
    fi
@@ -35,7 +37,23 @@ sql=$(cat)
 [[ "$sql" != *'CREATE USER'* && "$sql" != *'CREATE DATABASE'* && "$sql" != *'DROP TABLE'* && "$sql" != *'GRANT SELECT ON'* ]] || exit 92
 printf 'client\n' >> "$MOCK_DIRECTORY/calls"
 case "$sql" in
-   'SELECT DATABASE(),CURRENT_USER();') printf 'taskcompass_dev\ttaskcompass_dev@127.0.0.1\n' ;;
+   'SELECT DATABASE(),CURRENT_USER();')
+      if [[ " $* " == *' --database=taskcompass_dev '* ]]; then printf 'probe:%s\n' "$user" >> "$MOCK_DIRECTORY/probes"; fi
+      if [[ "${MOCK_AUTH_WARNING:-0}" == 1 ]]; then printf "WARNING: option --ssl-verify-server-cert is disabled, because of an insecure passwordless login.\n" >&2; fi
+      printf 'auth:%s\n' "$user" >> "$MOCK_DIRECTORY/auth-calls"
+      if [[ "${MOCK_NETWORK_FAIL:-0}" == 1 ]]; then printf 'ERROR 2002 (HY000): network failed\n' >&2; exit 1; fi
+      expectedPassword=$MOCK_SECRET
+      [[ "${MOCK_DISTINCT:-0}" != 1 ]] || expectedPassword+="-$user"
+      ending=$'\n'
+      [[ "${MOCK_CRLF:-0}" != 1 ]] || ending=$'\r\n'
+      if [[ "$MYSQL_PWD" != "$expectedPassword" ]]; then
+         printf "ERROR 1045 (28000): Access denied for user '%s' (using password: YES)%s" "$user" "$ending" >&2
+         exit 1
+      fi
+      account="$user@127.0.0.1"
+      [[ "$user" != root ]] || account=root@localhost
+      [[ "${MOCK_IDENTITY_FAIL:-0}" != 1 ]] || account=wrong@localhost
+      printf 'taskcompass_dev\t%s%s' "$account" "$ending" ;;
    'SELECT @@hostname,VERSION(),@@port;') printf 'fixture-host\t10.5.29-MariaDB\t3306\n' ;;
    *'AS authenticatedAccount'*) printf 'fixture-root-report\n' ;;
    *"'COUNT:SchemaMigration'"*)
@@ -57,6 +75,9 @@ if [[ " $* " == *' --version '* ]]; then printf 'MariaDB fixture-dump-version\n'
 printf 'dump\n' >> "$MOCK_DIRECTORY/calls"
 [[ "${MOCK_DUMP_FAIL:-0}" != 1 ]] || exit 1
 [[ " $* " == *' --user=taskcompass_dev '* && " $* " == *' --single-transaction '* && " $* " == *' --skip-add-drop-table '* ]]
+expectedPassword=$MOCK_SECRET
+[[ "${MOCK_DISTINCT:-0}" != 1 ]] || expectedPassword+='-taskcompass_dev'
+[[ "$MYSQL_PWD" == "$expectedPassword" ]]
 for argument in "$@"; do
    if [[ "$argument" == --result-file=* ]]; then printf 'fixture SQL dump\n' > "${argument#*=}"; fi
 done
@@ -67,7 +88,9 @@ set -euo pipefail
 [[ "$*" == '--verify' || "$*" == '--verify --to-version 1' ]] || exit 94
 [[ "$TASKCOMPASS_DB_NAME" == taskcompass_dev && "$TASKCOMPASS_DB_HOST" == 127.0.0.1 && "$TASKCOMPASS_DB_PORT" == 3306 && "$TASKCOMPASS_DB_ISOLATED" == 1 ]]
 [[ "$TASKCOMPASS_DB_USER" == taskcompass_migrate || "$TASKCOMPASS_DB_USER" == taskcompass_app ]]
-[[ "$TASKCOMPASS_DB_PASSWORD" == "$MOCK_SECRET" ]]
+expectedPassword=$MOCK_SECRET
+[[ "${MOCK_DISTINCT:-0}" != 1 ]] || expectedPassword+="-$TASKCOMPASS_DB_USER"
+[[ "$TASKCOMPASS_DB_PASSWORD" == "$expectedPassword" ]]
 printf 'verify\n' >> "$MOCK_DIRECTORY/calls"
 if [[ "${MOCK_FINAL_VERIFY_FAIL:-0}" == 1 ]]; then
    count=0
@@ -116,7 +139,7 @@ chmod +x "$temporaryDirectory/bin/"* "$temporaryDirectory/build with spaces/Task
 options=(--client "$client" --dump "$dump" --build-dir "$temporaryDirectory/build with spaces")
 run() { bash "$helperDirectory/$1.sh" "${options[@]}" "${@:2}"; }
 inputs() {
-   printf 'BASELINE UNCHANGED; WRITERS CLOSED\n%s\nALL TASKCOMPASS WRITERS CLOSED\n%s\n%s\n%s\n' "$MOCK_SECRET" "$MOCK_SECRET" "$MOCK_SECRET" "$MOCK_SECRET"
+   printf 'BASELINE UNCHANGED; WRITERS CLOSED\n%s\n%s\n%s\nALL TASKCOMPASS WRITERS CLOSED\n' "$MOCK_SECRET" "$MOCK_SECRET" "$MOCK_SECRET"
 }
 assertNoSecret() { [[ "$result" != *"$MOCK_SECRET"* ]]; }
 for stage in 01-check 02-preflight 03-capture 03a-finish-capture 04-review; do
@@ -179,7 +202,7 @@ if result=$(inputs | run 03-capture --approved --backup-dir "$partial" 2>&1); th
 unset MOCK_FINAL_VERIFY_FAIL
 [[ -s "$partial/after-gui.sql" && ! -e "$partial/client-version.txt" && ! -e "$partial/b7-schema1-evidence.sha256" ]]
 originalHash=$(sha256sum < "$partial/after-gui.sql")
-finishInputs() { printf 'FINISH REVIEWED CAPTURE; WRITERS CLOSED\n%s\n' "$MOCK_SECRET"; }
+finishInputs() { printf 'FINISH REVIEWED CAPTURE; WRITERS CLOSED\n%s\n%s\n' "$MOCK_SECRET" "$MOCK_SECRET"; }
 if result=$(printf 'wrong\n' | run 03a-finish-capture --approved --backup-dir "$partial" 2>&1); then exit 1; fi
 export MOCK_CURRENT_DRIFT=1
 if result=$(finishInputs | run 03a-finish-capture --approved --backup-dir "$partial" 2>&1); then exit 1; fi
@@ -194,6 +217,33 @@ result=$(finishInputs | run 03a-finish-capture --approved --backup-dir "$partial
 [[ "$result" == *'PASS: reviewed B7.2 completion'* && "$(sha256sum < "$partial/after-gui.sql")" == "$originalHash" ]]
 if result=$(finishInputs | run 03a-finish-capture --approved --backup-dir "$partial" 2>&1); then exit 1; fi
 printf 'PASS: explicit final-verification-only completion gates, current-data drift/failed verify refusal, no dump overwrite or reseal.\n'
+# A fresh attempt retries only denied authentication, then reuses each account's
+# distinct checked secret through final verify/legacy-helper input and exports.
+: > "$temporaryDirectory/probes"
+export MOCK_DISTINCT=1 MOCK_AUTH_WARNING=1
+result=$(printf 'BASELINE UNCHANGED; WRITERS CLOSED\nwrong-first\nwrong-second\n%s-taskcompass_migrate\nwrong-app\n%s-taskcompass_app\n%s-taskcompass_dev\nALL TASKCOMPASS WRITERS CLOSED\n' "$MOCK_SECRET" "$MOCK_SECRET" "$MOCK_SECRET" |
+   run 03-capture --approved --backup-dir "$temporaryDirectory/retried password" 2>&1)
+assertNoSecret
+[[ "$result" == *'PASS: B7.2 capture'* && "$result" == *'Authentication rejected'* ]]
+expectedProbes=$'probe:taskcompass_migrate\nprobe:taskcompass_migrate\nprobe:taskcompass_migrate\nprobe:taskcompass_app\nprobe:taskcompass_app\nprobe:taskcompass_dev'
+[[ "$(cat "$temporaryDirectory/probes")" == "$expectedProbes" ]]
+unset MOCK_DISTINCT MOCK_AUTH_WARNING
+: > "$temporaryDirectory/probes"
+if result=$(printf 'BASELINE UNCHANGED; WRITERS CLOSED\nbad1\nbad2\nbad3\n' |
+   run 03-capture --approved --backup-dir "$temporaryDirectory/exhausted" 2>&1); then exit 1; fi
+[[ "$result" == *'exhausted 3 attempts'* && ! -e "$temporaryDirectory/exhausted" ]]
+[[ "$(cat "$temporaryDirectory/probes")" == $'probe:taskcompass_migrate\nprobe:taskcompass_migrate\nprobe:taskcompass_migrate' ]]
+for failureMode in MOCK_NETWORK_FAIL MOCK_IDENTITY_FAIL; do
+   export "$failureMode=1"
+   : > "$temporaryDirectory/probes"
+   if result=$(inputs | run 03-capture --approved --backup-dir "$temporaryDirectory/$failureMode" 2>&1); then exit 1; fi
+   [[ "$(cat "$temporaryDirectory/probes")" == 'probe:taskcompass_migrate' && ! -e "$temporaryDirectory/$failureMode" ]]
+   unset "$failureMode"
+done
+if result=$(printf 'BASELINE UNCHANGED; WRITERS CLOSED\n' |
+   run 03-capture --approved --backup-dir "$temporaryDirectory/cancelled" 2>&1); then exit 1; fi
+[[ ! -e "$temporaryDirectory/cancelled" ]]
+printf 'PASS: three authentication attempts, account-specific memory cache, no late prompts, native-warning handling, cancellation and no network/identity retry.\n'
 export MSYSTEM=UCRT64 MOCK_ACL_FAIL=1
 if result=$(inputs | run 03-capture --approved --backup-dir "$temporaryDirectory/acl-failed" 2>&1); then exit 1; fi
 [[ -d "$temporaryDirectory/acl-failed" && ! -e "$temporaryDirectory/acl-failed/dataset.txt" ]]
@@ -208,4 +258,11 @@ result=$(printf '%s\nDUMP REVIEWED\n' "$windowsCapture" | run 04-review 2>&1)
 printf '%064d  ../outside\n' 0 > "$windowsCapture/after-gui.sql.sha256"
 if result=$(printf 'DUMP REVIEWED\n' | run 04-review --backup-dir "$windowsCapture" 2>&1); then exit 1; fi
 [[ "$result" == *'Unexpected checksum path'* ]]
+export MOCK_DISTINCT=1 MOCK_CRLF=1
+export MOCK_SECRET="${MOCK_SECRET}'\\&:/C:literal"
+result=$(printf 'BASELINE UNCHANGED; WRITERS CLOSED\n%s-taskcompass_migrate\nwrong-windows-app\n%s-taskcompass_app\n%s-taskcompass_dev\nALL TASKCOMPASS WRITERS CLOSED\n' "$MOCK_SECRET" "$MOCK_SECRET" "$MOCK_SECRET" |
+   run 03-capture --approved --backup-dir "$temporaryDirectory/windows retried password" 2>&1)
+assertNoSecret
+[[ "$result" == *'PASS: B7.2 capture'* && "$result" == *'Authentication rejected for taskcompass_app'* ]]
+unset MOCK_DISTINCT MOCK_CRLF
 printf 'PASS: mocked Windows path/ACL flow, ACL failure before files, interactive directory and manifest path rejection.\n'

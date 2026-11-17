@@ -12,8 +12,10 @@ instructions and actual results remain in [Phase1.2.md](milestones/Phase1.2.md).
 Run **one command at a time**, from repository root, on each platform separately.
 Linux uses Bash; Windows uses **MSYS2 UCRT64**. Transfer the latest scripts through
 the owner's normal source workflow first. Close all TaskCompass clients and SQL
-writers; keep MariaDB running. Keep writers closed throughout. Stop/report any
-failure or discrepancy; never rerun capture, repair, reset or clean up artifacts.
+writers; keep MariaDB running. Keep writers closed throughout. TaskCompass password entry allows up to three
+confirmed authentication-denial attempts before any capture begins; this is not
+a retry of a backup/export. Stop/report any operation failure or discrepancy;
+never automatically rerun capture, repair, reset or clean up artifacts.
 
 ## 1 — tool and reviewed-file checks (no database connection)
 
@@ -92,10 +94,24 @@ The existing helper additionally requires its established confirmation:
 ALL TASKCOMPASS WRITERS CLOSED
 ```
 
-Password prompts identify the accounts. Use the current platform's passwords:
-first taskcompass_migrate, then helper taskcompass_app and taskcompass_dev,
-then taskcompass_dev for each of three additional exports, then migrator for final
-verification. Do not use root at these prompts. No secrets are saved.
+TaskCompass credential entry now has **up to three attempts per account** and
+shows `[linux]` or `[windows]`. On a normal run enter each platform's password once,
+in order: taskcompass_migrate, taskcompass_app, taskcompass_dev. Successfully checked
+passwords stay only in the current shell process's memory and are reused for the
+helper, exports and final verification. All three are checked before creating the
+backup directory. No late migrator or diagnostic re-entry is needed. The existing
+helper receives the explicit writer confirmation and checked credentials through
+an anonymous pipe; no password appears in arguments, saved files, history or logs.
+The cache is cleared on exit and is not shared with another command or platform.
+Linux sudo and Windows native administrator-password handling in step2 are unchanged;
+no administrator secret is captured/cached by these scripts.
+
+Only the read-only native login/identity probe may repeat, and only for recognized
+ERROR1045/SQLSTATE28000 authentication denial (or empty entry), bounded to three
+entries. EOF cancels. Network, plugin, permission, identity, schema and unknown
+errors stop; a Qt verification failure after native authentication is not retried.
+No dump, export, sealing, migration or grant operation is ever retried. Known client
+password-option warnings are explained without changing TLS verification settings.
 
 The script verifies pinned schema1/known UUID before and after capture; delegates
 the private dump to existing 09-backup (umask077/Linux, protected owner ACL/Windows

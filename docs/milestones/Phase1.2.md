@@ -2,7 +2,7 @@
 
 # Phase 1.2 — Organizational Management
 
-**Status: Stage 1B isolated integration and B7.1 read-only development preflight passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported). Linux B7.2 schema-1 backup/evidence capture, targeted completion and private SQL review passed on 2026-11-17 (owner-reported); retained directory/hash recorded below. Windows B7.2 remains approved for operator execution, results pending. No live capture or database mutation performed by agent. Populated narrow-role rehearsal, development upgrade, GUI/restart and expanded backup/restore gates remain pending and separately gated. Phase 1.2 is not accepted.**
+**Status: Stage 1B isolated integration and B7.1 read-only development preflight passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported). Linux B7.2 schema-1 backup/evidence capture, targeted completion and private SQL review passed on 2026-11-17 (owner-reported); retained directory/hash recorded below. Windows B7.2 tool/preflight checks passed; latest capture stopped at runtime-account verification before directory/dump creation. B7.2 TaskCompass credential entry now supports bounded authentication-only retries and per-run memory reuse (offline-tested); Windows native execution/capture still pending. No live capture or database mutation performed by agent. Populated narrow-role rehearsal, development upgrade, GUI/restart and expanded backup/restore gates remain pending and separately gated. Phase 1.2 is not accepted.**
 Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
 Only this document and the roadmap were changed by Step A. Its designs/SQL were
 proposals. Step A itself authorized no SQL; the dated Step B reports below record
@@ -3963,3 +3963,200 @@ passed. No application/source/script/SQL/migration/private-artifact changes or
 agent live connection, completion, dump, restore or cleanup. Build/CTest not rerun
 for this reporting-only update; prior offline results remain historical evidence.
 No commit, push, merge or tag.
+
+
+## 2026-11-17 — Windows B7.2 stopped before capture began
+
+### Actual owner-reported checks and failure
+
+Windows step01 passed reviewed-file checksums and reported installed native tools:
+MariaDB13.0.2 client15.2 Win64 AMD64 (revision620a4b5624222048fece7fe1789978ae0675cae2)
+and mariadb-dump13.0.2 client10.20 Win64 AMD64. Step02 root metadata report matches
+B7.1: feldria-w10/13.0.2/3306, taskcompass_dev, lower_case_table_names1, FK/CHECK
+checks1, utf8mb4/utf8mb4_unicode_ci, exactly five InnoDB tables. Version1 checksum
+and stored fingerprint unchanged; appliedAt1794691232396; dataset
+457bb52b-fea4-4347-9c47-675c6b035c90 with createdAt1794691232396. Counts remain
+SchemaMigration1/Dataset1/Task2/CommandRecord16/LocalChange16, both tasks active
+and not tombstoned. Exact approved account/grant report unchanged; no extra
+roles/columns/stored-code/target-session rows displayed. PUBLIC rights still only
+on unrelated test/test\_% scopes. Owner transcript, not agent SQL evidence.
+
+Owner confirmed `BASELINE UNCHANGED; WRITERS CLOSED`. Step03 printed a proposed
+fresh destination, then failed its **initial** taskcompass_migrate verification:
+
+```text
+Fresh destination: /c/Users/justin/TaskCompassBackups/Phase1.2-schema1-windows-20261117-020553
+Cannot open MariaDB. Check service/TCP availability, QMYSQL, account, password and grants.
+STOP: Read-only schema-1 verification failed. Preserve evidence; no retry, cleanup or repair.
+```
+
+Owner attributes this to another incorrect password. Root's preceding successful
+TCP login does not validate the migrator password. No numeric capture exit was
+supplied. Source review confirms verifySchema1 runs **before** invoking 09-backup,
+which is responsible for directory creation. No helper-stage banner, dump/export
+or artifact success was reported. Therefore this script invocation did not create
+that directory, run a dump or write evidence. The agent has not inspected the
+private path; do not remove anything if an unexpected path already exists.
+
+### Reviewed next operator action within existing fresh-capture approval
+
+This differs from Linux's final-verification failure: **no partial capture needs
+completion**. Do not use 03a-finish-capture or 04-review for this failed attempt.
+After this report/source review, an owner-initiated **fresh** normal B7.2 capture
+is within the existing Windows approval; it selects a new timestamped directory
+and replaces no artifact. This is not an automatic retry by the agent or an
+approval to repair/reuse a failed capture. No extra target, privilege or operation
+is added, and no guard is disabled.
+
+If writers have remained closed and the immediately preceding baseline/grants are
+still unchanged, owner may run:
+
+```bash
+scripts/phase12/b72/03-capture.sh --approved
+```
+
+Use the **Windows taskcompass_migrate** password at the first and final migrator
+prompts (not Linux's password, root or diagnostic). The helper's taskcompass_app
+and taskcompass_dev prompts also require their Windows account passwords. No
+password reset/change is suggested. If writers resumed or state changed, repeat
+step02 and review it before any new capture. If this new attempt encounters any
+error, stop/report its exact location; do not loop or repair. Only after final
+capture PASS may the normal step04 review proceed for its newly printed directory.
+
+### Status, files and validation
+
+Linux B7.2 remains passed with its sealed dump/digest unchanged. Windows B7.2 is
+not passed: metadata/tools succeeded, actual capture/review pending. B7.3/restores,
+migrations, account/grant changes, resets, GUI writes and cleanup remain unauthorized.
+Updated milestone, Roadmap and TestingPhase1.2 reporting only. Markdown local links/
+fences and git diff --check passed; no build/CTest rerun for documentation-only
+changes. No agent SQL, capture, private-directory inspection, retry, repair or
+artifact change. No source/script/SQL/migration edit, commit/push/merge/tag or
+Phase1.3 work.
+
+
+## 2026-11-17 — password entry retries and per-run credential reuse
+
+### Latest Windows failure and owner direction
+
+Owner reported another normal Windows capture attempt proposing:
+
+```text
+/c/Users/justin/TaskCompassBackups/Phase1.2-schema1-windows-20261117-023735
+```
+
+The initial taskcompass_migrate schema1 verification succeeded with dataset
+457bb52b-fea4-4347-9c47-675c6b035c90. Existing helper 09-backup began and accepted
+its writer confirmation, then failed opening MariaDB as taskcompass_app:
+
+```text
+Cannot open MariaDB. Check service/TCP availability, QMYSQL, account, password and grants.
+STOP: Schema verification failed.
+STOP: B7.2 operation failed (exit 1). Preserve evidence; no retry, cleanup or repair.
+```
+
+No explicit numerical exit was supplied. The helper's runtime verification is
+before newDirectory, so this attempt created no capture directory or artifact.
+Agent inspected source only, not the private Windows path. If a directory exists
+unexpectedly, preserve it and report; do not delete it. Earlier Linux B7.2 success,
+its sealed dump/hash and all previous failures/approvals remain unchanged.
+
+Owner explicitly objected to single-chance/repeated password prompts. Applied this
+as authorization to improve **credential entry only**, not authorization to repeat
+failed backups, database changes or interrupted migrations. Bounded read-only
+login re-entry is the narrow exception to previous blanket retry wording; all
+operation fail-stop conditions remain. No live procedure is run on owner's behalf.
+
+### Implemented behavior and boundaries
+
+- Up to **three password entries per TaskCompass account**, with current platform,
+  account and attempt number shown. Empty entry can be corrected; EOF cancels.
+- Before caching, native client performs only `SELECT DATABASE(),CURRENT_USER()`
+  on fixed taskcompass_dev at127.0.0.1:3306 with explicit fixed account. Only
+  recognized native ERROR1045/SQLSTATE28000 denial allows another probe. It means
+  authentication rejection, not proof that password alone is the cause.
+- A successful probe must return exactly the approved database/authenticated account.
+  Identity mismatch, network/other/unknown errors or malformed output stop without
+  retry. Known observed MariaDB password-option warning is explained separately,
+  never treated as identity data or suppressed by changing TLS options. Native
+  error text is not echoed, to avoid exposing candidate credentials/connection data.
+- Checked account-specific passwords remain in a nonexported shell associative
+  array for that process only. A normal capture asks once each for migrator,
+  runtime and diagnostic; all three are checked before directory creation. Final
+  verify and all extra exports reuse them, eliminating the late password prompt.
+  Cache is cleared on exit/cancellation and never written to configuration/artifacts.
+- Existing backup helper is unchanged. After explicit writer confirmation, a shell
+  builtin sends that confirmation and cached app/diagnostic passwords over an
+  anonymous pipe to its existing stdin interface. No secrets in command arguments,
+  saved files, history or stdout. Its schema/identity checks, private ACL/umask,
+  dump settings, comparisons and failure behavior are preserved. Subsequent native
+  children receive only their account's password through existing MYSQL_PWD
+  mechanism; Windows environment conversion exclusions remain in place.
+- Qt error redaction now covers all cached accounts. Native errors after login
+  checks, Qt/plugin/schema errors, dump/export failures and checksum mismatches
+  still stop immediately: **no operation retry**, re-export, overwrite or repair.
+  Native login success followed by Qt failure is not presumed another password typo.
+- Linux sudo and Windows native root password prompts remain unchanged, avoiding
+  administrator-password capture/caching. The new three-attempt feature applies
+  to taskcompass_migrate/app/dev in B7.2, not a global credential manager or other
+  milestones' scripts. No accounts/passwords/grants changed or new dependencies.
+- Explicit completion uses the same account entry behavior, but retains its own
+  exact-target separate approval and no-partial-reseal guards; no new completion
+  is authorized by this UI improvement. Existing Linux capture remains sealed.
+
+### Files and actual offline validation
+
+Modified scripts/phase12/b72/run.sh, tests/Phase12BackupScripts.test.sh,
+docs/Phase1.2B72.md and current milestone/Roadmap/TestingPhase1.2 status. CMake,
+production C++, migrations/SQL review package and old Phase1.1 helper untouched.
+No server access or actual backup directory inspected/modified by the agent.
+
+```bash
+bash -n scripts/phase12/b72/run.sh
+bash tests/Phase12BackupScripts.test.sh
+ctest --test-dir build --output-on-failure \
+   -E '^(MariaDbIntegrationTests|OrganizationIntegrationTests)$'
+sha256sum --check scripts/phase12/b7/ReviewChecksums.sha256
+git diff --check
+```
+
+Expanded fake-executable harness passed **seven PASS groups**. New cases exercise
+wrong then correct secrets on second/third entry, exactly three-attempt exhaustion,
+EOF cancellation, per-account distinct passwords/cache reuse through helper and
+exports/final verification (no extra prompt input supplied), native warning
+handling, no network/identity retry and no artifact creation on prelogin failure.
+Mock Windows flow additionally exercises a corrected app password, CRLF identity/
+error output and special-character secrets (quotes, backslashes, ampersands/path-like
+text) with conversion exclusions, cache separation and redaction. Existing dump
+failure/drift/partial-completion/manifest/ACL guards still pass. Root Windows
+workflow remains native --password with no script-captured admin secret.
+
+Full Linux offline suite passed **17/17**, exit0, 7.33 seconds; both live suites
+explicitly excluded, not executed. Final direct harness rerun after adding extra
+mock-Windows cases also passed all seven groups. Shell syntax, reviewed checksum
+manifest, Markdown references/fences/whitespace and git diff --check passed.
+No application/C++ build needed for shell/test/docs-only changes. Actual Windows
+native authentication retry/cache execution is still pending owner results;
+mocked Windows checks are not relabeled as native validation.
+
+No agent live authentication/SQL, dump/export, backup/restore, provisioning/grants,
+reset/repair/cleanup, dependency installation or commit/push/merge/tag. Only
+harness-owned temporary fake artifacts were removed as normal offline test cleanup.
+
+### Next operator step within existing Windows B7.2 approval
+
+Copy/update the scripts in the Windows checkout through owner's normal source
+workflow; no C++ rebuild is required. After unchanged baseline review and stopped
+writers, run one fresh normal capture:
+
+```bash
+scripts/phase12/b72/03-capture.sh --approved
+```
+
+It selects a new independent timestamped destination; previous failed attempts
+stopped before directory creation, so no completion script is applicable. Each
+TaskCompass password may now be corrected within three login-only entries, and
+once accepted is not requested again during that run. If three entries fail or
+any operation fails, stop/report; no whole-operation loop or repair. Step04 only
+after final capture PASS. Linux evidence remains preserved, Windows B7.2 capture/
+review incomplete, B7.3 and all database mutations/restores still separately gated.

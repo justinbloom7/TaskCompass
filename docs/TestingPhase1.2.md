@@ -9,7 +9,10 @@ including corrected Qt schema-1 verification, passed on both platforms on
 2026-11-17 (owner-reported). B7.2 fresh schema-1 backup/exports are approved for
 owner execution only; [numbered operator scripts](Phase1.2B72.md) are prepared.
 Linux B7.2 passed after targeted completion and owner-confirmed private SQL review;
-retained path/hash are in the milestone. Windows capture/review remains pending.
+retained path/hash are in the milestone. Windows tools/preflight passed; latest
+runtime verification failed before artifact creation. Updated B7.2 scripts allow
+bounded TaskCompass login retries and memory-only credential reuse; fresh native
+Windows capture/review remains pending under existing approval.
 No live capture was performed by the agent. Development upgrades and subsequent
 privilege/GUI/backup gates remain pending and require separate approval.** Do not execute
 steps 3 or 4 without separate approval for that step, platform and target. None of

@@ -18,7 +18,10 @@ are approved for owner execution on both platforms; [numbered operator scripts](
 are prepared and offline-mock-tested (Linux 17/17 tests). Linux B7.2 passed on
 2026-11-17 (owner-reported), including targeted completion, checksum sealing and
 private SQL review; the retained directory/digest and failures are preserved in
-the milestone. Windows capture/review remains pending under its existing approval;
+the milestone. Windows tools/preflight passed; the latest capture failed at
+runtime verification before artifact creation. B7.2 now provides bounded TaskCompass
+authentication-only retries and per-run credential reuse (Linux 17/17 offline tests);
+native Windows capture/review remains pending under existing approval;
 no live capture was performed by the agent. Populated narrow-role rehearsal,
 development-upgrade, GUI and expanded backup/restore gates remain pending.
 Phase 1.2 is not accepted.** See the
