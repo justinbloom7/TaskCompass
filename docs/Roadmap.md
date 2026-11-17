@@ -13,8 +13,13 @@ are met. The [B7 review package](Phase1.2B7.md) is prepared; read-only developme
 preflight passed on both platforms (owner-reported, 2026-11-17), including schema-1
 verification with existing SELECT-only migrators. Corrected-source offline checks
 passed on both platforms (16 tests each; Windows also reported 2 live skips).
-Earlier failures remain in the milestone. B7.2 fresh schema-1 backup/private export
-approval is requested; no capture performed. Populated narrow-role rehearsal,
+Earlier failures remain in the milestone. B7.2 fresh schema-1 backup/private exports
+are approved for owner execution on both platforms; [numbered operator scripts](Phase1.2B72.md)
+are prepared and offline-mock-tested (Linux 17/17 tests). Linux B7.2 passed on
+2026-11-17 (owner-reported), including targeted completion, checksum sealing and
+private SQL review; the retained directory/digest and failures are preserved in
+the milestone. Windows capture/review remains pending under its existing approval;
+no live capture was performed by the agent. Populated narrow-role rehearsal,
 development-upgrade, GUI and expanded backup/restore gates remain pending.
 Phase 1.2 is not accepted.** See the
 [scripted Windows sequence](WindowsPhase1.1.md). Live provisioning, grants and

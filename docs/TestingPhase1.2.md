@@ -6,8 +6,11 @@ The [milestone record](milestones/Phase1.2.md) is authoritative for approvals an
 actual results. **Linux Stage 1A and corrected Stage 1B passed (owner-reported);
 Windows Stage 1A and Stage 1B also passed. B7.1 read-only development preflight,
 including corrected Qt schema-1 verification, passed on both platforms on
-2026-11-17 (owner-reported). B7.2 fresh schema-1 backup/export approval is requested;
-no capture performed. Development upgrades and subsequent
+2026-11-17 (owner-reported). B7.2 fresh schema-1 backup/exports are approved for
+owner execution only; [numbered operator scripts](Phase1.2B72.md) are prepared.
+Linux B7.2 passed after targeted completion and owner-confirmed private SQL review;
+retained path/hash are in the milestone. Windows capture/review remains pending.
+No live capture was performed by the agent. Development upgrades and subsequent
 privilege/GUI/backup gates remain pending and require separate approval.** Do not execute
 steps 3 or 4 without separate approval for that step, platform and target. None of
 these steps upgrades taskcompass_dev. Preserve taskcompass_integration, all accepted
@@ -256,8 +259,9 @@ contains the proposed SQL/recovery framework; it does not authorize execution.
 Use [Phase1.2B7.md](Phase1.2B7.md) for the proposed numbered platform-specific
 preflight, fresh private schema-1 capture, populated recovery/narrow-role rehearsal,
 controlled development upgrade, GUI and schema-2 backup/restore procedures.
-These are review instructions, not execution authorization. The first requested
-approval is B7.1 read-only taskcompass_dev preflight on both platforms; no capture,
-grant or migration is included. Approvals/results remain in the milestone.
+The initial B7.1 approval is now recorded as passed on both platforms. B7.2 is
+approved for owner-only capture using the [four numbered scripts](Phase1.2B72.md);
+live capture results are pending. Later grants, restores and migration remain
+separately gated. Approvals/results remain in the milestone.
 Do not rerun disposable integration tests on a populated clone or reuse retained
 taskcompass_integration/Phase 1.1 artifacts as scratch space.

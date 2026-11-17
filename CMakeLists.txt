@@ -68,6 +68,8 @@ if(BUILD_TESTING)
       set_tests_properties(IntegrationDatabaseScripts PROPERTIES TIMEOUT ${TASKCOMPASS_SHELL_TEST_TIMEOUT})
       add_test(NAME Phase12ValidationScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12ValidationScripts.test.sh")
       set_tests_properties(Phase12ValidationScripts PROPERTIES TIMEOUT ${TASKCOMPASS_PHASE11_SCRIPT_TIMEOUT})
+      add_test(NAME Phase12BackupScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12BackupScripts.test.sh")
+      set_tests_properties(Phase12BackupScripts PROPERTIES TIMEOUT ${TASKCOMPASS_PHASE11_SCRIPT_TIMEOUT})
       add_test(NAME Phase11ValidationScripts
                COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase11ValidationScripts.test.sh")
       set_tests_properties(Phase11ValidationScripts PROPERTIES TIMEOUT ${TASKCOMPASS_PHASE11_SCRIPT_TIMEOUT})
