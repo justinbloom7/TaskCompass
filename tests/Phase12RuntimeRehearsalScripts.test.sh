@@ -13,6 +13,7 @@ prepare() {
 }
 runtimeInput() { printf '%s\n' "$MOCK_SECRET"; }
 probeInput() { printf '%s\n' "$MOCK_SECRET"; }
+if [[ "${TASKCOMPASS_B75_FIXTURES_ONLY:-0}" == 1 ]]; then return 0; fi
 for platform in linux windows; do
    unset MSYSTEM
    [[ "$platform" != windows ]] || export MSYSTEM=UCRT64

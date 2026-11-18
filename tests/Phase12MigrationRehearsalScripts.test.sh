@@ -90,7 +90,7 @@ case "$sql" in
    *"'COUNT:SchemaMigration'"*)
       printf 'fixture-legacy\n'
       if [[ "${MOCK_LEGACY_DRIFT:-0}" == 1 || ( "${MOCK_POST_DRIFT:-0}" == 1 && "$(cat "$MOCK_SCHEMA")" == 2 ) ]]; then printf 'drift\n'; fi ;;
-   *'SHOW CREATE TABLE MigrationAttempt;'*) printf 'fixture-DDL2\n' ;;
+   *'SHOW CREATE TABLE MigrationAttempt;'*) printf 'fixture-DDL2\nLocalChange\tCREATE TABLE `LocalChange` (\n  KEY `changeTask` (`datasetId`,`taskId`),\n) ENGINE=InnoDB\n' ;;
    *'SHOW CREATE TABLE SchemaMigration;'*) printf 'fixture-DDL\n' ;;
    *'oldTasksWithUnexpectedOwner'*)
       fp=$(printf '%064d' 0)

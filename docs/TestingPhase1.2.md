@@ -17,7 +17,12 @@ B7.3 populated restore/schema1/full preservation passed on both platforms
 grant/clone migration is approved for owner execution using
 [four numbered scripts](Phase1.2B74a.md); all four stages passed on Linux and Windows (owner-reported, 2026-11-17). B7.4b runtime-role rehearsal is approved for owner execution using
 [three numbered scripts](Phase1.2B74b.md); all three stages passed on Linux and Windows
-(owner-reported, 2026-11-17).
+(owner-reported, 2026-11-17). B7.5 development upgrade scripts and
+[operator guide](Phase1.2B75.md) are prepared. Linux stages01/02 and reviewed schema2 preservation completion passed
+(owner-reported, 2026-11-17), after the recorded implicit-index comparison correction.
+Linux runtime transition04 and final verification05 also passed (owner-reported,
+2026-11-17). Linux development upgrade/final privileges/preservation/health are
+verified; Windows development remains schema1 and separate approval is requested.
 No live procedure was performed by the agent. Development upgrades and subsequent
 privilege/GUI/backup gates remain pending and require separate approval.** Do not execute
 steps 3 or 4 without separate approval for that step, platform and target. None of

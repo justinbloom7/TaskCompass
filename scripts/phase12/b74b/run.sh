@@ -12,7 +12,7 @@ done
 b74bDirectory=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 TASKCOMPASS_B74_LIBRARY=1 source "$b74bDirectory/../b74a/run.sh" preflight "$@"
 trap 'fail "B7.4b operation failed (exit $?)."' ERR
-printf 'B7.4b stage: %s\n' "$b74bAction"
+[[ "${TASKCOMPASS_B74B_LIBRARY:-0}" == 1 ]] || printf 'B7.4b stage: %s\n' "$b74bAction"
 readonly RUNTIME_HASH=9af378bc61c18a87bf76bb03f9472fc149ed28ec2914f74eac86ee727937bb7e
 readonly PROBE_HASH=0fa9b45a4f14dc9ffb2063915e0d5e5d35f95015ed64beaa2442c36dcc718417
 checkManifest() {
@@ -28,6 +28,8 @@ checkManifest() {
    [[ "$(printf '%s\n' $names | LC_ALL=C sort)" == "$(printf '%s\n' $expected | LC_ALL=C sort)" ]] || fail 'Incomplete evidence manifest.'
    (cd -- "$backupDirectory" && sha256sum --check "$manifest")
 }
+# Reuse definitions only; no rehearsal reads, writes or live operations.
+[[ "${TASKCOMPASS_B74B_LIBRARY:-0}" != 1 ]] || return 0
 snapshot
 checkRehearsalEvidence
 checkSql

@@ -27,7 +27,12 @@ platforms; [four numbered scripts](Phase1.2B74a.md) are prepared with offline mo
 B7.4a all four stages passed on Linux and Windows (owner-reported, 2026-11-17),
 preserving original data/history in both schema2 clones. Nothing executed by the agent. B7.4b runtime-role rehearsal is approved for owner execution using
 [three numbered scripts](Phase1.2B74b.md); all three stages passed on Linux and Windows
-(owner-reported, 2026-11-17). Development
+(owner-reported, 2026-11-17). B7.5 development upgrade scripts and
+[operator guide](Phase1.2B75.md) are prepared. Linux stages01/02 and reviewed schema2 preservation completion passed
+(owner-reported, 2026-11-17), after the recorded implicit-index comparison correction.
+Linux runtime transition04 and final verification05 also passed (owner-reported,
+2026-11-17). Linux development upgrade/final privileges/preservation/health are
+verified; Windows development remains schema1 and separate approval is requested. Development
 upgrade, GUI and schema2 backup/restore remain separately gated.
 Phase 1.2 is not accepted.** See the
 [scripted Windows sequence](WindowsPhase1.1.md). Live provisioning, grants and

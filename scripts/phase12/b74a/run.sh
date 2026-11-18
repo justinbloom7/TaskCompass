@@ -14,7 +14,13 @@ clientPath=''
 buildDirectory=''
 backupDirectory=''
 accountPassword=''
-readonly CREDENTIAL_DATABASE=taskcompass_phase12_test
+# Definition-only callers may select the already approved development pair.
+# Standalone rehearsal actions always retain their fixed clone identity.
+if [[ "${TASKCOMPASS_B74_LIBRARY:-0}" == 1 && "${TASKCOMPASS_B74_CREDENTIAL_DATABASE:-}" == taskcompass_dev ]]; then
+   readonly CREDENTIAL_DATABASE=taskcompass_dev
+else
+   readonly CREDENTIAL_DATABASE=taskcompass_phase12_test
+fi
 source "$scriptDirectory/../read-only-login.sh"
 adminInput=''
 adminOutput=''
@@ -179,7 +185,7 @@ baseline() {
 # Explicit flush and no reconnect; only approved metadata SELECTs + exact grant file.
 adminStart() {
    local -a command=("$clientPath" --no-defaults --skip-reconnect --skip-auto-rehash --unbuffered --batch --raw --skip-column-names
-                    --default-character-set=utf8mb4 --connect-timeout=5 --user=root --database=taskcompass_phase12_test)
+                    --default-character-set=utf8mb4 --connect-timeout=5 --user=root --database="$CREDENTIAL_DATABASE")
    if [[ "$platform" == linux ]]; then
       env -u MYSQL_PWD sudo -v
       command=(env -u MYSQL_PWD sudo -n -- "${command[@]}" --protocol=SOCKET)

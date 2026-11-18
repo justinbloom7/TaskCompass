@@ -7,12 +7,15 @@ from migration SQL; the broader logical model below includes future features.
 
 **The broad model below includes future features.** Phase 1.1 migration 001 was
 accepted with Linux/Windows validation; see [its historical report](milestones/Phase1.1.md).
-Phase 1.2 migration 002 is implemented as source only and has not been executed.
+Phase 1.2 migration002 passed populated isolated rehearsals on Linux and Windows
+(owner-reported); Linux development schema2 and reviewed legacy preservation passed
+(owner-reported), including final runtime grants and independent health verification; Windows development remains
+schema1. See the milestone for the current review state.
 See [002](../migrations/mariadb/002_OrganizationalManagement.sql) and the
 [Phase 1.2 record](milestones/Phase1.2.md) for current approval/validation status.
 Table names use PascalCase and columns camelCase.
 
-## Phase 1.2 physical subset — source implemented, live validation pending
+## Phase 1.2 physical subset — isolated validation passed, development verification pending
 
 The cumulative schema has nine tables. Dataset, Task, SchemaMigration,
 CommandRecord and LocalChange retain all existing rows; 001 is immutable.

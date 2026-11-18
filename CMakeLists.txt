@@ -74,6 +74,17 @@ if(BUILD_TESTING)
          add_test(NAME Phase12RestoreScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12RestoreScripts.test.sh")
          set_tests_properties(Phase12RestoreScripts PROPERTIES TIMEOUT ${TASKCOMPASS_PHASE11_SCRIPT_TIMEOUT}
                               ENVIRONMENT "TASKCOMPASS_TEST_PYTHON=${Python3_EXECUTABLE}")
+         add_test(NAME Schema2DdlComparison COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Schema2DdlComparison.test.sh")
+         set_tests_properties(Schema2DdlComparison PROPERTIES TIMEOUT 30)
+         add_test(NAME Phase12ReviewedCompletionScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12ReviewedCompletionScripts.test.sh")
+         set_tests_properties(Phase12ReviewedCompletionScripts PROPERTIES TIMEOUT 360
+                              ENVIRONMENT "TASKCOMPASS_TEST_PYTHON=${Python3_EXECUTABLE}")
+         add_test(NAME Phase12UpgradeInspectionScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12UpgradeInspectionScripts.test.sh")
+         set_tests_properties(Phase12UpgradeInspectionScripts PROPERTIES TIMEOUT 180
+                              ENVIRONMENT "TASKCOMPASS_TEST_PYTHON=${Python3_EXECUTABLE}")
+         add_test(NAME Phase12DevelopmentUpgradeScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12DevelopmentUpgradeScripts.test.sh")
+         set_tests_properties(Phase12DevelopmentUpgradeScripts PROPERTIES TIMEOUT 600
+                              ENVIRONMENT "TASKCOMPASS_TEST_PYTHON=${Python3_EXECUTABLE}")
          add_test(NAME Phase12RuntimeRehearsalScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12RuntimeRehearsalScripts.test.sh")
          set_tests_properties(Phase12RuntimeRehearsalScripts PROPERTIES TIMEOUT 360
                               ENVIRONMENT "TASKCOMPASS_TEST_PYTHON=${Python3_EXECUTABLE}")

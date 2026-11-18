@@ -2,7 +2,7 @@
 
 # Phase 1.2 — Organizational Management
 
-**Status: Stage 1B isolated integration, B7.1 read-only development preflight, B7.2 populated schema-1 capture/private review and B7.3 populated restore/full preservation checks passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported, 2026-11-17). All exact source snapshots/evidence are retained; both populated rehearsal clones are now schema2. B7.4a narrow-migrator grant transition and clone-only migration002 approved for operator execution on both platforms (2026-11-17); all four stages passed on Linux and Windows (owner-reported, 2026-11-17). No live database procedure performed by agent. B7.4b runtime-role rehearsal approved for operator execution on both platforms; all three stages passed on Linux and Windows (owner-reported, 2026-11-17). Development upgrade, GUI/restart and schema2 backup/restore remain separately gated. Phase 1.2 is not accepted.**
+**Status: Stage 1B isolated integration, B7.1 read-only development preflight, B7.2 populated schema-1 capture/private review and B7.3 populated restore/full preservation checks passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported, 2026-11-17). All exact source snapshots/evidence are retained; both populated rehearsal clones are now schema2. B7.4a narrow-migrator grant transition and clone-only migration002 approved for operator execution on both platforms (2026-11-17); all four stages passed on Linux and Windows (owner-reported, 2026-11-17). No live database procedure performed by agent. B7.4b runtime-role rehearsal approved for operator execution on both platforms; all three stages passed on Linux and Windows (owner-reported, 2026-11-17). Linux B7.5 stages01/02 and reviewed schema2 preservation completion passed (owner-reported, 2026-11-17), following the recorded implicit FK-index comparison correction. Linux runtime transition04 and final verification05 passed (owner-reported, 2026-11-17): schema2, preserved original data and final least-privilege grants. Windows development remains schema1; separate Windows B7.5 approval requested. GUI/restart and schema2 backup/restore remain separately gated. Phase 1.2 is not accepted.**
 Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
 Only this document and the roadmap were changed by Step A. Its designs/SQL were
 proposals. Step A itself authorized no SQL; the dated Step B reports below record
@@ -5301,3 +5301,692 @@ accounts or databases changed by agent. Build/CTest not repeated for this
 reporting-only change; previous actual offline results remain preserved.
 Markdown local references/fences and `git diff --check` validated. No commit,
 push, merge or tag.
+
+## 2026-11-17 — B7.5 development upgrade preparation (no live execution)
+
+### Prerequisites, review and scope
+
+Reviewed current milestone owner reports, the pinned B7 review package,
+TestingPhase1.2, authoritative requirements/architecture/data model/interactions,
+B7.1–B7.4b operator scripts and all19 reviewed SQL files. Both platforms have
+owner-reported passes for schema1 development preflight, independently captured/
+privately reviewed backups, exact populated restore, narrow migration002 rehearsal,
+legacy preservation, runtime19 privilege rehearsal and rollback-only probe with
+all-nine-table equality. **Historical rehearsal prerequisites are satisfied on
+both platforms.** No completed rehearsal or private artifact was rerun, read or
+modified by agent. Fresh development checks remain mandatory; historical success
+does not establish current readiness or authorize a live upgrade.
+
+Reviewed DatabaseConfig/DatabaseConnection, MigrateMain, MigrationRunner,
+SchemaConstraints, MutationLease, Migrations.qrc and
+`migrations/mariadb/SchemaManifest.json` (SHA256
+`9d7328b58902fd135c1433e62695274e677d2e91ad02561a419323f395e76755`).
+The CLI's exact dev pair is taskcompass_dev with app/migrator, loopback TCP and
+explicit isolated configuration. Diagnostic stays native read-only, never a Qt
+migration identity. Runner verifies immutable001 and contiguous002, source and
+embedded checksums, complete registered structure/latest fingerprint and original
+UUID. It uses migration lock/shared mutation lease; journals nine DDL steps and
+rejects incomplete/failed/unknown journal states. DDL can persist on failure;
+metadata commit uncertainty requires review, not replay. No production runner,
+configuration, schema manifest or migration changes were needed.
+
+The original pinned B7 runbook's initial pending statements are historical;
+[the new B7.5 guide](../Phase1.2B75.md) and this ledger give current state. Do not
+edit the pinned review package to erase that history. DataModel's stale assertion
+that002 had never executed was corrected to distinguish passed isolated rehearsals
+from still-pending development upgrades. Schema diagrams need no regeneration:
+actual migration SQL is unchanged.
+
+Owner's current requirement10 explicitly includes the final runtime transition,
+previously called B7.6. Prepared it as separate stage04 within the requested
+platform-specific development package; it is part of the concrete approval request
+below, not silently inferred from B7.4 or source preparation. GUI remains excluded.
+
+### Files and implementation details
+
+Added:
+
+- `scripts/phase12/b75/01-preflight.sh`.
+- `scripts/phase12/b75/02-migration-grants.sh`.
+- `scripts/phase12/b75/03-migrate.sh`.
+- `scripts/phase12/b75/04-runtime-grants.sh`.
+- `scripts/phase12/b75/05-verify.sh`.
+- `scripts/phase12/b75/run.sh`, SELECT-only `preflight.sql`.
+- `tests/Phase12DevelopmentUpgradeScripts.test.sh`.
+- `docs/Phase1.2B75.md`, including exact SQL, per-platform commands, targets,
+  expected results, artifacts and failure/recovery policy.
+
+Modified:
+
+- `scripts/phase12/b74a/run.sh`: definition-only callers can select the existing
+  dev credential pair; standalone rehearsal actions retain their fixed clone
+  pair. Shared native administrator session uses the fixed caller database.
+- `scripts/phase12/b74b/run.sh`: definition-only return for reuse, before any
+  rehearsal artifact/database operation; suppresses the unrelated stage heading
+  in that definition-only use. Existing live rehearsal behavior unchanged.
+- `tests/Phase12RuntimeRehearsalScripts.test.sh`: fixture-definition-only hook for
+  new offline tests. Reuses prior fake snapshot/auth/client factories.
+- `CMakeLists.txt`: register the new Bash/Python mock suite with bounded timeout.
+- Current pointers in this milestone, Roadmap and TestingPhase1.2; focused factual
+  isolated-versus-development status correction in DataModel.
+
+No new framework/dependency, source C++ change, migration edit, account/password
+change, live connection, dev/rehearsal write, backup/restore/reset, private evidence
+access or Phase1.1 historical change. No GUI acceptance/Phase1.3 work.
+
+### Stage behavior and automatic guards
+
+Each script requires --approved plus explicit --platform linux|windows matching
+its actual terminal. Help/print-plan have no live side effects. No typed approval
+phrases, equivalent prompts or redundant yes/no reads. Only passwords are prompted;
+TaskCompass credentials have bounded authentication-only retries/memory cache,
+root remains native sudo/socket or Windows password/TCP. No secrets in source,
+files, build products, arguments/history or output. Windows environment conversion
+excludes TASKCOMPASS_DB_PASSWORD as well as MYSQL_PWD. All native query sessions
+use no-defaults, explicit TCP/account/database, no automatic reconnect/no --force.
+
+Reuse platform pins, source backup/ACL/mode/checksum guards and B7.3 evidence;
+verify all B7.4a/B7.4b sealed files, exact receipt values and rollback counts.
+Never query or modify populated rehearsal databases. Reject unsafe/linked/duplicate/
+missing manifest paths. Compare all original legacy columns/history and complete
+schema1 DDL with the approved sealed snapshot. Verify both source and built001/002
+previews before connection, plus exact original reviewed grant file hashes.
+
+Root preflight is SELECT-only. Require the exact observed hostname/version/port,
+root@localhost, database, table-case mode, utf8mb4/collation, CHECK/FK settings,
+known5/9 InnoDB tables and no stored code. Check all development account hosts,
+complete per-account direct/schema/table grants, no roles/global/column extras or
+grant option. Windows effective PUBLIC writes covering dev reject; unrelated
+standard test/test-prefix scopes remain acceptable. Reject every other processlist
+session selected into dev or authenticated as any of the three dev accounts,
+including idle sessions with no selected DB. This is a point-in-time check, not a
+firewall against a newly started writer or unrelated privileged admin; owner must
+keep writers stopped throughout. Migration lock and mutation lease add cooperative
+exclusion during the actual runner operation.
+
+Stage01 is read-only/no new files. Stage02 repeats baseline after admin login,
+exports originals/grant metadata, then writes attempt receipt before the exact
+reviewed eight GRANT statements. Verify only ten temporary table rights added to
+migrator's existing schema SELECT; app original9 and diagnostic SELECT unchanged.
+Stage03 revalidates the narrow baseline and writes attempt before a single dev
+runner --apply --to-version2 (no test flags/manual SQL). Root only inspects metadata.
+Independent Qt verify2, fresh root inventory and byte-exact legacy/DDL comparisons
+precede completed-journal/NULL ownership/typed-history checks, all59 health rows0,
+and full schema2 export/seal. Original metadata row1 is included in the legacy
+comparison; row2/journal are separately checked by Qt and export postconditions.
+
+Stage04 requires preservation seals and fresh whole-schema equality; adds only
+reviewed app rights and removes temporary migration privileges. Verify final exact
+matrix and Qt read access under both app and SELECT-only migrator; diagnostic
+stays SELECT-only and full data must remain unchanged. Stage05 independently
+rechecks sealed stages, schema2/UUID, legacy/DDL, final metadata, both Qt identities,
+all59 health rules and full-schema equality. Its runtime --apply guard uses a
+literal placeholder, expects the exact preconnection identity rejection/exit1,
+and never supplies a real runtime secret to a write-capable probe. No dev DML
+permission tests or GUI writes are introduced.
+
+### Exact changes and preservation requirements
+
+The unchanged reviewed SQL is reproduced in full in
+[the operator guide](../Phase1.2B75.md#stages-and-exact-sql-transitions):
+
+- [migration-dev-grants.sql](../../scripts/phase12/b7/migration-dev-grants.sql):
+  `517aaef4966eb3a50f0ec6f0c6f1b66f540ba474043ff54a46f5c4ed8030d4fb`.
+- [002_OrganizationalManagement.sql](../../migrations/mariadb/002_OrganizationalManagement.sql):
+  `7de311935843e4fc04cbca74d025d9f38986a4154d70bdd29b35a2820f87b736`,
+  nine statements, runner only.001 remains
+  `bb901d7580398893b5c04ee263f813b9d05873eb4bae08e0daf377faf73b0ea0`.
+- [runtime-dev-grants-and-revoke.sql](../../scripts/phase12/b7/runtime-dev-grants-and-revoke.sql):
+  `c474535e2d9af43ba570f6d0694936a59d01e6e2b8bab37a779f5cce10e04442`.
+
+Targets remain taskcompass_dev@127.0.0.1:3306, existing taskcompass_migrate/app/dev
+accounts only. No CREATE USER/authentication changes/global grants/GRANT OPTION.
+Migrator gets schema SELECT plus CREATE Pillar/Project/Objective, CREATE/INSERT/
+UPDATE MigrationAttempt, ALTER Task/CommandRecord/LocalChange and INSERT
+SchemaMigration. Final migrator/diagnostic each schema SELECT-only; app exact19
+per-table privileges (four domain tables SELECT/INSERT/UPDATE, two history tables
+SELECT/INSERT, three metadata tables SELECT), no schema/global app DML/DDL.
+
+All legacy Task IDs/tombstones/lifecycle/timestamps/revisions, Dataset identity/name/
+creation, operation IDs, command/change records and raw JSON/payload bytes must
+remain unchanged. Metadata row1 unchanged; row2 checksum/fingerprint correct and
+journal version2/completed/step9. New organization tables empty, task ownership and
+new typed history targets NULL, legacy payload versions1. No domain command/change
+created by migration. Within-platform comparison only; do not compare Linux and
+Windows case-dependent raw DDL or fingerprints.
+
+### Private evidence, interruption and recovery
+
+New files are noclobber/private beside the retained source snapshot:
+`b75-baseline.hex.tsv`, `b75-before-grants.txt`, `b75-after-grants.txt`,
+`b75-grants-{attempt,success}.txt`, `b75-grants.sha256`,
+`b75-migration-{attempt,success}.txt`, `b75-legacy.hex.tsv`,
+`b75-schema2.ddl.txt`, `b75-upgrade-checks.tsv`, `b75-health.tsv`,
+`b75-schema2.hex.tsv`, `b75-preservation.sha256`, `b75-final-grants.txt`,
+`b75-runtime-{attempt,success}.txt`, `b75-runtime.sha256`,
+`b75-final-health.tsv`, `b75-final.hex.tsv`, `b75-verification-success.txt`,
+`b75-final.sha256`. Original files/checksums/permissions remain untouched.
+
+Attempt markers precede every grant/migration; success receipts follow verified
+outcomes and bind platform/target/snapshot/migration/grant hashes. Missing seals,
+partial artifacts or existing attempts stop rather than being overwritten/replayed.
+SIGINT/SIGTERM fail closed and terminate only this script's native admin session;
+actual DDL/grant completion may be uncertain. No automatic reconnect/retry/reset/
+repair/resume/restore/down migration, marker deletion or privilege broadening.
+Stop immediately and report safe output; preserve actual database and all evidence.
+
+MariaDB grants/DDL are not transactionally reversible. The original backup is an
+immutable recovery source, not permission to restore. Exact partial state must be
+read-only inspected and a specific recovery decision authorized. Any recovery
+restore should first use a newly approved isolated target; no generic in-place
+DROP/reimport instructions are authorized. Existing Phase1.1 backups, restored
+integration databases and populated rehearsals must remain intact regardless of
+upgrade outcome. No cleanup is part of this package.
+
+### Actual offline validation and observed development-test issue
+
+```bash
+cmake --build build --parallel 2
+ctest --test-dir build --output-on-failure -E '^(MariaDbIntegrationTests|OrganizationIntegrationTests)$'
+ctest --test-dir build -R '^Phase12DevelopmentUpgradeScripts$' --output-on-failure
+sha256sum --check scripts/phase12/b7/ReviewChecksums.sha256
+build/TaskCompassMigrate --print-migration 1 | sha256sum
+build/TaskCompassMigrate --print-migration 2 | sha256sum
+```
+
+Build succeeded. Full offline CTest **21/21 passed**, zero failures, 122.02 seconds;
+new development upgrade suite67.34 seconds. Both live integration suites explicitly
+excluded. After adding an explicit Windows TASKCOMPASS_DB_PASSWORD conversion
+exclusion and mock assertion, reran the affected suite: **1/1 passed**, zero
+failures, 67.43 seconds. This verifies the final password-conversion change without
+claiming native MSYS2 execution. Existing B7.4a/B7.4b tests passed with definition
+reuse and original standalone behavior intact.
+
+New tests cover mocked Linux and Windows five-stage upgrades, original/app9 →
+migration narrow rights → final app19/SELECT-only identities, correct dev-only
+configuration, exact metadata/legacy/DDL/UUID checks, schema2 journal/health,
+complete preservation, no passwords in output/args, no typed confirmation input,
+missing/wrong-platform approval gates, corrupt sealed rehearsal evidence,
+unexpected PUBLIC/account grants, wrong server/UUID, idle/active-client indicator,
+data drift, partial/failed/interrupted grants and migrations, malformed journal,
+nonzero health and runtime grant failure. Explicit SIGTERM injection after fake
+grant/partial-DDL action preserves attempted state/markers and blocks replay.
+Preflight SQL is statically checked as SELECT-only with account-session filtering.
+All DB tools/snapshots in these tests are temporary fakes; no live/private data.
+
+An early direct mock run was invalidated by editing its running shell harness and
+exited2 with `syntax error near unexpected token ')'`. The current saved harness
+passed `bash -n`; stopped editing it during execution and the stable full suite
+and final affected-suite rerun passed as above. This was test development, not a
+live SQL/migration failure. No automatic live retry or recovery occurred.
+
+All20 original review-package checksum entries passed. Phase1.1 historical report,
+001/002 and schema-manifest hashes remained unchanged; built SQL preview hashes
+matched the source pins. Markdown local references/fences, new/modified individual
+shell syntax and `git diff --check` are final reporting checks below. No dependency
+installation, live query/grant/migration/backup/restore/reset, private artifact read,
+GUI acceptance or native Windows validation was executed by agent. Native Windows
+script execution and both live development upgrades remain pending owner execution.
+
+### Approval Requested — Linux B7.5 stages01–05 only
+
+Approve owner execution of the prepared package on **feledria, MariaDB10.5.29,
+taskcompass_dev@127.0.0.1:3306**, using existing taskcompass_migrate/dev/app accounts.
+Expected schema1 Dataset UUID `21be9da7-b767-4578-b972-cc9a35122ddb`, Dataset1/Task4/
+CommandRecord28/LocalChange28/SchemaMigration1. Original fingerprint is
+`6b3bd320ea92630b21909de0bd7cd38ea3bc3f644a69ba1fd249db43e656a343`;
+complete original metadata/data/DDL still must match sealed evidence, not only counts.
+
+Recovery source remains the already reviewed private schema1 backup:
+`/home/justin/temp/TaskCompassBackups/Phase1.2-schema1-linux-20261117-013703/after-gui.sql`,
+SHA256 `83ae094ed33865bba0c22e39174f2977a49cc014de3f669115300105eec2bd26`.
+No new backup or restore is part of these commands; require it still validates.
+Existing snapshot/rehearsal evidence must pass before touching development.
+
+Approval covers, separately invoked: read-only preflight; exact reviewed temporary
+migration GRANT file; single runner002 apply plus independent preservation/journal/
+health checks; exact reviewed runtime GRANT/REVOKE file (former B7.6 transition);
+final read-only identities/grants/health verification and noclobber private evidence.
+The two exact SQL files and002 hash are listed above and reproduced/linked in the
+operator guide. No provisioning, password/plugin changes, GUI/domain mutations,
+reset/recovery, backup restoration or cleanup. No agent live execution is requested.
+
+**After Linux approval**, close all writers and run one command at a time:
+
+```bash
+scripts/phase12/b75/01-preflight.sh --approved --platform linux
+scripts/phase12/b75/02-migration-grants.sh --approved --platform linux
+scripts/phase12/b75/03-migrate.sh --approved --platform linux
+scripts/phase12/b75/04-runtime-grants.sh --approved --platform linux
+scripts/phase12/b75/05-verify.sh --approved --platform linux
+```
+
+Expected PASS sequence: baseline/schema1; exact temporary migration rights with
+original data unchanged; schema2/same UUID/completed9-step journal and all legacy
+payloads preserved; app19/diagnostic+migrator SELECT-only with no data change;
+final independent complete preservation and all health rules0. No typed phrases;
+enter only named passwords. Stop immediately on any deviation/uncertainty and
+preserve state/attempt files; recovery requires the specific decision described
+above, never an automatic retry or silent repair.
+
+Windows is **not** included in this request. After actual Linux outputs are
+reviewed, present independent Windows authorization for feldria-w10/MariaDB13.0.2,
+dataset `457bb52b-fea4-4347-9c47-675c6b035c90`, Task2/CommandRecord16/LocalChange16,
+backup SHA `6588eb9ebc30b63b36b33f2abbc4a0de9da31b252c41a3fd585b8b060073fe50`.
+Its five --platform windows commands are prepared in the guide, not authorized.
+Review both platform results before any separate GUI acceptance. Phase1.2 remains
+unaccepted; Phase1.3 not started. No commit/push/merge/tag.
+
+Final additional regression: explicitly injected a change in the complete schema2
+export after successful migration and before runtime grants. The runtime stage
+refused before writing its attempt marker/changing privileges. Final affected-suite
+rerun passed **1/1**, zero failures, 73.46 seconds (test73.45 seconds). No production
+script changed for this extra test. Updated Markdown references/fences, individual
+shell syntax, absence of new typed-confirmation reads and `git diff --check` all
+passed. Preparation is stopped at the Linux-only approval checkpoint above.
+
+## 2026-11-17 — Linux B7.5 stage03 preservation failure; read-only diagnosis prepared
+
+### Owner-reported execution and actual state
+
+Owner ran the Linux commands with --approved/--platform linux. Stage01 passed fresh
+backup/rehearsal/schema1/data/DDL/account/session checks on feledria/MariaDB10.5.29,
+dataset `21be9da7-b767-4578-b972-cc9a35122ddb`. Stage02 rejected the first diagnostic
+password, accepted attempt2 using the read-only probe, then applied and verified
+the exact temporary migration grants with original data unchanged; all five grant
+receipt/export files reported OK. No backup/export occurred in the rejected probe.
+
+Stage03 revalidated prerequisite seals/grants, verified schema1 and invoked the
+runner once. Apply and repeated verify reported schema2/same UUID; root metadata
+reported exact migration grants/no unexpected authority or active sessions. The
+next independent baseline comparison stopped with:
+
+```text
+STOP: Development legacy/history/metadata/DDL differs from approved baseline. Preserve target and artifacts; no retry/reset/repair.
+```
+
+The combined error does not distinguish original-data mismatch from schema2 raw
+DDL mismatch. Runner/schema2 success is evidence of completed registered structure/
+journal and UUID, but does not establish the independent preservation verdict.
+**Do not rerun stage03 or proceed to stage04/05.** Preserve actual schema2 state,
+temporary migrator rights and b75-migration-attempt.txt; no success receipt or
+preservation manifest is to be synthesized. Windows development remains schema1
+and separately gated. No GUI acceptance or recovery action is authorized here.
+
+### Inspection findings and source-only correction
+
+Reviewed the exact failure location in baseline75: it checks legacy-export.sql
+against legacy-before.hex.tsv, then ddl2-export.sql against rehearsal2.ddl.txt.
+The old error was ambiguous. Changed only the diagnostic message to name the SQL,
+expected file and hashes; strict equality is retained. No normalization, weakened
+schema/data check or claim of harmless DDL variation is introduced.
+
+Added `scripts/phase12/b75/06-inspect-failure.sh` and definition-only reuse in
+B7.5 run.sh. The operator diagnostic validates original/rehearsal and grant seals
+plus the migration attempt receipt; runs Qt verify2 and root metadata with the
+expected narrow privileges; then exports legacy columns, raw schema2 DDL,
+postconditions and health into a fresh private b75-inspection timestamp/PID child
+directory. Each comparison reports MATCH/DIFFERENT and hashes independently; only
+DDL text may be printed via diff. Domain/history bytes stay private. Optional diff
+absence reports paths instead; no installation needed. Seal the new inspection
+files without replacing any existing artifact. No completion receipt, --apply,
+GRANT/REVOKE, DML, reset, restore or repair is executed by this diagnostic.
+
+Added `tests/Phase12UpgradeInspectionScripts.test.sh`, registered in CMake, with
+fixture-only reuse in the development upgrade test. Simulates completed apply
+followed by DDL mismatch and separately legacy mismatch, verifies read-only
+inspection cannot replay/finish a mutation, alter grant state, overwrite old
+markers or expose passwords. Existing development-upgrade regressions are rerun.
+Current pointers updated in Roadmap, TestingPhase1.2 and DataModel; inspection
+instructions added to Phase1.2B75. Historical successes/failures remain preserved.
+No production C++/SQL/migration/manifest/schema diagram change; no agent live SQL,
+credential/private evidence access, database write or account change.
+
+### Operator next step (read-only)
+
+With writers stopped, using the updated repository, run:
+
+```bash
+scripts/phase12/b75/06-inspect-failure.sh --approved --platform linux
+```
+
+Enter the named migration/diagnostic passwords and sudo authentication if needed.
+No typed approval phrases. Report the output, including any DDL diff. Root only
+inspects metadata. This gathers facts; it is not a migration retry or permission
+to complete/repair the interrupted workflow. Decide the specific next action only
+after the difference is understood. No automatic recovery or new privileges.
+
+### Actual validation and diagnostic-test correction
+
+```bash
+cmake --build build --parallel 2
+ctest --test-dir build -R '^Phase12(UpgradeInspection|DevelopmentUpgrade)Scripts$' --output-on-failure
+ctest --test-dir build -R '^Phase12UpgradeInspectionScripts$' --output-on-failure
+```
+
+Build succeeded. Initial inspection mock failed because diagnostic authentication
+occurred in export subshells and was not retained between exports, exhausting the
+fixture input. Corrected by checking/caching the diagnostic account once in the
+parent before any export, avoiding repeated password prompts. No live operation
+was involved. Corrected inspection rerun **1/1 passed**, 7.86 seconds. Existing
+development-upgrade suite independently passed, 73.78 seconds. The earlier combined
+run retains its reported one-failure/one-pass outcome (80.74 seconds); it is not
+misrepresented as a clean combined pass. Both affected tests now have passing
+results for the corrected code. Other suites not rerun because their behavior is
+unaffected; no production schema/application source changed.
+
+Markdown references/fences, individual new/modified shell syntax and
+`git diff --check` checked for this report. No dependency installed. No live query,
+grant, migration, backup/restore, reset, artifact cleanup, commit/push/merge/tag.
+
+## 2026-11-17 — Inspection isolates equivalent implicit index; no database repair
+
+### Owner-reported inspection findings
+
+Owner ran `06-inspect-failure.sh --approved --platform linux`. Original/rehearsal/
+grant seals passed. Qt verified schema2, same dataset
+`21be9da7-b767-4578-b972-cc9a35122ddb`; root verified exact migration privileges and
+no unexpected authority/sessions. Private inspection preserved at:
+`/home/justin/temp/TaskCompassBackups/Phase1.2-schema1-linux-20261117-013703/b75-inspection-20261117-215310-179794`.
+
+All original legacy data, historical payloads and metadata row1 matched exactly:
+expected/actual SHA256 both
+`87e134d0fe5a55c47dc6123e50cdeb5fa3ce12e4b14466ac2ac80ba61b2e551c`.
+Raw schema2 DDL hashes differ: rehearsal
+`32912a5b7a4cc16de9089d61bc7d1483b264e1029b55e86ea917871718392248`,
+development `a0e073d57f63e145994f109dc1266f1a510756aa82c597bf192720972931f5f8`.
+Owner supplied the complete DDL diff; its only change is:
+
+```diff
+-  KEY `changeTask` (`datasetId`,`taskId`),
+   KEY `changePending` (`datasetId`,`acknowledgmentState`,`createdAt`),
++  KEY `changeTaskV2` (`datasetId`,`taskId`),
+```
+
+Both are nonunique on exactly datasetId,taskId, inside LocalChange; no other DDL
+change appears in the supplied diff. Original exports/inspection files and seals
+remain intact. Captured health/postcondition files reported checksum OK; this
+inspection did not independently assert their values, so reviewed completion must
+still validate all postconditions freshly. No agent database/private-file access.
+
+### Source review and comparison correction
+
+001 declares FK changeTask without explicitly declaring its supporting index.
+002 drops that FK and adds changeTaskV2. SchemaManifest registers the explicit
+changePending/Pillar/Project/Objective indexes; the auto-created supporting index
+is not an explicitly named migration index. MigrationRunner verifies exact FK
+columns, target schema/table and registered explicit indexes, then a physical DDL
+fingerprint consistent with the database's own history row. Dump/restored indexes
+are rendered as explicit KEY definitions. The observed name/position variation is
+consistent with original implicit versus restored explicit index handling during
+FK replacement; agent has not independently reproduced the server internals.
+The index definitions themselves and absence of other DDL differences are direct
+owner-supplied evidence. No schema/index rename or data repair is warranted merely
+to make raw renderings identical.
+
+Our raw rehearsal-vs-development DDL equality assumption was too strict for this
+specific implicit index. Added `scripts/phase12/b75/compare-schema2-ddl.sh` to allow
+only one plain KEY named changeTask OR changeTaskV2 on exactly datasetId,taskId,
+within the single LocalChange definition. Remove that one line for comparison,
+preserving every other byte/order; reject duplicate/missing/unknown supporting
+index definitions, different columns/order, uniqueness, type/engine/constraint
+changes and unrelated index reordering. This is not broad SQL normalization or
+ignoring indexes. Registered Qt schema/FK/index/journal checks remain mandatory.
+Schema1 and every original data/payload byte still require exact equality.
+
+Updated only B7.5 schema2 DDL comparisons to this helper. Do not rewrite migration
+001/002, manifests, physical fingerprints, raw exports or any old checksum/receipt.
+No application or database behavior changed. New fresh Windows development runs
+can accept this same exact implicit-index form; other variations still stop.
+
+### Verification-only completion package and exact next command
+
+Added `07-complete-reviewed-verification.sh`, Linux-only. This is not a DDL resume,
+migration retry, grant change or automatic repair. It requires original grant seals,
+retained migration attempt and absent success/preservation outputs. Freshly verifies
+schema2/completed journal/UUID, exact migration privileges, byte-identical original
+data/history/metadata, narrowly equivalent schema2 DDL, empty new organizational
+ownership/tables, exact postconditions and all59 health rules0. Export and seal the
+full evidence, then write the normal migration-success/preservation receipts plus
+additional b75-reviewed-completion.txt and b75-reviewed-completion.sha256. Original
+attempt and all prior inspection artifacts remain unchanged. No --apply, DML,
+GRANT/REVOKE, reset, restore or SQL repair is in this script.
+
+With writers closed and updated source, operator can run the read-only verification
+and private evidence-completion step:
+
+```bash
+scripts/phase12/b75/07-complete-reviewed-verification.sh --approved --platform linux
+```
+
+Report its result before the existing stage04 runtime transition. Do not rerun
+stage03 or manually delete markers. No separate database-write recovery is proposed
+or executed; any new mismatch/partial journal must still stop for specific review.
+Windows authorization and GUI acceptance remain pending and excluded.
+
+### Changed files and test coverage
+
+Added the comparison helper, Linux verification-only completion script,
+`tests/Schema2DdlComparison.test.sh` and
+`tests/Phase12ReviewedCompletionScripts.test.sh`; registered tests in CMake.
+Updated `scripts/phase12/b75/run.sh` and fixture DDL in
+`tests/Phase12MigrationRehearsalScripts.test.sh` and
+`tests/Phase12DevelopmentUpgradeScripts.test.sh` to model the actual supporting
+index rather than a one-line DDL placeholder. Updated B7.5 guide/current milestone,
+Roadmap and TestingPhase1.2 pointers. No dependency, production C++/SQL/manifest/
+diagram change, live SQL/grants/migrations, private evidence modification or
+commit/push/merge/tag.
+
+Comparison unit tests cover exact/both alias directions/index position/stdin and
+reject changed columns/column order/uniqueness/names/types/engines/duplicates.
+Completion mocks start from the reported completed-runner/no-success-receipt
+state, accept only the reviewed alias and perform no grant/apply mutation;
+subsequent existing runtime/final verification stages work. Unrelated DDL, altered
+legacy data, malformed journal and health violations refuse completion and retain
+attempt state. No production database or private snapshot is used by tests.
+
+### Actual validation results
+
+```bash
+bash tests/Schema2DdlComparison.test.sh
+cmake --build build --parallel 2
+ctest --test-dir build --output-on-failure -E '^(MariaDbIntegrationTests|OrganizationIntegrationTests)$'
+sha256sum --check scripts/phase12/b7/ReviewChecksums.sha256
+```
+
+Build succeeded. Full offline CTest **24/24 passed**, zero failures, 164.92 seconds.
+Comparison unit0.06 seconds, reviewed completion28.25 seconds, inspection7.86
+seconds, development upgrade73.64 seconds, existing runtime27.85 seconds and
+migration rehearsal15.18 seconds. Both live integration suites explicitly excluded.
+No failed new-code validation run occurred in this correction. Added LF/CRLF-specific
+comparison assertions afterward and reran that standalone unit successfully:
+both CRLF exports accept the exact index variant, but unrelated line-ending drift
+is not silently normalized. Final Markdown links/fences, individual shell syntax
+and `git diff --check` passed.
+
+All20 original review-package entries, accepted Phase1.1 report, migrations001/002
+and SchemaManifest hashes remained unchanged. No live SQL/index rename/grant,
+metadata fingerprint rewrite, migration replay, private artifact read, cleanup or
+restore executed by agent. Existing owner-reported inspected data/DDL evidence is
+preserved. Actual Linux verification-only completion, runtime/final stages,
+Windows development authorization and later GUI acceptance remain pending.
+
+## 2026-11-17 — Linux reviewed schema2 preservation completion passed (owner-reported)
+
+Owner executed:
+
+```bash
+scripts/phase12/b75/07-complete-reviewed-verification.sh --approved --platform linux
+```
+
+All original snapshot/rehearsal/grant evidence validated. Qt twice verified schema2
+with dataset `21be9da7-b767-4578-b972-cc9a35122ddb`; metadata confirmed feledria's
+exact migration account grants and no unexpected authority/active sessions. The
+narrow LocalChange supporting-index comparison passed without altering raw DDL or
+fingerprints. Fresh legacy data/history/row1 preservation, completed journal,
+ownership defaults/new-table emptiness, health and full-schema exports passed the
+script's required checks before any completion receipt was written.
+
+All seven preservation entries reported checksum OK:
+b75-migration-attempt.txt, b75-migration-success.txt, b75-legacy.hex.tsv,
+b75-schema2.ddl.txt, b75-upgrade-checks.tsv, b75-health.tsv and b75-schema2.hex.tsv.
+The additional b75-reviewed-completion.txt and b75-preservation.sha256 seal entries
+also reported OK. Final output:
+
+```text
+PASS: reviewed Linux completed-migration preservation verified; original attempt retained; no migration or grants replayed.
+```
+
+These are owner-reported live verification results, not agent database access or
+independent private-file inspection. The earlier raw-DDL failure and its diagnosis
+remain historical; no attempt/inspection/backup artifact was removed or rewritten.
+No schema repair, index rename, migration replay or grant change occurred in07.
+Linux development is schema2 with preserved original data; migrator still has the
+previously reviewed temporary rights until stage04. Runtime/final steps have not
+been reported. Do not rerun stage03 or07.
+
+### Remaining Linux operator steps
+
+Continue the prepared runtime/final sequence, writers closed, one command at a time:
+
+```bash
+scripts/phase12/b75/04-runtime-grants.sh --approved --platform linux
+scripts/phase12/b75/05-verify.sh --approved --platform linux
+```
+
+Stage04 performs only the exact reviewed runtime grants/revocations and verifies
+app19 rights, diagnostic/migrator SELECT-only, both Qt identities and unchanged
+full data. Stage05 independently verifies metadata, schema/UUID, complete original
+preservation, health and runtime preconnection write-guard rejection, then seals
+final evidence. No repeated approval phrase/prompt is required; --approved remains
+the operator's explicit stage intent. Stop/preserve/report on any unexpected result.
+Windows development remains schema1 and separately gated until Linux results are
+reviewed. No GUI acceptance/Phase1.3 authorized; milestone not accepted.
+
+Reporting-only changes: this milestone, Roadmap, TestingPhase1.2, DataModel's current
+physical status and the B7.5 guide status pointer. No application/SQL/script change
+or agent live query, grant, database write, private evidence access, backup/restore,
+reset or cleanup. Build/CTest not repeated for documentation-only evidence recording;
+previous 24/24 actual offline results remain preserved. Markdown references/fences
+and git diff --check validated. No commit/push/merge/tag.
+
+## 2026-11-17 — Linux B7.5 runtime transition and final verification passed
+
+### Owner-reported execution and results
+
+Owner ran:
+
+```bash
+scripts/phase12/b75/04-runtime-grants.sh --approved --platform linux
+scripts/phase12/b75/05-verify.sh --approved --platform linux
+```
+
+Target was feledria/MariaDB10.5.29, taskcompass_dev@127.0.0.1:3306, dataset
+`21be9da7-b767-4578-b972-cc9a35122ddb`. All prerequisite backup/rehearsal/grant/
+preservation seals passed. Fresh schema2/UUID and original legacy data checks
+passed, with only the explicitly reviewed implicit-index alias/position variation.
+Root metadata reported no unexpected authority or active sessions.
+
+Stage04 verified exact temporary migration grants before the reviewed runtime
+transition, then exact final grants. Application and SELECT-only migration account
+Qt schema2 verification passed. Full data stayed unchanged; runtime attempt/success
+and final grant report checksums reported OK. Final stage04 output:
+
+```text
+PASS: final app19 rights; diagnostic/migrator SELECT-only; no data changes. Run stage05.
+```
+
+Stage05 independently validated all seals, schema2/UUID, byte-exact original data,
+reviewed DDL equivalence, final account matrix and runtime Qt read access. The
+script's required exact preconnection runtime --apply rejection, complete schema2
+export equality and all59 health-rule checks passed before final receipt/seal.
+Three final verification/health/export entries reported checksum OK. Final output:
+
+```text
+PASS: B7.5 development upgrade/final privileges/preservation/health verified on linux.
+```
+
+These are owner-reported live results, not agent database queries or independent
+private-artifact inspection. No errors occurred in the supplied stage04/05 outputs.
+The earlier raw-DDL stop, diagnosis and verification-only completion remain fully
+preserved in their historical entries. Migrator's temporary rights are now removed;
+diagnostic/migrator retain schema SELECT-only; app has exactly19 reviewed table
+rights, no schema/global DML/DDL and no history/outbox UPDATE/DELETE.
+
+Linux B7.5, including the requested former-B7.6 runtime transition, is verified.
+This is not GUI acceptance or final milestone acceptance. Preserve all private
+b75 evidence beside the original Linux snapshot, both populated rehearsal clones,
+Phase1.1 backups/exports/restored integration databases and original domain/history
+records. Do not rerun Linux mutation/completion stages or any reset/cleanup script.
+Windows development remains schema1 pending its independent authorization.
+
+### Approval Requested — Windows B7.5 stages01–05 only
+
+Linux results have now been reviewed. Request separate owner authorization for
+**feldria-w10/MariaDB13.0.2, taskcompass_dev@127.0.0.1:3306**, existing
+`taskcompass_migrate`, `taskcompass_dev` and `taskcompass_app` accounts only.
+Expected schema1 dataset `457bb52b-fea4-4347-9c47-675c6b035c90`, Dataset1, Task2,
+CommandRecord16, LocalChange16, SchemaMigration1. Original schema1 fingerprint
+`6b3bd320ea92630b21909de0bd7cd38ea3bc3f644a69ba1fd249db43e656a343` and complete
+metadata/data/DDL must still match sealed Windows evidence.
+
+Preserved reviewed backup:
+`/c/Users/justin/TaskCompassBackups/Phase1.2-schema1-windows-20261117-064917/after-gui.sql`,
+SHA256 `6588eb9ebc30b63b36b33f2abbc4a0de9da31b252c41a3fd585b8b060073fe50`.
+Freshly validate its private evidence, B7.3/B7.4a/B7.4b seals, server identity,
+account grants and quiescence. No rehearsal repeat/cleanup. --platform windows is
+explicitly distinct from the completed Linux authorization.
+
+Exact proposed scope is the already prepared five-stage package:
+
+1. Read-only preflight of schema1/UUID/fingerprint/checksum/legacy bytes/raw DDL,
+   original privilege matrices, stored-code/session exclusions and effective PUBLIC.
+2. Only `migration-dev-grants.sql` (SHA256
+   `517aaef4966eb3a50f0ec6f0c6f1b66f540ba474043ff54a46f5c4ed8030d4fb`): ten
+   temporary table privileges for migrator plus its unchanged schema SELECT;
+   diagnostic/app grants stay unchanged.
+3. Single `TaskCompassMigrate --apply --to-version 2` as dev migrator, using002
+   SHA256 `7de311935843e4fc04cbca74d025d9f38986a4154d70bdd29b35a2820f87b736`.
+   Independent journal/schema2/UUID/legacy preservation, narrow DDL comparison,
+   NULL ownership/empty new tables and health verification, private evidence seal.
+4. Only `runtime-dev-grants-and-revoke.sql` (SHA256
+   `c474535e2d9af43ba570f6d0694936a59d01e6e2b8bab37a779f5cce10e04442`): app19
+   table rights; remove all temporary migrator table rights; diagnostic and migrator
+   SELECT-only. Verify both Qt identities/grants and unchanged full data.
+5. Final independent metadata/schema/UUID/data/health verification and runtime
+   preconnection write-guard rejection, with new noclobber private exports/receipts.
+
+Exact SQL is linked/reproduced in [B7.5 operator guide](../Phase1.2B75.md).
+No CREATE USER/password/plugin changes, global grants, GUI writes, provisioning,
+backup restoration, reset, schema repair or cleanup. No Linux operation included.
+The read-only Linux-specific07 completion is not a Windows stage; a new unexpected
+Windows failure must stop for its own review rather than blindly reusing it.
+
+**After Windows approval**, from updated repository-root UCRT64 with writers
+closed, run one command at a time and stop on any unexpected result:
+
+```bash
+scripts/phase12/b75/01-preflight.sh --approved --platform windows
+scripts/phase12/b75/02-migration-grants.sh --approved --platform windows
+scripts/phase12/b75/03-migrate.sh --approved --platform windows
+scripts/phase12/b75/04-runtime-grants.sh --approved --platform windows
+scripts/phase12/b75/05-verify.sh --approved --platform windows
+```
+
+No typed approval phrases; passwords only. MariaDB DDL/grants may partially persist.
+Preserve actual database state and all attempt files on failure/uncertain outcome;
+no automatic retry/reset/repair/resume/restore, marker deletion or privilege
+broadening. Original Windows snapshot is an immutable recovery source, not approval
+to restore in place. Exact-state read-only inspection and a specific separate
+recovery decision are required for any deviation. Preserve successful Linux and
+both rehearsal databases and all historical artifacts regardless of outcome.
+Review both platforms before requesting GUI acceptance; do not start Phase1.3.
+
+### Reporting-only changes and validation
+
+Updated this milestone, Roadmap, TestingPhase1.2, DataModel's current physical status
+and B7.5 guide's current Linux pointer. No application/SQL/script/migration or
+private artifact changed by agent; no live query/grant/migration/backup/restore/
+reset/cleanup performed by agent. Build/CTest not rerun because only owner evidence
+and approval documentation changed; previous actual 24/24 offline results preserved.
+Markdown references/fences and `git diff --check` validated. No commit/push/merge/tag.
