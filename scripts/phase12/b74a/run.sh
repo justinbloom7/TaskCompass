@@ -50,7 +50,7 @@ while [[ $# -gt 0 ]]; do
 done
 "$approved" || fail 'Explicit B7.4a approval is required.'
 case "$action" in preflight) stageNumber=01 ;; grants) stageNumber=02 ;; migrate) stageNumber=03 ;; preservation) stageNumber=04 ;; esac
-printf 'Stage %s/04: B7.4a %s\n' "$stageNumber" "$action"
+[[ "${TASKCOMPASS_B74_LIBRARY:-0}" == 1 ]] || printf 'Stage %s/04: B7.4a %s\n' "$stageNumber" "$action"
 if [[ -n "${MSYSTEM:-}" ]]; then
    [[ "$MSYSTEM" == UCRT64 ]] || fail 'Use MSYS2 UCRT64.'
    platform=windows
@@ -256,6 +256,16 @@ preflight() {
          for name in task commandrecord localchange; do expectedTableRights+=$'taskcompass_phase12_test\t'"$name"$'\tALTER\tNO\n'; done
          expectedTableRights+=$'taskcompass_phase12_test\tschemamigration\tINSERT\tNO\n'
          [[ "$(printf '%s' "$tableRights" | LC_ALL=C sort)" == "$(printf '%s' "$expectedTableRights" | LC_ALL=C sort)" ]] || fail 'Narrow table grants differ; do not broaden.' ;;
+      runtime)
+         local expectedTableRights=''
+         for name in task pillar project objective; do
+            for right in SELECT INSERT UPDATE; do expectedTableRights+=$'taskcompass_phase12_test\t'"$name"$'\t'"$right"$'\tNO\n'; done
+         done
+         for name in commandrecord localchange; do
+            for right in SELECT INSERT; do expectedTableRights+=$'taskcompass_phase12_test\t'"$name"$'\t'"$right"$'\tNO\n'; done
+         done
+         for name in dataset schemamigration migrationattempt; do expectedTableRights+=$'taskcompass_phase12_test\t'"$name"$'\tSELECT\tNO\n'; done
+         [[ "$(printf '%s' "$tableRights" | LC_ALL=C sort)" == "$(printf '%s' "$expectedTableRights" | LC_ALL=C sort)" ]] || fail 'Runtime table grants differ.' ;;
       *) fail 'Unknown role policy.' ;;
    esac
    [[ "$(printf '%s' "$rights" | LC_ALL=C sort)" == "$(printf '%s' "$expected" | LC_ALL=C sort)" ]] || fail 'Schema grants differ from approved state.'
@@ -270,6 +280,8 @@ preflight() {
    fi
    printf 'PASS: fresh %s schema%s on %s/%s; exact %s grants and no unexpected authority/sessions.\n' "$CREDENTIAL_DATABASE" "$version" "$expectedHost" "$expectedVersion" "$policy"
 }
+# Definition-only reuse by B7.4b; this path performs no database operation.
+[[ "${TASKCOMPASS_B74_LIBRARY:-0}" != 1 ]] || return 0
 snapshot
 checkRehearsalEvidence
 checkSql

@@ -25,8 +25,10 @@ both populated clones and exact source artifacts. B7.4a narrow-migrator grant
 transition and clone-only migration002 are approved for operator execution on both
 platforms; [four numbered scripts](Phase1.2B74a.md) are prepared with offline mocks.
 B7.4a all four stages passed on Linux and Windows (owner-reported, 2026-11-17),
-preserving original data/history in both schema2 clones. Nothing executed by the agent. Runtime-role rehearsal, development upgrade, GUI and schema2 backup/
-restore remain pending and separately gated.
+preserving original data/history in both schema2 clones. Nothing executed by the agent. B7.4b runtime-role rehearsal is approved for owner execution using
+[three numbered scripts](Phase1.2B74b.md); Linux all three stages passed
+(owner-reported, 2026-11-17), Windows B7.4b remains pending. Development
+upgrade, GUI and schema2 backup/restore remain separately gated.
 Phase 1.2 is not accepted.** See the
 [scripted Windows sequence](WindowsPhase1.1.md). Live provisioning, grants and
 migrations remain behind their specific approval checkpoints. Phase 0.1 is accepted on owner

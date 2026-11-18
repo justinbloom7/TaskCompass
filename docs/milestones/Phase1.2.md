@@ -2,7 +2,7 @@
 
 # Phase 1.2 — Organizational Management
 
-**Status: Stage 1B isolated integration, B7.1 read-only development preflight, B7.2 populated schema-1 capture/private review and B7.3 populated restore/full preservation checks passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported, 2026-11-17). All exact source snapshots/evidence are retained; both populated rehearsal clones are now schema2. B7.4a narrow-migrator grant transition and clone-only migration002 approved for operator execution on both platforms (2026-11-17); all four stages passed on Linux and Windows (owner-reported, 2026-11-17). No live database procedure performed by agent. Runtime-role rehearsal, development upgrade, GUI/restart and schema2 backup/restore remain pending and separately gated. Phase 1.2 is not accepted.**
+**Status: Stage 1B isolated integration, B7.1 read-only development preflight, B7.2 populated schema-1 capture/private review and B7.3 populated restore/full preservation checks passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported, 2026-11-17). All exact source snapshots/evidence are retained; both populated rehearsal clones are now schema2. B7.4a narrow-migrator grant transition and clone-only migration002 approved for operator execution on both platforms (2026-11-17); all four stages passed on Linux and Windows (owner-reported, 2026-11-17). No live database procedure performed by agent. B7.4b runtime-role rehearsal approved for operator execution on both platforms; Linux all three stages passed (owner-reported, 2026-11-17); Windows B7.4b remains pending. Development upgrade, GUI/restart and schema2 backup/restore remain separately gated. Phase 1.2 is not accepted.**
 Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
 Only this document and the roadmap were changed by Step A. Its designs/SQL were
 proposals. Step A itself authorized no SQL; the dated Step B reports below record
@@ -4945,3 +4945,239 @@ databases or accounts accessed or modified by agent. Build/CTest not repeated fo
 this documentation-only report; prior actual offline results remain preserved.
 Markdown references/fences and `git diff --check` are the reporting validation.
 No commit, push, merge or tag.
+
+## 2026-11-17 — Request to continue to B7.5: prerequisite review
+
+Owner requested continuing to B7.5. Reviewed the B7.4b/B7.5 procedures, exact
+rehearsal-runtime grants and rollback-only probe. Both B7.4a migration rehearsals
+passed, but no B7.4b runtime-equivalent role/probe result has been reported.
+The approved review package explicitly requires both narrow migration and runtime
+rehearsals before development upgrade. The request to continue does not explicitly
+waive that prerequisite or approve the separately gated clone privilege transition.
+No live SQL, grants, migration or private artifact access occurred during this review.
+B7.5 development execution is not ready until B7.4b passes on both servers.
+
+### Approval Requested — B7.4b prerequisite, operator execution on both clones
+
+Approve only the existing populated schema2 `taskcompass_phase12_test` clones on
+feledria/MariaDB10.5.29 and feldria-w10/MariaDB13.0.2, using the unchanged exact
+[rehearsal-runtime-grants.sql](../../scripts/phase12/b7/rehearsal-runtime-grants.sql)
+and [runtime-probe.sql](../../scripts/phase12/b7/runtime-probe.sql) documented in
+[B7.4b](../Phase1.2B7.md#b74b-runtime-role).
+
+Before the grant transition, freshly verify B7.4a sealed evidence, schema2/UUID,
+all legacy data and exact narrow migration privileges. Remove only the reviewed
+migration/schema privileges and establish the exact19 individual runtime table
+privileges, with no schema/global rights, roles or grant option. Capture all nine
+tables, perform Qt read verification and the reviewed rollback-only DML probe,
+then require identical before/after nine-table exports, four UPDATE counts1 and
+six probe-row counts0. No account/password changes, GUI, development changes,
+reset or cleanup. Prepare numbered, offline-mock-tested operator scripts before
+execution; agent must not execute live procedures on owner's behalf.
+
+Grant changes are not atomic. Stop on any unexpected result or uncertain/partial
+operation; retain the clone and all receipts/exports. No automatic retry, reset,
+repair, resume or privilege broadening. The probe uses one new InnoDB transaction
+with explicit ROLLBACK and no COMMIT/DDL; disconnect on failure rolls back its
+uncommitted DML, but any uncertain outcome requires review and comparison rather
+than an assumed pass. Recovery grant changes or restoration require separate
+exact-state approval. Preserve Phase1.1 evidence and both development databases.
+
+This entry records the prerequisite and concrete approval scope; it does not
+execute or authorize the request on the owner's behalf. Existing exact B7.5 SQL
+remains prepared in the review package for later host/artifact-specific approval.
+Only the milestone document changed. Markdown references/fences and
+`git diff --check` checked; application tests not rerun for documentation-only work.
+No commit/push/merge/tag.
+
+## 2026-11-17 — B7.4b approved; runtime rehearsal operator scripts prepared
+
+### Approval decision and current scope
+
+Owner explicitly approved the preceding B7.4b request, both populated schema2
+`taskcompass_phase12_test` clones only. This authorizes the exact reviewed
+runtime grant transition and rollback-only probe through operator execution.
+Source scripts/tests/documentation are prepared below; **live B7.4b not attempted
+by agent / pending owner results**. B7.5 development migration, B7.6 runtime dev
+changes, GUI writes, recovery/reset and Phase1.3 remain separately gated.
+Both successful B7.4a clones and all existing evidence must be preserved.
+
+### Files and implementation
+
+- Added `scripts/phase12/b74b/01-preflight.sh`, `02-runtime-grants.sh`, `03-probe.sh`
+  and `run.sh`.
+- Extended `scripts/phase12/b74a/run.sh` with definition-only reuse for B7.4b and
+  an exact runtime-role metadata policy. Existing B7.4a actions remain unchanged;
+  the definition-only path executes no database operation. Reuses pinned platform,
+  snapshot/UUID, credential, native administrator, manifest and metadata guards
+  rather than duplicating that infrastructure.
+- Added `tests/Phase12RuntimeRehearsalScripts.test.sh`; extended existing
+  `tests/Phase12MigrationRehearsalScripts.test.sh` fixture-only clients/factory
+  with runtime grants, probe results and failure modes. Registered the new test
+  in `CMakeLists.txt` using existing Bash/Python dependencies and finite timeout.
+- Added [operator guide](../Phase1.2B74b.md), updated current pointers in Roadmap,
+  TestingPhase1.2 and this milestone. No production C++/schema/migration/diagram
+  or reviewed SQL changes. No dependencies installed.
+
+Before mutation the scripts verify the original pinned B7.2/B7.3 snapshot evidence
+and the complete eight-file B7.4a preservation seal. Reject malformed/duplicate/
+linked/unexpected manifest paths and incorrect receipt contents. Source and built
+migration previews must match001/002. Fresh schema2/UUID verification plus current
+legacy data, raw DDL, journal/postconditions and health output must match the sealed
+B7.4a outputs; exact server/account/selected database/engine/encoding/session and
+privilege metadata checks remain mandatory. No ordinary integration tests run.
+
+Stage01 validates the narrow migration role only. Stage02 captures all nine
+schema2 tables before the exact grant transition, revalidates baseline after root
+authentication, writes an attempt receipt, executes only the approved grant file,
+then checks exact19 runtime table rights/no schema rights, Qt read verification
+and unchanged full data before recording success. Stage03 requires the sealed
+grant receipts/full baseline; rechecks runtime metadata and data, writes an attempt
+receipt before the single probe session, then requires four UPDATE counts1 and six
+post-ROLLBACK row counts0. Both nine-table exports must match byte-for-byte, and
+schema/legacy/journal/health verification repeats before success/sealing.
+
+Reviewed SQL is unchanged and pinned:
+
+- `rehearsal-runtime-grants.sql`:
+  `9af378bc61c18a87bf76bb03f9472fc149ed28ec2914f74eac86ee727937bb7e`.
+- `runtime-probe.sql`:
+  `0fa9b45a4f14dc9ffb2063915e0d5e5d35f95015ed64beaa2442c36dcc718417`.
+
+Exact runtime matrix: Task/Pillar/Project/Objective SELECT+INSERT+UPDATE;
+CommandRecord/LocalChange SELECT+INSERT; Dataset/SchemaMigration/MigrationAttempt
+SELECT. No schema/global DML/DDL, DROP/DELETE, roles, grant option, new account,
+password/authentication change, or development database access.
+
+### Evidence, failure and recovery
+
+All new files are private and noclobber: `b74b-before-grants.hex.tsv`,
+`b74b-grants-attempt.txt`, `b74b-grants-success.txt`, `b74b-grants.sha256`,
+`rehearsal-before-probe.hex.tsv`, `rehearsal-after-probe.hex.tsv`,
+`b74b-probe-result.tsv`, `b74b-probe-attempt.txt`, `b74b-probe-success.txt`,
+`b74b-probe.sha256`. Receipts bind original snapshot, migration and both runtime
+SQL digests; attempt markers prevent replay of interrupted/failed operations.
+Existing evidence is not replaced. TaskCompass test credentials remain memory-only
+with three authentication-only attempts; administrator password stays in the native
+client (Linux sudo/socket, Windows native password/TCP). No TLS changes. Native
+sessions explicitly disable automatic reconnect and do not use --force.
+
+Grant failure can leave partial rights; stop and preserve state. Probe DML is one
+new InnoDB transaction with explicit ROLLBACK/no COMMIT/DDL. Disconnect rolls back
+uncommitted DML but does not establish an acceptance result. Unexpected counts,
+connection loss or data drift means stop/review, no auto retry/resume/reset/repair,
+privilege broadening or restoration. Separate exact-state approval is required for
+recovery. Do not rerun disposable tests against these populated clones.
+
+### Actual offline validation and limitations
+
+```bash
+TASKCOMPASS_TEST_PYTHON=python3 bash tests/Phase12RuntimeRehearsalScripts.test.sh
+cmake --build build --parallel 2
+ctest --test-dir build --output-on-failure -E '^(MariaDbIntegrationTests|OrganizationIntegrationTests)$'
+sha256sum --check scripts/phase12/b7/ReviewChecksums.sha256
+```
+
+Direct new-script mocks passed Linux and Windows positive flows and negative
+partial/extra grants, changed baseline, failed probe, wrong counts and nine-table
+data drift. Missing approval/help previews do not mutate; mutation replay is
+rejected. Failures preserve attempt markers without success receipts. No test
+failure was observed in this preparation run.
+
+Build succeeded. Full offline CTest **20/20 passed**, zero failures, 55.25 seconds;
+new runtime test28.20 seconds and existing migration rehearsal15.14 seconds.
+Both live integration suites explicitly excluded. All20 reviewed-package checksum
+entries passed. Phase1.1 milestone and both migration file hashes remained exactly
+unchanged. Ordinary tests used fake clients and temporary fixture snapshots only.
+Native Windows execution of new scripts and live MariaDB B7.4b are not claimed.
+No private backup accessed and no live SQL/grant/probe executed by agent.
+
+### Operator steps and remaining gate
+
+On each platform, from repository-root Bash (Windows UCRT64), close all writers
+and run one command at a time, stopping on any error:
+
+```bash
+scripts/phase12/b74b/01-preflight.sh --approved
+scripts/phase12/b74b/02-runtime-grants.sh --approved
+scripts/phase12/b74b/03-probe.sh --approved
+```
+
+Enter that platform's `taskcompass_phase12_test` password. Expected outputs:
+fresh schema2/narrow baseline PASS; exact19 runtime privileges and unchanged data
+PASS; rollback-only probe/all-nine-tables-unchanged PASS. Preserve outputs/clones.
+No repeat approval for this exact B7.4b scope is needed. Report both results before
+preparing the concrete B7.5 host/snapshot/grant/migration approval checkpoint.
+The operator guide contains exact confirmation phrases and recovery limitations.
+No commit/push/merge/tag.
+
+Final reporting checks passed: Markdown local references/fenced blocks, individual
+`bash -n` on all new/modified shell files, and `git diff --check`. No unresolved
+architecture changes or scope conflicts were introduced.
+
+## 2026-11-17 — Linux B7.4b runtime-role rehearsal passed (owner-reported)
+
+### Initial failure and owner service action
+
+Owner's first `01-preflight.sh --approved` validated retained evidence but stopped
+at the read-only login/identity probe:
+
+```text
+STOP: Login/identity check for taskcompass_phase12_test failed for a reason other than a confirmed password rejection; not retried.
+```
+
+No grant or DML stage was reached. Output does not include the native failure code,
+so the precise initial connection error is not independently established. Owner
+then ran the following OS service commands, after which preflight succeeded:
+
+```bash
+sudo systemctl start mariadb
+sudo systemctl enable mariadb
+```
+
+Enable reported creation of mysql/mysqld/mariadb service symlinks. These were
+owner-executed service changes, not agent actions; no account/password/grant repair
+or automatic retry occurred. Starting the server resolved the observed inability
+to connect. Preserve this initial failed observation rather than treating it as a
+password rejection or a successful first attempt.
+
+### Successful owner-executed sequence
+
+```bash
+scripts/phase12/b74b/01-preflight.sh --approved
+scripts/phase12/b74b/02-runtime-grants.sh --approved
+scripts/phase12/b74b/03-probe.sh --approved
+```
+
+Target: `taskcompass_phase12_test`, feledria/MariaDB10.5.29, dataset
+`21be9da7-b767-4578-b972-cc9a35122ddb`. All subsequent stages passed:
+
+- Preflight validated original B7.2/B7.3 artifacts and B7.4a seal, fresh schema2/
+  UUID and exact narrow privileges with no unexpected authority/sessions.
+- Runtime transition revalidated the baseline before mutation and verified
+  `exact19 runtime table privileges; no schema rights; schema2/data unchanged`.
+- Probe verified exact runtime metadata, schema2/UUID and original baseline;
+  the scripted result checks and full nine-table before/after equality passed.
+  All five final probe exports/receipts reported checksum OK. Final output:
+  `PASS: B7.4b runtime verification and rollback-only probe; all nine tables unchanged.`
+
+These are owner-reported live results, not agent-executed queries or independent
+artifact inspection. The probe script requires four UPDATE counts1 and six
+post-ROLLBACK row counts0 before its reported PASS; individual counts were retained
+in the private result file, not displayed in this transcript.
+
+### Current state, remaining work and reporting validation
+
+Linux populated schema2 clone now has the reviewed runtime-equivalent privileges.
+Preserve it and all B7.4b receipts/exports in the existing private directory
+`/home/justin/temp/TaskCompassBackups/Phase1.2-schema1-linux-20261117-013703`.
+Do not rerun its grant/probe stages or disposable reset tests. Windows B7.4b remains
+approved but pending owner results. B7.5 still requires both platform rehearsals
+and separate concrete development approval; GUI acceptance/Phase1.3 are not started.
+
+Modified only this milestone, Roadmap and TestingPhase1.2 current pointers.
+Historical reports preserved. No application/SQL/script/private artifact/database
+changes or live operations by agent. No new approval requested in this entry.
+Build/tests not repeated for documentation-only reporting; prior 20/20 offline
+results remain preserved. Markdown reference/fence and `git diff --check` validation
+performed for this update. No commit/push/merge/tag.

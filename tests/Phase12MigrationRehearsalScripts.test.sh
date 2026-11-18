@@ -36,6 +36,15 @@ if [[ " $* " == *' --user=root '* ]]; then
          fi
          if [[ "$(cat "$MOCK_ROLE")" == broad ]]; then
             for right in SELECT INSERT UPDATE CREATE DROP ALTER; do printf 'RIGHT\ttaskcompass\\_phase12\\_test\t%s\tNO\n' "$right"; done
+         elif [[ "$(cat "$MOCK_ROLE")" == runtime || "$(cat "$MOCK_ROLE")" == runtime-extra ]]; then
+            for name in task pillar project objective; do
+               for right in SELECT INSERT UPDATE; do printf 'TABLE_RIGHT\ttaskcompass_phase12_test\t%s\t%s\tNO\n' "$name" "$right"; done
+            done
+            for name in commandrecord localchange; do
+               for right in SELECT INSERT; do printf 'TABLE_RIGHT\ttaskcompass_phase12_test\t%s\t%s\tNO\n' "$name" "$right"; done
+            done
+            for name in dataset schemamigration migrationattempt; do printf 'TABLE_RIGHT\ttaskcompass_phase12_test\t%s\tSELECT\tNO\n' "$name"; done
+            [[ "$(cat "$MOCK_ROLE")" != runtime-extra ]] || printf 'RIGHT\ttaskcompass\\_phase12\\_test\tSELECT\tNO\n'
          else
             printf 'RIGHT\ttaskcompass\\_phase12\\_test\tSELECT\tNO\n'
             for name in pillar project objective; do printf 'TABLE_RIGHT\ttaskcompass_phase12_test\t%s\tCREATE\tNO\n' "$name"; done
@@ -50,6 +59,11 @@ if [[ " $* " == *' --user=root '* ]]; then
          printf 'narrow\n' > "$MOCK_ROLE"
          [[ "${MOCK_GRANT_FAIL:-0}" != 1 ]] || exit 1
          [[ "${MOCK_EXTRA_GRANT:-0}" != 1 ]] || printf 'extra\n' > "$MOCK_ROLE"
+      elif [[ "$buffer" == *'REVOKE CREATE ON taskcompass_phase12_test.Pillar'* ]]; then
+         printf 'runtime-grant\n' >> "$MOCK_DIRECTORY/calls"
+         printf 'runtime\n' > "$MOCK_ROLE"
+         [[ "${MOCK_RUNTIME_GRANT_FAIL:-0}" != 1 ]] || exit 1
+         [[ "${MOCK_RUNTIME_EXTRA:-0}" != 1 ]] || printf 'runtime-extra\n' > "$MOCK_ROLE"
       elif [[ "$buffer" == *'SHOW GRANTS FOR PUBLIC;'* ]]; then
          if [[ "${MOCK_PUBLIC_UNSAFE:-0}" == 1 ]]; then printf 'GRANT INSERT ON `taskcompass%%`.* TO PUBLIC\n'
          else printf 'GRANT ALL PRIVILEGES ON `test\\_%%`.* TO PUBLIC\n'; fi
@@ -62,6 +76,16 @@ fi
 [[ " $* " == *' --user=taskcompass_phase12_test '* && "$MYSQL_PWD" == "$MOCK_SECRET" ]]
 sql=$(cat)
 case "$sql" in
+   *'START TRANSACTION;'*)
+      [[ "$(cat "$MOCK_ROLE")" == runtime && "$sql" == *'ROLLBACK;'* && "$sql" != *'COMMIT;'* ]]
+      printf 'probe\n' >> "$MOCK_DIRECTORY/calls"
+      [[ "${MOCK_PROBE_FAIL:-0}" != 1 ]] || exit 1
+      printf '%s\n' "${MOCK_PROBE_COUNT:-1}" 1 1 1
+      printf 'Pillar\t0\nProject\t0\nObjective\t0\nTask\t0\nCommandRecord\t0\nLocalChange\t0\n'
+      [[ "${MOCK_PROBE_DRIFT:-0}" != 1 ]] || touch "$MOCK_DIRECTORY/probe-drift" ;;
+   *"'COUNT:MigrationAttempt'"*)
+      printf 'fixture-nine-tables\n'
+      [[ ! -e "$MOCK_DIRECTORY/probe-drift" ]] || printf 'drift\n' ;;
    'SELECT DATABASE(),CURRENT_USER();') printf 'taskcompass_phase12_test\ttaskcompass_phase12_test@127.0.0.1\n' ;;
    *"'COUNT:SchemaMigration'"*)
       printf 'fixture-legacy\n'
@@ -116,6 +140,7 @@ setup() {
 }
 grantsInput() { printf 'NARROW GRANTS taskcompass_phase12_test\nWRITERS CLOSED; BASELINE UNCHANGED\n%s\n' "$MOCK_SECRET"; }
 migrateInput() { printf 'MIGRATE REHEARSAL taskcompass_phase12_test TO 2\nWRITERS CLOSED; BASELINE UNCHANGED\n%s\n' "$MOCK_SECRET"; }
+if [[ "${TASKCOMPASS_B74_FIXTURES_ONLY:-0}" == 1 ]]; then return 0; fi
 "$TASKCOMPASS_TEST_PYTHON" - "$helperDirectory/preflight.sql" <<'READONLY'
 import pathlib, re, sys
 source = re.sub(r'^--.*$', '', pathlib.Path(sys.argv[1]).read_text(), flags=re.M)

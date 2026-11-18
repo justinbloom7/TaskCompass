@@ -74,6 +74,9 @@ if(BUILD_TESTING)
          add_test(NAME Phase12RestoreScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12RestoreScripts.test.sh")
          set_tests_properties(Phase12RestoreScripts PROPERTIES TIMEOUT ${TASKCOMPASS_PHASE11_SCRIPT_TIMEOUT}
                               ENVIRONMENT "TASKCOMPASS_TEST_PYTHON=${Python3_EXECUTABLE}")
+         add_test(NAME Phase12RuntimeRehearsalScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12RuntimeRehearsalScripts.test.sh")
+         set_tests_properties(Phase12RuntimeRehearsalScripts PROPERTIES TIMEOUT 360
+                              ENVIRONMENT "TASKCOMPASS_TEST_PYTHON=${Python3_EXECUTABLE}")
          add_test(NAME Phase12MigrationRehearsalScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12MigrationRehearsalScripts.test.sh")
          # Many one-shot positive/negative stages, including streamed admin sessions.
          if(WIN32)
