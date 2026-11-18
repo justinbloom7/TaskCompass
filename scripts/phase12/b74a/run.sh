@@ -90,9 +90,9 @@ snapshot() {
    [[ "${digest%% *}" == "$expectedDigest" ]] || fail 'Dump does not match the exact owner-approved platform hash.'
 }
 confirm() {
-   local response=''
-   IFS= read -r -p "Type $1: " response || fail 'Cancelled.'
-   [[ "$response" == "$1" ]] || fail 'Confirmation mismatch.'
+   # Owner requests no typed approval phrases; invocation supplies operator intent.
+   # This notice consumes no stdin. Automatic identity/evidence guards still apply.
+   printf 'Required precondition/operation: %s\n' "$1"
 }
 readonly MIGRATION_1=bb901d7580398893b5c04ee263f813b9d05873eb4bae08e0daf377faf73b0ea0
 readonly MIGRATION_2=7de311935843e4fc04cbca74d025d9f38986a4154d70bdd29b35a2820f87b736

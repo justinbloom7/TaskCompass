@@ -108,6 +108,16 @@ given for the specific action and scope; do not broaden it. Prepare the concrete
 SQL/procedure and complete safe, authorized source/documentation work before
 requesting the final approval needed for execution.
 
+## Operator interaction
+
+Owner preference: development scripts must not require typing approval phrases,
+restating known targets, or redundant yes/no confirmations. Keep password prompts
+and requests for genuinely missing information only. Show operations and required
+preconditions as notices; preserve automatic target/identity/evidence checks and
+interrupted-operation guards. Existing explicit command-line opt-in flags can
+remain. Do not silently replay a potentially partial database operation after an
+interruption; inspect its actual stage/evidence before proposing recovery.
+
 ## Database safety
 
 - Access only explicitly authorized TaskCompass databases. Never access or modify

@@ -138,8 +138,8 @@ setup() {
    cp "$snapshot/schema1.ddl.txt" "$snapshot/rehearsal1.ddl.txt"
    (cd -- "$snapshot" && sha256sum rehearsal1.hex.tsv rehearsal1.ddl.txt b73-import-attempt.txt b73-import-success.txt > b73-comparison.sha256)
 }
-grantsInput() { printf 'NARROW GRANTS taskcompass_phase12_test\nWRITERS CLOSED; BASELINE UNCHANGED\n%s\n' "$MOCK_SECRET"; }
-migrateInput() { printf 'MIGRATE REHEARSAL taskcompass_phase12_test TO 2\nWRITERS CLOSED; BASELINE UNCHANGED\n%s\n' "$MOCK_SECRET"; }
+grantsInput() { printf '%s\n' "$MOCK_SECRET"; }
+migrateInput() { printf '%s\n' "$MOCK_SECRET"; }
 if [[ "${TASKCOMPASS_B74_FIXTURES_ONLY:-0}" == 1 ]]; then return 0; fi
 "$TASKCOMPASS_TEST_PYTHON" - "$helperDirectory/preflight.sql" <<'READONLY'
 import pathlib, re, sys

@@ -53,14 +53,14 @@ No dev database or account is accessed or changed.
    equality of all nine tables and repeat Qt/schema/legacy/journal/health checks.
    Final PASS means the runtime SQL permission rehearsal passed, not GUI acceptance.
 
-Stage02 confirmations:
+Stage02 prints these notices without requiring input:
 
 ```text
 RUNTIME GRANTS taskcompass_phase12_test
 WRITERS CLOSED; BASELINE UNCHANGED
 ```
 
-Stage03 confirmations:
+Stage03 prints these notices without requiring input:
 
 ```text
 ROLLBACK PROBE taskcompass_phase12_test

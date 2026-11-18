@@ -5181,3 +5181,65 @@ changes or live operations by agent. No new approval requested in this entry.
 Build/tests not repeated for documentation-only reporting; prior 20/20 offline
 results remain preserved. Markdown reference/fence and `git diff --check` validation
 performed for this update. No commit/push/merge/tag.
+
+## 2026-11-17 — Remove typed confirmation phrases; Windows interruption reviewed
+
+Owner requested no more typed approval phrases or redundant confirmations during
+development, keeping password prompts and genuinely required information only.
+Recorded this durable operator preference in AGENTS.md. Updated the shared B7.4a/
+B7.4b `confirm()` helper to print operation/precondition notices without reading
+stdin. Existing --approved flags, fixed target/SQL pins, fresh metadata/data guards,
+private evidence checks and no-replay attempt markers remain intact. This change
+executes no live procedure and does not implicitly resume partial mutations.
+
+Files changed: AGENTS.md; `scripts/phase12/b74a/run.sh` (shared by B7.4b);
+`tests/Phase12MigrationRehearsalScripts.test.sh` and
+`tests/Phase12RuntimeRehearsalScripts.test.sh` (now supply passwords only);
+`docs/Phase1.2B74a.md`, `docs/Phase1.2B74b.md` and this milestone. Earlier milestone
+observations of typed prompts are historical. Earlier standalone B7.2/B7.3 and
+Phase1.1 scripts were not refactored as part of this active B7.4 workflow change.
+
+### Owner-reported Windows preflight and Ctrl+C location
+
+Windows B7.4b stage01 passed on feldria-w10/MariaDB13.0.2, dataset
+`457bb52b-fea4-4347-9c47-675c6b035c90`, exact narrow migration privileges and
+unchanged sealed schema2 evidence. Authentication rejected attempt1 and accepted
+attempt2 via the read-only probe. Stage02 was then interrupted at:
+
+```text
+Type WRITERS CLOSED; BASELINE UNCHANGED:
+```
+
+Inspected stage02 source order: both confirmation reads precede `baseline2`,
+`adminStart`, the nine-table export and `b74b-grants-attempt.txt`. Therefore this
+reported interruption performed no stage02 live connection, export, receipt write
+or grant change; nothing needs database repair or cleanup. Stage01 was read-only.
+No claim is made about another unreported attempt.
+
+After updating the repository on Windows, resume at the same stage02 command and
+then stage03, with writers closed; no preflight rerun is necessary because stage02
+freshly revalidates all baseline/identity/grant prerequisites itself:
+
+```bash
+scripts/phase12/b74b/02-runtime-grants.sh --approved
+scripts/phase12/b74b/03-probe.sh --approved
+```
+
+These updated scripts no longer read approval phrases. Enter only requested
+passwords. Existing unexpected attempt markers still stop rather than being deleted
+or bypassed. Windows runtime grants/probe remain pending results. Linux B7.4b
+success is preserved; do not rerun its mutation stages. No agent live operation,
+private artifact access, SQL, schema, migration or backup change occurred.
+
+### Actual validation
+
+```bash
+cmake --build build --parallel 2
+ctest --test-dir build -R '^Phase12(Migration|Runtime)RehearsalScripts$' --output-on-failure
+```
+
+Build reported no work needed. Both relevant offline suites passed (2/2, zero
+failures, 42.58 seconds), exercising password-only input on mocked Linux/Windows
+flows while preserving approval flags and automatic refusal checks. Markdown
+references/fences, shell syntax and `git diff --check` passed. No live/native Windows
+run by agent, dependencies installed or commit/push/merge/tag.

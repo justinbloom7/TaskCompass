@@ -11,8 +11,8 @@ prepare() {
    result=$(printf '%s\n' "$MOCK_SECRET" | run 04-preservation --approved 2>&1)
    helperDirectory="$repositoryDirectory/scripts/phase12/b74b"
 }
-runtimeInput() { printf 'RUNTIME GRANTS taskcompass_phase12_test\nWRITERS CLOSED; BASELINE UNCHANGED\n%s\n' "$MOCK_SECRET"; }
-probeInput() { printf 'ROLLBACK PROBE taskcompass_phase12_test\nWRITERS CLOSED; BASELINE UNCHANGED\n%s\n' "$MOCK_SECRET"; }
+runtimeInput() { printf '%s\n' "$MOCK_SECRET"; }
+probeInput() { printf '%s\n' "$MOCK_SECRET"; }
 for platform in linux windows; do
    unset MSYSTEM
    [[ "$platform" != windows ]] || export MSYSTEM=UCRT64

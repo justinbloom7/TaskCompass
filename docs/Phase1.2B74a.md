@@ -69,14 +69,14 @@ following the privilege change. TLS settings are unchanged.
    violations for all59 CHECK/FK health queries. Seal new exports and receipts.
    Expected final PASS: schema2 clone with original data/history preserved.
 
-Exact confirmation phrases for stage02:
+Stage02 now prints these notices without asking for typed confirmation:
 
 ```text
 NARROW GRANTS taskcompass_phase12_test
 WRITERS CLOSED; BASELINE UNCHANGED
 ```
 
-For stage03:
+Stage03 notices:
 
 ```text
 MIGRATE REHEARSAL taskcompass_phase12_test TO 2
