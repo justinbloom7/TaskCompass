@@ -16,8 +16,8 @@ B7.3 populated restore/schema1/full preservation passed on both platforms
 (owner-reported); both populated clones must be retained. B7.4a narrow-migrator
 grant/clone migration is approved for owner execution using
 [four numbered scripts](Phase1.2B74a.md); all four stages passed on Linux and Windows (owner-reported, 2026-11-17). B7.4b runtime-role rehearsal is approved for owner execution using
-[three numbered scripts](Phase1.2B74b.md); Linux all three stages passed
-(owner-reported, 2026-11-17), Windows B7.4b remains pending.
+[three numbered scripts](Phase1.2B74b.md); all three stages passed on Linux and Windows
+(owner-reported, 2026-11-17).
 No live procedure was performed by the agent. Development upgrades and subsequent
 privilege/GUI/backup gates remain pending and require separate approval.** Do not execute
 steps 3 or 4 without separate approval for that step, platform and target. None of

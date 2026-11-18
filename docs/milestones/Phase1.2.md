@@ -2,7 +2,7 @@
 
 # Phase 1.2 — Organizational Management
 
-**Status: Stage 1B isolated integration, B7.1 read-only development preflight, B7.2 populated schema-1 capture/private review and B7.3 populated restore/full preservation checks passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported, 2026-11-17). All exact source snapshots/evidence are retained; both populated rehearsal clones are now schema2. B7.4a narrow-migrator grant transition and clone-only migration002 approved for operator execution on both platforms (2026-11-17); all four stages passed on Linux and Windows (owner-reported, 2026-11-17). No live database procedure performed by agent. B7.4b runtime-role rehearsal approved for operator execution on both platforms; Linux all three stages passed (owner-reported, 2026-11-17); Windows B7.4b remains pending. Development upgrade, GUI/restart and schema2 backup/restore remain separately gated. Phase 1.2 is not accepted.**
+**Status: Stage 1B isolated integration, B7.1 read-only development preflight, B7.2 populated schema-1 capture/private review and B7.3 populated restore/full preservation checks passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported, 2026-11-17). All exact source snapshots/evidence are retained; both populated rehearsal clones are now schema2. B7.4a narrow-migrator grant transition and clone-only migration002 approved for operator execution on both platforms (2026-11-17); all four stages passed on Linux and Windows (owner-reported, 2026-11-17). No live database procedure performed by agent. B7.4b runtime-role rehearsal approved for operator execution on both platforms; all three stages passed on Linux and Windows (owner-reported, 2026-11-17). Development upgrade, GUI/restart and schema2 backup/restore remain separately gated. Phase 1.2 is not accepted.**
 Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
 Only this document and the roadmap were changed by Step A. Its designs/SQL were
 proposals. Step A itself authorized no SQL; the dated Step B reports below record
@@ -5243,3 +5243,61 @@ failures, 42.58 seconds), exercising password-only input on mocked Linux/Windows
 flows while preserving approval flags and automatic refusal checks. Markdown
 references/fences, shell syntax and `git diff --check` passed. No live/native Windows
 run by agent, dependencies installed or commit/push/merge/tag.
+
+## 2026-11-17 — Windows B7.4b passed; both runtime rehearsals complete
+
+Owner supplied successful Windows/UCRT64 results following the already reported
+stage01 preflight and reviewed pre-mutation interruption. Resumed with updated
+scripts that print notices instead of reading confirmation phrases:
+
+```bash
+scripts/phase12/b74b/02-runtime-grants.sh --approved
+scripts/phase12/b74b/03-probe.sh --approved
+```
+
+Target: `taskcompass_phase12_test` on feldria-w10/MariaDB13.0.2, dataset
+`457bb52b-fea4-4347-9c47-675c6b035c90`. These are owner-executed, owner-reported
+live results; agent did not connect or independently read private artifacts.
+
+Stage02 revalidated the exact sealed source/B7.3/B7.4a evidence and fresh schema2/
+UUID, all baseline values and narrow migration-role authority. After the exact
+reviewed transition, metadata verified runtime privileges with no unexpected
+authority/sessions. Qt verification and complete data comparisons passed:
+
+```text
+PASS: exact19 runtime table privileges; no schema rights; schema2/data unchanged. Probe still pending.
+```
+
+Stage03 verified sealed grant receipts, fresh schema2/UUID and runtime metadata,
+then performed the rollback-only probe. Both nine-table exports, result file and
+attempt/success receipts reported checksum OK. Scripted count checks (four UPDATE
+counts1, six post-ROLLBACK row counts0) passed; individual counts remain in the
+private result file, not displayed in this transcript. Final result:
+
+```text
+PASS: B7.4b runtime verification and rollback-only probe; all nine tables unchanged.
+```
+
+No failure occurred in these resumed stage02/03 runs. Password-option notices
+reported unchanged TLS settings. Preserve the prior authentication rejection and
+Ctrl+C observation in the earlier entries; this success does not erase them.
+Retain populated schema2/runtime-role clones and all B7.4b evidence on both
+platforms. Windows private evidence directory remains
+`/c/Users/justin/TaskCompassBackups/Phase1.2-schema1-windows-20261117-064917`.
+No reset or mutation-stage replay is needed.
+
+### Current gate and validation
+
+Both populated narrow-migration B7.4a and runtime-role B7.4b rehearsals have now
+passed on Linux/MariaDB10.5.29 and Windows/MariaDB13.0.2. The rehearsal prerequisite
+for B7.5 is satisfied. Development execution still requires fresh per-platform
+schema1/data/grant/backup verification and the exact reviewed B7.5 operations;
+these results alone do not migrate either development database. No B7.5 live action,
+GUI write or Phase1.3 work was performed by agent in this reporting update.
+
+Files changed: this milestone, Roadmap and TestingPhase1.2 current pointers.
+Historical evidence preserved; no source, SQL, scripts, private backups/exports,
+accounts or databases changed by agent. Build/CTest not repeated for this
+reporting-only change; previous actual offline results remain preserved.
+Markdown local references/fences and `git diff --check` validated. No commit,
+push, merge or tag.
