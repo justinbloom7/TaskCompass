@@ -2,8 +2,9 @@
 
 # Phase 1.2 B7.5 — Development upgrade operator package
 
-**Prepared and offline-tested; no live development execution authorized by this
-preparation request.** Approval/results are recorded in the
+**Linux and Windows B7.5 passed (owner-reported, 2026-11-17), including final
+privileges, original preservation and health verification. Preserve all evidence;
+do not rerun mutation/completion stages. No agent live execution.** Approval/results are recorded in the
 [milestone](milestones/Phase1.2.md). Both platforms passed B7.1–B7.4b according
 to owner reports; these rehearsal prerequisites are satisfied. Fresh development
 checks below must still pass. No completed rehearsal is rerun or modified.
@@ -237,8 +238,8 @@ or GUI. No migration retry is needed to gather these facts.
 
 **Current status:** owner reported successful verification-only completion and
 stage04 runtime transition/stage05 final verification on 2026-11-17. Linux B7.5 is
-verified; do not rerun its mutation/completion stages. Windows development approval
-is the next checkpoint; GUI acceptance remains separately gated. The original
+verified; do not rerun its mutation/completion stages. Windows development stages01–05 are approved for owner execution, with results
+pending; GUI acceptance remains separately gated. The original
 failure and reviewed completion procedure below are retained as history.
 
 The owner-reported inspection found all original data byte-identical (legacy SHA

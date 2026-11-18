@@ -32,8 +32,9 @@ preserving original data/history in both schema2 clones. Nothing executed by the
 (owner-reported, 2026-11-17), after the recorded implicit-index comparison correction.
 Linux runtime transition04 and final verification05 also passed (owner-reported,
 2026-11-17). Linux development upgrade/final privileges/preservation/health are
-verified; Windows development remains schema1 and separate approval is requested. Development
-upgrade, GUI and schema2 backup/restore remain separately gated.
+verified; Windows B7.5 stages01–05 also passed (owner-reported, 2026-11-17).
+Both development upgrades, final least-privilege grants, original preservation and
+health are verified; earlier authentication failures remain historical. GUI and schema2 backup/restore remain separately gated.
 Phase 1.2 is not accepted.** See the
 [scripted Windows sequence](WindowsPhase1.1.md). Live provisioning, grants and
 migrations remain behind their specific approval checkpoints. Phase 0.1 is accepted on owner

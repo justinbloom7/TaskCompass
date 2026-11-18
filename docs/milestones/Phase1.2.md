@@ -2,7 +2,7 @@
 
 # Phase 1.2 — Organizational Management
 
-**Status: Stage 1B isolated integration, B7.1 read-only development preflight, B7.2 populated schema-1 capture/private review and B7.3 populated restore/full preservation checks passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported, 2026-11-17). All exact source snapshots/evidence are retained; both populated rehearsal clones are now schema2. B7.4a narrow-migrator grant transition and clone-only migration002 approved for operator execution on both platforms (2026-11-17); all four stages passed on Linux and Windows (owner-reported, 2026-11-17). No live database procedure performed by agent. B7.4b runtime-role rehearsal approved for operator execution on both platforms; all three stages passed on Linux and Windows (owner-reported, 2026-11-17). Linux B7.5 stages01/02 and reviewed schema2 preservation completion passed (owner-reported, 2026-11-17), following the recorded implicit FK-index comparison correction. Linux runtime transition04 and final verification05 passed (owner-reported, 2026-11-17): schema2, preserved original data and final least-privilege grants. Windows development remains schema1; separate Windows B7.5 approval requested. GUI/restart and schema2 backup/restore remain separately gated. Phase 1.2 is not accepted.**
+**Status: Stage 1B isolated integration, B7.1 read-only development preflight, B7.2 populated schema-1 capture/private review and B7.3 populated restore/full preservation checks passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported, 2026-11-17). All exact source snapshots/evidence are retained; both populated rehearsal clones are now schema2. B7.4a narrow-migrator grant transition and clone-only migration002 approved for operator execution on both platforms (2026-11-17); all four stages passed on Linux and Windows (owner-reported, 2026-11-17). No live database procedure performed by agent. B7.4b runtime-role rehearsal approved for operator execution on both platforms; all three stages passed on Linux and Windows (owner-reported, 2026-11-17). Linux B7.5 stages01/02 and reviewed schema2 preservation completion passed (owner-reported, 2026-11-17), following the recorded implicit FK-index comparison correction. Linux runtime transition04 and final verification05 passed (owner-reported, 2026-11-17): schema2, preserved original data and final least-privilege grants. Windows B7.5 stages01–05 passed (owner-reported, 2026-11-17): schema2, original preservation, final least-privilege grants and health verified. Both development upgrades are verified; earlier authentication failures remain historical. GUI/restart and schema2 backup/restore remain separately gated. Phase 1.2 is not accepted.**
 Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
 Only this document and the roadmap were changed by Step A. Its designs/SQL were
 proposals. Step A itself authorized no SQL; the dated Step B reports below record
@@ -5990,3 +5990,236 @@ private artifact changed by agent; no live query/grant/migration/backup/restore/
 reset/cleanup performed by agent. Build/CTest not rerun because only owner evidence
 and approval documentation changed; previous actual 24/24 offline results preserved.
 Markdown references/fences and `git diff --check` validated. No commit/push/merge/tag.
+
+## 2026-11-17 — Windows B7.5 stages01–05 explicitly approved
+
+Owner replied "yes, I approve" to the preceding separate Windows upgrade request.
+Approval covers exactly the five prepared stages on feldria-w10/MariaDB13.0.2,
+taskcompass_dev@127.0.0.1:3306, existing dev/migrator/app accounts, dataset
+`457bb52b-fea4-4347-9c47-675c6b035c90`, pinned Windows snapshot SHA
+`6588eb9ebc30b63b36b33f2abbc4a0de9da31b252c41a3fd585b8b060073fe50`, and unchanged
+reviewed migration grants/002/runtime grants described in the request above.
+No broader privilege, target, recovery, restore, cleanup or GUI scope is inferred.
+
+Owner execution, one command at a time from updated repository-root UCRT64, with
+all writers closed and stopping immediately on unexpected results:
+
+```bash
+scripts/phase12/b75/01-preflight.sh --approved --platform windows
+scripts/phase12/b75/02-migration-grants.sh --approved --platform windows
+scripts/phase12/b75/03-migrate.sh --approved --platform windows
+scripts/phase12/b75/04-runtime-grants.sh --approved --platform windows
+scripts/phase12/b75/05-verify.sh --approved --platform windows
+```
+
+Enter the named Windows account passwords, which differ from Linux. No typed
+confirmation phrases. All fresh source backup/rehearsal/schema1/data/DDL/UUID/
+server/account/session checks must pass before mutation. Preserve failed/uncertain
+state and all attempts; no automatic retry/reset/repair/resume, marker deletion,
+restore or privilege broadening. The Linux-specific07 completion is not a Windows
+stage and must not be used as a generic workaround. Preserve Linux success,
+Phase1.1 artifacts and both populated rehearsal databases. No GUI or Phase1.3.
+
+Execution/results remain pending; latest verified Windows development state is
+schema1. Agent performed no SQL, grant, migration, private evidence access, cleanup
+or database operation. Updated only milestone/current Roadmap/TestingPhase1.2 and
+operator guide status pointers. Prior approval requests/results retained as history.
+Build/tests not repeated for documentation-only approval recording; previous actual
+24/24 offline results preserved. Markdown references/fences and `git diff --check`
+validated. No commit/push/merge/tag.
+
+## 2026-11-17 — Windows schema2 preservation passed; stage04 root login rejected
+
+### Owner-reported results
+
+Owner supplied successful outputs for:
+
+```bash
+scripts/phase12/b75/01-preflight.sh --approved --platform windows
+scripts/phase12/b75/02-migration-grants.sh --approved --platform windows
+scripts/phase12/b75/03-migrate.sh --approved --platform windows
+```
+
+On feldria-w10/MariaDB13.0.2, taskcompass_dev, dataset
+`457bb52b-fea4-4347-9c47-675c6b035c90`, preflight matched the complete schema1/
+backup/rehearsal/account/session baseline. Stage02 verified original then exact
+migration grants, unchanged original data and all five grant evidence entries.
+Stage03 ran002 once, independently verified schema2/same UUID and exact migration
+rights, passed legacy data/history and narrowly reviewed DDL comparisons, then
+postconditions/journal/health/full exports. All seven preservation entries reported
+checksum OK. Final output:
+
+```text
+PASS: dev schema2/UUID/journal verified; all original data/history preserved; runtime transition pending.
+```
+
+No Linux-specific07 completion was needed. The comparison message permits the
+reviewed alias/position difference but does not itself prove a raw Windows DDL
+difference; no Windows diff was supplied. No loss/corruption or migration failure
+is indicated in this sequence. Prior Linux evidence remains unchanged.
+
+### Stage04 failure location and safe manual rerun
+
+Owner then ran `04-runtime-grants.sh --approved --platform windows`. Prerequisite
+seals, schema2/UUID, original data/DDL/full-schema equality and app credential
+probe passed. Root native client rejected authentication:
+
+```text
+ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+STOP: Administrator command failed/connection lost; preserve any attempted transition.
+```
+
+Owner reports entering the wrong root password. Inspected exact source order:
+`adminStart; preflight75 migration 2` comes before the repeated baseline,
+`writeMarker b75-runtime-attempt.txt` and the GRANT/REVOKE file invocation.
+The reported1045 occurred during this first administrator metadata query, so no
+runtime grant SQL or runtime attempt marker was reached in this attempt. No
+runtime final-grant report/seal was written. The generic failure warning does not
+mean that a privilege transition actually began. Stages01–03 succeeded; the error
+is in stage04 only. No password change, account repair, schema repair or artifact
+cleanup is needed.
+
+Existing Windows stage04 approval remains valid. Manually rerunning04 is safe for
+this observed pre-mutation authentication failure; it is not replaying a partially
+applied grant. All automatic evidence/identity/privilege/session guards will run
+again and still reject unexpected existing attempts. With writers closed:
+
+```bash
+scripts/phase12/b75/04-runtime-grants.sh --approved --platform windows
+```
+
+Use the Windows MariaDB root password at the native administrator prompt. If04
+passes, run:
+
+```bash
+scripts/phase12/b75/05-verify.sh --approved --platform windows
+```
+
+Do not rerun stages01–03, delete markers or use07. On any new unexpected failure,
+stop and report rather than assuming the same pre-mutation state. Do not launch
+GUI or run backup/reset/recovery operations. Windows final privileges/verification
+remain pending; current verified Windows database is schema2 with temporary
+migration rights and original app9 runtime rights, based on the reported point of
+failure. No agent live operation or independent private-file inspection.
+
+### Reporting-only changes and checks
+
+Updated this milestone, Roadmap, TestingPhase1.2, DataModel's physical state and
+B7.5 guide pointer. No source/SQL/script, database/account or private artifact
+change by agent; no migration/grant/reset/backup/restore/cleanup executed by agent.
+Build/tests not repeated for documentation-only evidence and source-order review;
+prior actual24/24 offline results preserved. Markdown reference/fence checks and
+`git diff --check` validated. No commit/push/merge/tag.
+
+## 2026-11-17 — Windows runtime transition passed; final read-only root login rejected
+
+Owner reran the already approved Windows stage04. The first migrator credential
+probe rejected authentication; attempt2 succeeded. This was the bounded read-only
+login retry, not a failed migration or grant replay. Original snapshot/rehearsal/
+B7.5 seals, schema2/dataset `457bb52b-fea4-4347-9c47-675c6b035c90`, original data,
+reviewed DDL comparison and complete schema2 equality passed. Root authentication
+then succeeded and metadata verified the exact migration privilege state before
+GRANT/REVOKE. After the reviewed transition, final metadata, both Qt identities
+and unchanged data passed. Runtime attempt/success/final grant report checksums OK:
+
+```text
+PASS: final app19 rights; diagnostic/migrator SELECT-only; no data changes. Run stage05.
+```
+
+**Stage04 passed; do not rerun it.** Windows now has the reviewed final runtime
+matrix; temporary migrator privileges have been removed. No rollback/repair needed.
+
+Owner then ran the approved stage05. All prerequisite seals including runtime
+receipts passed, schema2/same UUID verified, original legacy/DDL and complete data
+comparisons passed. Native root authentication failed during read-only metadata:
+
+```text
+ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+```
+
+Inspected source order: stage05 performs baseline/full-data checks followed by
+adminStart/preflight75 final2. App verify, runtime preconnection rejection guard,
+final health/data export and success/seal come afterward. Thus this failure wrote
+no new stage05 export or completion receipt; stage05 has no database mutation SQL.
+The generic "preserve any attempted transition" message does not imply another
+runtime transition occurred. Preserve successful stage04 and all earlier evidence.
+
+Safe next command, writers closed, using the Windows MariaDB root password at the
+native administrator prompt (no new approval required):
+
+```bash
+scripts/phase12/b75/05-verify.sh --approved --platform windows
+```
+
+Rerun05 only; do not repeat stages01–04, use07, remove markers, change passwords or
+modify grants. Any different/unexpected failure still requires review. Windows
+final independent verification remains pending; Linux B7.5 success preserved.
+GUI acceptance, backup/restore and Phase1.3 remain separately gated.
+
+Owner-reported evidence only; no agent database/private-artifact access. Modified
+only this milestone and current pointers in Roadmap, TestingPhase1.2, DataModel and
+B7.5 guide. No scripts/SQL/application changes or agent live operations. Build/tests
+not repeated for documentation/source-order review; prior24/24 actual offline
+results preserved. Markdown references/fences and git diff --check validated.
+No commit/push/merge/tag.
+
+## 2026-11-17 — Windows final verification passed; B7.5 verified on both platforms
+
+Owner reran the approved read-only final command:
+
+```bash
+scripts/phase12/b75/05-verify.sh --approved --platform windows
+```
+
+On feldria-w10/MariaDB13.0.2, taskcompass_dev, the first two migrator credential
+probes rejected authentication; attempt3 succeeded. These were bounded read-only
+login attempts, not SQL mutation retries. Diagnostic and root authentication then
+succeeded, followed by app authentication. Preserve prior root-login failures as
+historical observations; no password/account/privilege repair was necessary.
+
+All original backup/rehearsal/B7.5 grant/preservation/runtime seals validated.
+Qt verified schema2 and unchanged dataset
+`457bb52b-fea4-4347-9c47-675c6b035c90` under migrator and app identities. Original
+legacy/DDL and complete schema2 data checks passed. Root metadata reported exact
+final account grants, no unexpected authority/active sessions. The scripted
+preconnection runtime --apply rejection, all59 zero health results and complete
+final export equality passed before receipt/seal. Final verification, health and
+export entries reported checksum OK:
+
+```text
+b75-verification-success.txt: OK
+b75-final-health.tsv: OK
+b75-final.hex.tsv: OK
+PASS: B7.5 development upgrade/final privileges/preservation/health verified on windows.
+```
+
+These are owner-reported live results, not agent database/private-artifact access.
+B7.5 (including the prepared former-B7.6 runtime transition) is now verified on
+Linux/MariaDB10.5.29 and Windows/MariaDB13.0.2. Both dev databases are schema2;
+original domain/history data and dataset identities preserved. Each diagnostic
+and migrator has schema SELECT-only; each runtime app has exactly19 reviewed table
+privileges and no schema/global DML/DDL. Temporary migration rights removed.
+
+Preserve all private backups, B7.5 exports/seals, the Linux reviewed completion/
+inspection evidence, both populated rehearsal databases and Phase1.1 historical
+artifacts/restored integration databases. No rerun of mutation/completion stages,
+reset or cleanup is needed. The script's generic final STOP wording does not
+revoke the separately recorded Windows authorization; it states that completion
+does not authorize a new platform/stage. Actual Windows stage05 passed.
+
+### Remaining work and reporting checks
+
+Next is preparation/review of B7.7 persistent GUI acceptance on both platforms,
+with identifiable QA entities rather than edits to pre-existing work. GUI writes
+are not yet authorized. Schema2 populated backup/isolated restore validation,
+review and final owner milestone acceptance remain pending. Phase1.2 is not
+accepted; Phase1.3 not started. No new approval requested or live operation
+performed in this reporting-only update.
+
+Changed only this milestone, Roadmap, TestingPhase1.2, DataModel's current physical
+status and B7.5 guide status pointer. Historical failures/decisions preserved.
+No application/source/SQL/script or private artifact changed by agent. No live
+query, grant, migration, backup/restore, reset/cleanup or dependency installation.
+Build/CTest not repeated for documentation-only evidence recording; prior actual
+24/24 offline results preserved. Markdown references/fences and git diff --check
+validated. No commit/push/merge/tag.

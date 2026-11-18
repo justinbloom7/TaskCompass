@@ -22,7 +22,9 @@ grant/clone migration is approved for owner execution using
 (owner-reported, 2026-11-17), after the recorded implicit-index comparison correction.
 Linux runtime transition04 and final verification05 also passed (owner-reported,
 2026-11-17). Linux development upgrade/final privileges/preservation/health are
-verified; Windows development remains schema1 and separate approval is requested.
+verified; Windows B7.5 stages01–05 also passed (owner-reported, 2026-11-17).
+Both development upgrades, final least-privilege grants, original preservation and
+health are verified; earlier authentication failures remain historical.
 No live procedure was performed by the agent. Development upgrades and subsequent
 privilege/GUI/backup gates remain pending and require separate approval.** Do not execute
 steps 3 or 4 without separate approval for that step, platform and target. None of
