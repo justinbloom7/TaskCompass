@@ -22,14 +22,14 @@ class EnvironmentReportTests(unittest.TestCase):
          destination.mkdir()
          first, changed = REPORT.saveReport({'version': '1'}, output, 'build', destination)
          self.assertEqual(changed, ['version'])
-         oldNotes = (output / 'BuildNotes.md').read_text()
+         oldNotes = (output / 'BuildNotes.md').read_text(encoding="utf-8")
          second, changed = REPORT.saveReport({'version': '1', 'server_evidence': 'new provenance path'}, output, 'launch', destination)
          self.assertEqual(changed, [])
-         self.assertEqual(oldNotes, (output / 'BuildNotes.md').read_text())
+         self.assertEqual(oldNotes, (output / 'BuildNotes.md').read_text(encoding="utf-8"))
          self.assertNotEqual(first, second)
          _, changed = REPORT.saveReport({'version': '2'}, output, 'build', destination)
          self.assertEqual(changed, ['version'])
-         self.assertIn('1 → 2', (output / 'BuildNotes.md').read_text())
+         self.assertIn('1 → 2', (output / 'BuildNotes.md').read_text(encoding="utf-8"))
          self.assertEqual(len(list(destination.glob('*.sha256'))), 3)
 
    def testBuildCacheQtPathsWithSpacesAndOnlyWhitelistedValues(self):

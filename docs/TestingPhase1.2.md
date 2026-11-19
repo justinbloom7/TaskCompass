@@ -348,3 +348,20 @@ objective icons on Linux/Windows, light/dark themes and available HiDPI; inspect
 full type/path/UUID tooltips. Enable Show Archived, close and reopen: it starts off
 and hides archived entities; re-enable only for observation. No original-row writes,
 settings reset, QA cleanup, migration or privilege change is needed.
+
+## Windows offline fixture retest — 2026-11-18
+
+The owner-reported nine failures on Qt6.12.0 after a successful build are recorded
+in the milestone. These tests use mocked executables/temporary synthetic evidence;
+MariaDB being stopped is not their prerequisite. Explicit UTF-8 report reads,
+fixture platform state and LF output have been corrected/hardened, with improved
+captured-failure diagnostics. Native Windows confirmation remains pending.
+
+After obtaining corrected sources, run in UCRT64:
+
+```bash
+ctest --test-dir build-ucrt64 --rerun-failed --output-on-failure
+```
+
+Stop and share remaining offline fixture failures; do not repair databases or alter
+backup evidence. Resume the Windows checklist only when its build gate is green.

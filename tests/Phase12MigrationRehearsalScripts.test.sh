@@ -4,9 +4,10 @@
 set -euo pipefail
 repositoryDirectory=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 TASKCOMPASS_OPERATOR_FIXTURES_ONLY=1 source "$repositoryDirectory/tests/Phase12RestoreScripts.test.sh"
+trap 'code=$?; printf "Offline fixture failure in %s at line %s (exit %s).\n" "${BASH_SOURCE[0]}" "$LINENO" "$code" >&2; if [[ -n "${result:-}" ]]; then printf "%s\n" "${result//${MOCK_SECRET:-unused}/[fixture-secret]}" >&2; fi' ERR
 helperDirectory="$repositoryDirectory/scripts/phase12/b74a"
 export MOCK_REPOSITORY="$repositoryDirectory"
-trap 'printf "FAIL: B7.4a offline test line %s.\n" "$LINENO" >&2' ERR
+trap 'printf "FAIL: B7.4a offline test line %s.\n" "$LINENO" >&2; if [[ -n "${result:-}" ]]; then printf "%s\n" "${result//${MOCK_SECRET:-unused}/[fixture-secret]}" >&2; fi' ERR
 cat > "$temporaryDirectory/bin/mariadb" <<'CLIENT'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -143,7 +144,7 @@ migrateInput() { printf '%s\n' "$MOCK_SECRET"; }
 if [[ "${TASKCOMPASS_B74_FIXTURES_ONLY:-0}" == 1 ]]; then return 0; fi
 "$TASKCOMPASS_TEST_PYTHON" - "$helperDirectory/preflight.sql" <<'READONLY'
 import pathlib, re, sys
-source = re.sub(r'^--.*$', '', pathlib.Path(sys.argv[1]).read_text(), flags=re.M)
+source = re.sub(r'^--.*$', '', pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"), flags=re.M)
 assert all(s.strip().startswith('SELECT ') for s in source.split(';') if s.strip())
 READONLY
 setup 'linux rehearsal'

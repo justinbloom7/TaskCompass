@@ -7,9 +7,10 @@ repositoryDirectory=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 helperDirectory="$repositoryDirectory/scripts/phase12/b73"
 temporaryDirectory=$(mktemp -d)
 trap 'rm -rf -- "$temporaryDirectory"' EXIT
-trap 'printf "FAIL: B7.3 offline tests line %s.\n" "$LINENO" >&2' ERR
 export MOCK_DIRECTORY="$temporaryDirectory" MOCK_SECRET='b73-fixture-secret'
-unset MSYSTEM MYSQL_PWD TASKCOMPASS_PHASE12_TEST_DB_PASSWORD
+trap 'code=$?; printf "Offline fixture failure in %s at line %s (exit %s).\n" "${BASH_SOURCE[0]}" "$LINENO" "$code" >&2; if [[ -n "${result:-}" ]]; then printf "%s\n" "${result//${MOCK_SECRET:-unused}/[fixture-secret]}" >&2; fi' ERR
+export MSYSTEM=''
+unset MYSQL_PWD TASKCOMPASS_PHASE12_TEST_DB_PASSWORD
 mkdir -p "$temporaryDirectory/bin" "$temporaryDirectory/build with spaces"
 export PATH="$temporaryDirectory/bin:$PATH"
 testPython=${TASKCOMPASS_TEST_PYTHON:-$(command -v python3 || command -v python)}
@@ -22,13 +23,14 @@ cat > "$temporaryDirectory/hash.py" <<'HASH'
 #!/usr/bin/env python3
 # Only exact synthetic marker bytes simulate approved private snapshot hashes.
 import hashlib, pathlib, re, sys
+sys.stdout.reconfigure(encoding="utf-8", newline="\n")
 pins = {b'fixture-reviewed-linux\n': '83ae094ed33865bba0c22e39174f2977a49cc014de3f669115300105eec2bd26',
         b'fixture-reviewed-windows\n': '6588eb9ebc30b63b36b33f2abbc4a0de9da31b252c41a3fd585b8b060073fe50'}
 def digest(data):
    return pins.get(data, hashlib.sha256(data).hexdigest())
 if sys.argv[1:2] == ['--check']:
    for manifest in sys.argv[2:]:
-      for line in pathlib.Path(manifest).read_text().splitlines():
+      for line in pathlib.Path(manifest).read_text(encoding="utf-8").splitlines():
          match = re.fullmatch(r'([0-9a-f]{64}) [ *](.+)', line)
          if not match or digest(pathlib.Path(match[2]).read_bytes()) != match[1]:
             sys.exit(1)
@@ -131,7 +133,7 @@ inputs() { printf 'RESTORE taskcompass_phase12_test\nDUMP REVIEWED; WRITERS CLOS
 # Ensure root preflight stays SELECT-only, independently of the fake client.
 "$TASKCOMPASS_TEST_PYTHON" - "$helperDirectory/preflight.sql" <<'READONLY'
 import pathlib, re, sys
-source = re.sub(r'^--.*$', '', pathlib.Path(sys.argv[1]).read_text(), flags=re.M)
+source = re.sub(r'^--.*$', '', pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"), flags=re.M)
 assert all(statement.strip().startswith('SELECT ') for statement in source.split(';') if statement.strip())
 READONLY
 # Reusable offline-only fixture factory; never a production script bypass.

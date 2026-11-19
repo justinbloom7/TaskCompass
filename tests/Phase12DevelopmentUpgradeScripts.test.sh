@@ -4,7 +4,8 @@
 set -euo pipefail
 repositoryDirectory=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 TASKCOMPASS_B75_FIXTURES_ONLY=1 source "$repositoryDirectory/tests/Phase12RuntimeRehearsalScripts.test.sh"
-trap 'printf "FAIL: B7.5 offline test line %s.\n" "$LINENO" >&2' ERR
+trap 'code=$?; printf "Offline fixture failure in %s at line %s (exit %s).\n" "${BASH_SOURCE[0]}" "$LINENO" "$code" >&2; if [[ -n "${result:-}" ]]; then printf "%s\n" "${result//${MOCK_SECRET:-unused}/[fixture-secret]}" >&2; fi' ERR
+trap 'printf "FAIL: B7.5 offline test line %s.\n" "$LINENO" >&2; if [[ -n "${result:-}" ]]; then printf "%s\n" "${result//${MOCK_SECRET:-unused}/[fixture-secret]}" >&2; fi' ERR
 cp "$temporaryDirectory/bin/mariadb" "$temporaryDirectory/bin/clone-client"
 cp "$temporaryDirectory/build with spaces/TaskCompassMigrate" "$temporaryDirectory/build with spaces/CloneMigrate"
 cat > "$temporaryDirectory/bin/mariadb" <<'CLIENT'
@@ -133,7 +134,7 @@ countDevMutations() {
 }
 if [[ "${TASKCOMPASS_B75_INSPECTION_FIXTURES_ONLY:-0}" == 1 ]]; then return 0; fi
 for platform in linux windows; do
- unset MSYSTEM; [[ "$platform" != windows ]] || export MSYSTEM=UCRT64
+ export MSYSTEM=''; [[ "$platform" != windows ]] || export MSYSTEM=UCRT64
  setup75 "$platform dev"
  before=$(wc -l < "$MOCK_DIRECTORY/calls")
  for stage in 01-preflight 02-migration-grants 03-migrate 04-runtime-grants 05-verify; do
@@ -157,7 +158,7 @@ for platform in linux windows; do
  [[ -s "$snapshot/b75-final.sha256" && "$(cat "$DEV_SCHEMA")" == 2 && "$(cat "$DEV_POLICY")" == final ]]
  printf 'PASS: %s mock dev upgrade/final19 rights and original preservation, no typed confirmations/replay.\n' "$platform"
 done
-unset MSYSTEM
+export MSYSTEM=''
 setup75 'negative development checks'
 cp "$snapshot/b74b-probe-result.tsv" "$temporaryDirectory/saved-probe.tsv"
 printf 'tampered\n' >> "$snapshot/b74b-probe-result.tsv"
@@ -206,7 +207,7 @@ printf 'PASS: sealed evidence/PUBLIC/wrong identity/grants/writers/drift rejecte
 
 "$TASKCOMPASS_TEST_PYTHON" - "$repositoryDirectory/scripts/phase12/b75/preflight.sql" <<'READONLY'
 import pathlib, re, sys
-source = re.sub(r'^--.*$', '', pathlib.Path(sys.argv[1]).read_text(), flags=re.M)
+source = re.sub(r'^--.*$', '', pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"), flags=re.M)
 assert all(part.strip().startswith('SELECT ') for part in source.split(';') if part.strip())
 assert "USER IN ('taskcompass_dev','taskcompass_migrate','taskcompass_app')" in source
 READONLY

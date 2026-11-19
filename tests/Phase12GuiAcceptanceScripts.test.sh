@@ -4,6 +4,7 @@
 set -euo pipefail
 repositoryDirectory=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 TASKCOMPASS_B75_INSPECTION_FIXTURES_ONLY=1 source "$repositoryDirectory/tests/Phase12DevelopmentUpgradeScripts.test.sh"
+trap 'code=$?; printf "Offline fixture failure in %s at line %s (exit %s).\n" "${BASH_SOURCE[0]}" "$LINENO" "$code" >&2; if [[ -n "${result:-}" ]]; then printf "%s\n" "${result//${MOCK_SECRET:-unused}/[fixture-secret]}" >&2; fi' ERR
 cp "$temporaryDirectory/bin/mariadb" "$temporaryDirectory/bin/b77-old-client"
 cat > "$temporaryDirectory/bin/mariadb" <<'CLIENT'
 #!/usr/bin/env bash
@@ -28,14 +29,15 @@ import importlib.util, os
 from pathlib import Path
 spec=importlib.util.spec_from_file_location('fixture',Path(os.environ['MOCK_REPOSITORY'])/'tests/GuiAcceptanceEvidenceTests.py')
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
-m.DATASET=os.environ['MOCK_QA_DATASET'];m.PREFIX=Path(os.environ['MOCK_QA_RUN']+'/prefix.txt').read_text().strip()
-Path(os.environ['MOCK_QA_CURRENT']).write_text(m.export(m.qaRecords(m.baseline())),encoding='utf-8')
+m.DATASET=os.environ['MOCK_QA_DATASET'];m.PREFIX=Path(os.environ['MOCK_QA_RUN']+'/prefix.txt').read_text(encoding="utf-8").strip()
+Path(os.environ['MOCK_QA_CURRENT']).write_bytes(m.export(m.qaRecords(m.baseline())).encode('utf-8'))
 PY
 fi
 GUI
 chmod +x "$temporaryDirectory/bin/mariadb" "$temporaryDirectory/build with spaces/TaskCompass"
 for platform in linux windows; do
- unset MSYSTEM MOCK_QA_CURRENT
+ export MSYSTEM=''
+ unset MOCK_QA_CURRENT
  [[ "$platform" != windows ]] || export MSYSTEM=UCRT64
  setup75 "GUI $platform"
  for stage in 02-migration-grants 03-migrate 04-runtime-grants 05-verify; do result=$(passwords75 | run75 "$stage" --approved 2>&1); done
@@ -47,7 +49,7 @@ import importlib.util, os
 from pathlib import Path
 spec=importlib.util.spec_from_file_location('fixture',Path(os.environ['MOCK_REPOSITORY'])/'tests/GuiAcceptanceEvidenceTests.py')
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);m.DATASET=os.environ['MOCK_QA_DATASET']
-Path(os.environ['MOCK_QA_CURRENT']).write_text(m.export(m.baseline()),encoding='utf-8')
+Path(os.environ['MOCK_QA_CURRENT']).write_bytes(m.export(m.baseline()).encode('utf-8'))
 PY
  cp "$MOCK_QA_CURRENT" "$snapshot/b75-schema2.hex.tsv"
  cp "$MOCK_QA_CURRENT" "$snapshot/b75-final.hex.tsv"

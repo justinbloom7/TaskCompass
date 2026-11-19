@@ -7040,3 +7040,69 @@ Validation: documentation-only; checked procedure against current creation/menu,
 owner/default/count/archive/drag/history and B7.7 script behavior. Markdown local
 links/fences and git diff --check passed. Application build/tests were not rerun
 because no executable source changed; prior actual test results remain historical.
+
+### 2026-11-18 — Windows offline B7.7 build portability failures
+
+Owner reports Windows/UCRT64 build on source27a123b0d28daa550cfd276360552c108e275d64,
+Qt6.12.0 compiled successfully, then nine CTest failures in87.44s: Phase12BackupScripts,
+Phase12RestoreScripts, EnvironmentReportTests, Phase12GuiAcceptanceScripts,
+Phase12ReviewedCompletionScripts, Phase12UpgradeInspectionScripts,
+Phase12DevelopmentUpgradeScripts, Phase12RuntimeRehearsalScripts and
+Phase12MigrationRehearsalScripts. Both live integration entries skipped; persistent
+and organization desktop tests passed. This is historical owner evidence, not a
+new Windows execution by agent. No GUI acceptance/preflight result is implied.
+
+A stopped MariaDB service does not explain this offline build suite: scripts use
+fake clients/executables and synthetic temporary snapshots, and live entries are
+disabled. Confirmed EnvironmentReportTests defect: BuildNotes.md is written UTF-8
+but read with the Windows locale default in assertions; explicit encoding='utf-8'
+fixes the arrow comparison. The restore harness reported 'Dataset evidence belongs
+to another platform', and several dependent harnesses lost captured helper output.
+Exact native cause of those remaining failures is not yet independently reproduced.
+
+Test-only portability hardening implemented:
+
+- tests/EnvironmentReportTests.py reads report files explicitly as UTF-8.
+- Backup/Restore/MigrationRehearsal/RuntimeRehearsal/DevelopmentUpgrade/
+  GuiAcceptance shell harnesses explicitly export empty MSYSTEM for simulated Linux
+  and UCRT64 for simulated Windows, instead of relying on absent inherited state.
+  These assignments remain confined to test subprocesses; production target and
+  platform gates are not changed. Native Windows confirmation remains pending.
+- Restore hash fake prints UTF-8 with explicit LF; SQL-fixture reads use UTF-8.
+  GUI fake writes synthetic sealed exports as UTF-8 bytes with LF, avoiding native
+  Python CRLF translation changing the bytes under checksum comparisons.
+- Unexpected fixture failures now show source/line/exit and captured mock helper
+  output (fixture-secret redacted), rather than silently losing result=$(...) text.
+  Later inspection/review tests inherit these fixture diagnostics. No real password
+  or live database path is used by these tests.
+
+Only test harnesses and documentation changed. No production/operator SQL, safety
+checks, app/migration source, services, accounts, grants, databases, backups or
+preserved QA evidence changed. No install, service restart, live access, reset,
+repair, commit/push/merge/tag. These are candidate corrections plus diagnostics;
+do not claim all nine native Windows failures resolved without owner retest.
+
+Agent validation so far: python3 tests/EnvironmentReportTests.py6/6 passed;
+PYTHONUTF8=0 PYTHONCOERCECLOCALE=0 LC_ALL=C python3 tests/EnvironmentReportTests.py
+6/6 passed (0.005s). MSYSTEM=UCRT64 bash tests/Phase12RestoreScripts.test.sh passed
+all synthetic Linux/Windows paths. Bash syntax checks and git diff --check passed.
+Full Linux offline build/CTest result follows when complete.
+
+Windows operator retest after obtaining these source changes:
+
+```bash
+ctest --test-dir build-ucrt64 --rerun-failed --output-on-failure
+```
+
+This re-executes only offline tests previously failed; no MariaDB startup is needed
+for this command. If failures remain, report the newly exposed fixture output.
+Do not start Windows GUI/preflight from a failed build gate. Native Windows service
+availability will be checked separately by approved live preflight. Keep Linux's
+unresolved protected-task/restart evidence outstanding; no rebaseline is implied.
+
+Agent full Linux validation completed: scripts/phase12/b77/01-build.sh configured/
+built successfully (no C++ rebuild needed) and ran29 registrations: 27 offline
+entries passed, two opt-in integration entries skipped, zero failures,195.55s.
+Bash syntax, Markdown references/fences and git diff --check passed after final
+fixture-diagnostic cleanup. Native Windows nine-test retest remains required;
+Linux success does not prove native encoding/environment behavior resolved there.

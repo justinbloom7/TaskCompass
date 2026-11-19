@@ -3,6 +3,7 @@
 set -euo pipefail
 repositoryDirectory=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 TASKCOMPASS_B74_FIXTURES_ONLY=1 source "$repositoryDirectory/tests/Phase12MigrationRehearsalScripts.test.sh"
+trap 'code=$?; printf "Offline fixture failure in %s at line %s (exit %s).\n" "${BASH_SOURCE[0]}" "$LINENO" "$code" >&2; if [[ -n "${result:-}" ]]; then printf "%s\n" "${result//${MOCK_SECRET:-unused}/[fixture-secret]}" >&2; fi' ERR
 prepare() {
    helperDirectory="$repositoryDirectory/scripts/phase12/b74a"
    setup "$1"
@@ -15,7 +16,7 @@ runtimeInput() { printf '%s\n' "$MOCK_SECRET"; }
 probeInput() { printf '%s\n' "$MOCK_SECRET"; }
 if [[ "${TASKCOMPASS_B75_FIXTURES_ONLY:-0}" == 1 ]]; then return 0; fi
 for platform in linux windows; do
-   unset MSYSTEM
+   export MSYSTEM=''
    [[ "$platform" != windows ]] || export MSYSTEM=UCRT64
    prepare "$platform runtime"
    for stage in 01-preflight 02-runtime-grants 03-probe; do
@@ -32,7 +33,7 @@ for platform in linux windows; do
    if result=$(probeInput | run 03-probe --approved 2>&1); then exit 1; fi
    printf 'PASS: %s mocked runtime19 grants, Qt verification, rollback counts and nine-table equality; no replay.\n' "$platform"
 done
-unset MSYSTEM
+export MSYSTEM=''
 for failureMode in MOCK_RUNTIME_GRANT_FAIL MOCK_RUNTIME_EXTRA MOCK_LEGACY_DRIFT; do
    prepare "negative $failureMode"
    export "$failureMode=1"

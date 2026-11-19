@@ -7,11 +7,12 @@ repositoryDirectory=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 helperDirectory="$repositoryDirectory/scripts/phase12/b72"
 temporaryDirectory=$(mktemp -d)
 trap 'rm -rf -- "$temporaryDirectory"' EXIT
-trap 'printf "FAIL: B7.2 offline script tests at line %s.\n" "$LINENO" >&2' ERR
 export MOCK_DIRECTORY="$temporaryDirectory"
+trap 'code=$?; printf "Offline fixture failure in %s at line %s (exit %s).\n" "${BASH_SOURCE[0]}" "$LINENO" "$code" >&2; if [[ -n "${result:-}" ]]; then printf "%s\n" "${result//${MOCK_SECRET:-unused}/[fixture-secret]}" >&2; fi' ERR
 export MOCK_SECRET='b72-fixture-secret'
 originalStat=$(command -v stat)
-unset MSYSTEM MYSQL_PWD TASKCOMPASS_DB_PASSWORD
+export MSYSTEM=''
+unset MYSQL_PWD TASKCOMPASS_DB_PASSWORD
 mkdir -p "$temporaryDirectory/bin" "$temporaryDirectory/build with spaces"
 export PATH="$temporaryDirectory/bin:$PATH"
 client="$temporaryDirectory/bin/mariadb"
