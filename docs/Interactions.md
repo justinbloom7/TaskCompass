@@ -316,3 +316,71 @@ use local QSettings. Organization records and task ownership persist through the
 repository. Live restart/GUI validation has not occurred for this source increment;
 offline fake-session tests are not a substitute. Contexts, drag ordering, progress,
 dates, planning and sync described elsewhere remain later-phase designs.
+
+
+## Phase 1.2 usability refinement — 2026-11-18
+
+The owner's focused refinement request supersedes the earlier independent-global
+New Task behavior above. All New Task entry points now default to the selected
+active objective/project; pillar, archived and global selections default to
+Independent. Choose Owner retains Independent and never permits direct pillar
+ownership. Existing task editing preserves its actual owner.
+
+The toolbar + menu and tree context menu share creation generation: New Task,
+separator, legal child actions, separator when needed, New Pillar. Pillars offer
+Subpillar/Project/Objective; projects offer Subproject/Objective; objectives and
+archived/global selections offer no organizational children. New Pillar means a
+root pillar; creation dialogs still allow choosing another valid parent. Context
+edit/move/archive/restore actions follow the creation section.
+
+All Tasks and Inbox precede a nonselectable Organization separator. Every entity
+has a persistent visible Pillar/Subpillar/Project/Subproject/Objective type prefix,
+type/path/UUID tooltip and selected-type/path details. Siblings group pillars,
+projects and objectives, then sort raw titles case-insensitively with typed UUID
+as deterministic tie-breaker. Selection/expansion remain UUID-based across refresh;
+no stored manual position exists. Show Archived defaults off only when no saved
+preference exists; explicit saved values survive.
+
+Project-oriented tree drag-and-drop supports dropping one organization **onto**
+a legal pillar/project parent. It opens the existing Move parent picker with the
+destination selected, then the existing subtree/archive preview. Cancellation,
+invalid/unchanged parents, cycles, stale model drags, foreign-model payloads and
+between-row drops do not move records. Busy/unavailable and objective-oriented
+views disable dragging. Root-pillar promotion remains available through Move's
+No parent choice. Qt drag events emit intent only; the existing application move
+command revalidates workspace/revisions and commits transactionally with shared
+undo/redo. No task dragging, priority changes or manual ordering is introduced.
+
+
+## Phase 1.2 tree counts and presentation — 2026-11-18
+
+This owner-approved refinement supersedes the earlier type-prefix and saved-archive
+presentation above. The separator is **Pillars**. Show Archived is session-only:
+every application start unchecks it and hides effectively archived entities,
+ignoring any historical QSettings value. Other settings retain existing behavior;
+a saved selection hidden by the active filter falls back to All Tasks.
+
+Every organization label shows its name followed by its open-task count, including
+(0), without a full type prefix. Existing duplicate-name disambiguation remains.
+Pillars/subpillars include their entire subtree, projects/subprojects include
+direct tasks and descendant objective/project tasks, and objectives include their
+direct tasks. Count each active, non-tombstoned task once at its owner and propagate
+upward; exclude effective archive, completed tasks and independent tasks from all
+organization counts. Counts do not depend on search, selection or task filters.
+They are derived in memory from the loaded workspace, with iterative inheritance
+and bottom-up aggregation; no SQL-per-item or persisted count state exists.
+
+Qt palette-aware vector icons replace type prefixes: columns for pillars, a folder
+for projects, and a target for objectives, with a small corner mark for nested
+pillars/projects. Names/counts remain text; type, path, UUID, count and archive
+status are exposed in tooltips and accessible roles. Icons use palette text and
+highlighted-text colors and scale through QIconEngine, without emoji, theme icon
+packages, bitmap assets or a new SVG dependency. Native light/dark/HiDPI appearance
+on both platforms still needs owner observation.
+
+Alphabetical grouping sorts raw names, never rendered counts. Workspace refreshes
+following tasks, moves, archive/restore and shared undo/redo recalculate counts;
+UUID-based selection/expansion remains intact. Creation remains exclusively the
++ toolbar button and contextual menus (New Task first, New Pillar last in creation
+sections); Task-menu/keyboard actions remain available without separate creation
+buttons. Ownership and organizational reparenting rules are unchanged.

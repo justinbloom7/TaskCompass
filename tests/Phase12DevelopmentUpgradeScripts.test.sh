@@ -123,6 +123,14 @@ setup75() {
 # Platform string is explicit, not inferred from approval on the other platform.
 run75() { local stage=$1; shift; local selected=linux; [[ "${MSYSTEM:-}" != UCRT64 ]] || selected=windows; run "$stage" --platform "$selected" "$@"; }
 passwords75() { printf '%s\n%s\n%s\n' "$MOCK_SECRET" "$MOCK_SECRET" "$MOCK_SECRET"; }
+# Builtin-only count: no ripgrep/grep dependency, including the zero-match case.
+countDevMutations() {
+   local file=$1 line count=0
+   while IFS= read -r line || [[ -n "$line" ]]; do
+      case "$line" in dev-grants|dev-apply|dev-runtime) count=$((count+1)) ;; esac
+   done < "$file"
+   printf '%s\n' "$count"
+}
 if [[ "${TASKCOMPASS_B75_INSPECTION_FIXTURES_ONLY:-0}" == 1 ]]; then return 0; fi
 for platform in linux windows; do
  unset MSYSTEM; [[ "$platform" != windows ]] || export MSYSTEM=UCRT64

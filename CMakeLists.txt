@@ -74,6 +74,13 @@ if(BUILD_TESTING)
          add_test(NAME Phase12RestoreScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12RestoreScripts.test.sh")
          set_tests_properties(Phase12RestoreScripts PROPERTIES TIMEOUT ${TASKCOMPASS_PHASE11_SCRIPT_TIMEOUT}
                               ENVIRONMENT "TASKCOMPASS_TEST_PYTHON=${Python3_EXECUTABLE}")
+         add_test(NAME EnvironmentReportTests COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/EnvironmentReportTests.py")
+         set_tests_properties(EnvironmentReportTests PROPERTIES TIMEOUT 30)
+         add_test(NAME GuiAcceptanceEvidenceTests COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/GuiAcceptanceEvidenceTests.py")
+         set_tests_properties(GuiAcceptanceEvidenceTests PROPERTIES TIMEOUT 30)
+         add_test(NAME Phase12GuiAcceptanceScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12GuiAcceptanceScripts.test.sh")
+         set_tests_properties(Phase12GuiAcceptanceScripts PROPERTIES TIMEOUT 360
+                              ENVIRONMENT "TASKCOMPASS_TEST_PYTHON=${Python3_EXECUTABLE}")
          add_test(NAME Schema2DdlComparison COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Schema2DdlComparison.test.sh")
          set_tests_properties(Schema2DdlComparison PROPERTIES TIMEOUT 30)
          add_test(NAME Phase12ReviewedCompletionScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12ReviewedCompletionScripts.test.sh")

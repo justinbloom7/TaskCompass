@@ -14,7 +14,9 @@ if [[ $# -gt 0 ]]; then
    [[ $# == 2 && "$1" == --build-dir ]] || { printf 'Usage: bash scripts/phase12/01-build.sh [--build-dir PATH]\n' >&2; exit 2; }
    buildDirectory=$2
 fi
+bash "$repositoryDirectory/scripts/environment-report.sh" --build-dir "$buildDirectory" --context build-start
 cmake -S "$repositoryDirectory" -B "$buildDirectory" -G Ninja -DCMAKE_BUILD_TYPE=Debug \
    -DTASKCOMPASS_ENABLE_DB_TESTS=OFF -DTASKCOMPASS_ENABLE_PHASE12_DB_TESTS=OFF
 cmake --build "$buildDirectory" --parallel 2
+bash "$repositoryDirectory/scripts/environment-report.sh" --build-dir "$buildDirectory" --context build
 ctest --test-dir "$buildDirectory" --output-on-failure

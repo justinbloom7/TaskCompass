@@ -21,10 +21,12 @@
 #include <QSplitter>
 #include <QStandardItemModel>
 #include <QStatusBar>
+#include <QStyle>
 #include <QTableView>
 #include <QTextEdit>
 #include <QTimer>
 #include <QToolBar>
+#include <QToolButton>
 #include <QTreeView>
 #include <QVBoxLayout>
 #include <QComboBox>
@@ -70,7 +72,10 @@ PersistentTaskWindow::PersistentTaskWindow(PersistentTaskController::SessionFact
    navigation->setEditTriggers(QAbstractItemView::NoEditTriggers);
    auto *panel = new QWidget(splitter);
    auto *layout = new QVBoxLayout(panel);
-   layout->addWidget(new QLabel("Tasks — select organizational context in the navigation panel", panel));
+   selectionDetails = new QLabel("All tasks", panel);
+   selectionDetails->setObjectName("selectionDetails");
+   selectionDetails->setWordWrap(true);
+   layout->addWidget(selectionDetails);
    navigationMode = new QComboBox(panel);
    navigationMode->setObjectName("navigationMode");
    navigationMode->addItems({"Project-oriented navigation", "Objective-oriented navigation"});
@@ -84,7 +89,7 @@ PersistentTaskWindow::PersistentTaskWindow(PersistentTaskController::SessionFact
    showCompleted->setObjectName("showCompleted");
    showArchived = new QCheckBox("Show archived organization and tasks", panel);
    showArchived->setObjectName("showArchived");
-   showArchived->setChecked(settings.value("showArchived", false).toBool());
+   showArchived->setChecked(false); // Session-only: ignore historical saved values.
    layout->addWidget(search);
    layout->addWidget(showCompleted);
    layout->addWidget(showArchived);
@@ -102,6 +107,10 @@ PersistentTaskWindow::PersistentTaskWindow(PersistentTaskController::SessionFact
    table->setSelectionMode(QAbstractItemView::SingleSelection);
    table->setEditTriggers(QAbstractItemView::NoEditTriggers);
    table->setAlternatingRowColors(true);
+   table->setWordWrap(false);
+   const int compactRowHeight = std::max(table->fontMetrics().height(), table->style()->pixelMetric(QStyle::PM_IndicatorHeight)) + 6;
+   table->verticalHeader()->setMinimumSectionSize(compactRowHeight);
+   table->verticalHeader()->setDefaultSectionSize(compactRowHeight);
    table->setSortingEnabled(true);
    table->sortByColumn(0, Qt::AscendingOrder);
    table->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
@@ -166,9 +175,11 @@ PersistentTaskWindow::PersistentTaskWindow(PersistentTaskController::SessionFact
    navigation->setContextMenuPolicy(Qt::CustomContextMenu);
    connect(navigation, &QWidget::customContextMenuRequested, this, [this](const QPoint &point) {
       const auto index = navigation->indexAt(point);
-      if (index.isValid()) { navigation->setCurrentIndex(index); }
+      navigation->setCurrentIndex(index);
       refresh(); QMenu menu(this);
-      for (auto *action : organizationActions) { menu.addAction(action); }
+      populateCreationMenu(&menu);
+      menu.addSeparator();
+      for (std::size_t i = 3; i < organizationActions.size(); ++i) { menu.addAction(organizationActions[i]); }
       menu.exec(navigation->viewport()->mapToGlobal(point));
    });
    auto *view = menuBar()->addMenu("&View");
@@ -185,14 +196,35 @@ PersistentTaskWindow::PersistentTaskWindow(PersistentTaskController::SessionFact
    });
    auto *toolbar = addToolBar("Tasks");
    toolbar->setObjectName("persistentToolbar");
-   toolbar->addActions({newAction, editAction, completeAction, undoAction, redoAction});
-   toolbar->addSeparator(); toolbar->addAction(organizationActions.front());
+   auto *createButton = new QToolButton(toolbar);
+   createButton->setObjectName("createButton"); createButton->setText("+");
+   createButton->setToolTip("Create under the current selection");
+   createButton->setAccessibleName("Create");
+   createButton->setPopupMode(QToolButton::InstantPopup);
+   auto *creationMenu = new QMenu(createButton); creationMenu->setObjectName("creationMenu");
+   connect(creationMenu, &QMenu::aboutToShow, this, [this, creationMenu]() { populateCreationMenu(creationMenu); });
+   createButton->setMenu(creationMenu); toolbar->addWidget(createButton);
+   toolbar->addActions({editAction, completeAction, undoAction, redoAction});
+   navigation->setDragDropMode(QAbstractItemView::DragDrop);
+   navigation->setDefaultDropAction(Qt::MoveAction);
+   navigation->setDragDropOverwriteMode(true);
+   connect(organizationModel, &OrganizationTreeModel::reparentRequested, this, [this](const QModelIndex &source, const QModelIndex &destination) {
+      const auto key = organizationModel->keyAt(source), parent = organizationModel->keyAt(destination);
+      if (!key || !parent) { return; }
+      // Defer modal interaction until Qt finishes delivering the drop event.
+      QTimer::singleShot(0, this, [this, key, parent]() {
+         if (!controller->isReady() || controller->isBusy()) { return; }
+         const auto index = organizationModel->indexFor(*key);
+         if (!index.isValid()) { return; }
+         navigation->setCurrentIndex(index); moveOrganization(parent);
+      });
+   });
    connect(search, &QLineEdit::textChanged, proxy, &QSortFilterProxyModel::setFilterFixedString);
    connect(showCompleted, &QCheckBox::toggled, this, [activeProxy](bool enabled) {
       activeProxy->setIncludeCompleted(enabled);
    });
    connect(showArchived, &QCheckBox::toggled, this, [this](bool) { rebuildNavigation(); updateScope(); refresh(); });
-   connect(navigationMode, &QComboBox::currentIndexChanged, this, [this](int) { rebuildNavigation(); updateScope(); });
+   connect(navigationMode, &QComboBox::currentIndexChanged, this, [this](int) { rebuildNavigation(); updateScope(); refresh(); });
    connect(navigation->selectionModel(), &QItemSelectionModel::currentChanged, this, [this]() { updateScope(); refresh(); });
    connect(table, &QTableView::doubleClicked, this, [this](const QModelIndex &index) {
       if (index.column() != PersistentTaskModel::STATUS_COLUMN) {
@@ -241,6 +273,7 @@ void PersistentTaskWindow::refresh() {
    const bool enabled = controller->isReady() && !controller->isBusy();
    const auto task = selectedTask();
    model->setWritable(enabled);
+   organizationModel->setReparentingEnabled(enabled && navigationMode->currentIndex() == 0);
    newAction->setEnabled(enabled);
    editAction->setEnabled(enabled && task.has_value());
    completeAction->setEnabled(enabled && task.has_value());
@@ -251,6 +284,9 @@ void PersistentTaskWindow::refresh() {
    redoAction->setEnabled(controller->canRedo());
    reloadAction->setEnabled(!controller->isBusy());
    const auto organization = selectedOrganization();
+   selectionDetails->setText(organization ? navigation->currentIndex().data(OrganizationTreeModel::TYPE_ROLE).toString()
+      + " — " + navigation->currentIndex().data(OrganizationTreeModel::PATH_ROLE).toString() : "All tasks / Independent inbox");
+   selectionDetails->setToolTip(organization ? QString::fromStdString(taskcompass::organizationFields(*organization).id) : QString());
    for (std::size_t index = 0; index < organizationActions.size(); ++index) {
       bool allowed = enabled && (index < 3 || organization.has_value());
       if (organization && index == 5) { allowed = allowed && !taskcompass::organizationFields(*organization).archivedAt; }
@@ -268,6 +304,14 @@ void PersistentTaskWindow::refresh() {
 }
 
 void PersistentTaskWindow::editTask(bool create, std::optional<taskcompass::TaskOwner> initialOwner) {
+   if (create && !initialOwner && !navigation->currentIndex().data(OrganizationTreeModel::EFFECTIVE_ARCHIVE_ROLE).toBool()) {
+      if (const auto entity = selectedOrganization()) {
+         const auto key = taskcompass::organizationKey(*entity);
+         if (key.kind != taskcompass::OrganizationKind::PILLAR) {
+            initialOwner = taskcompass::TaskOwner{key.kind == taskcompass::OrganizationKind::OBJECTIVE ? taskcompass::TaskOwnerKind::OBJECTIVE : taskcompass::TaskOwnerKind::PROJECT, key.id};
+         }
+      }
+   }
    const auto original = create ? std::optional<taskcompass::Task>() : selectedTask();
    if (!create && !original) {
       return;
@@ -380,6 +424,7 @@ void PersistentTaskWindow::rebuildNavigation() {
    const QSignalBlocker blocker(navigation->selectionModel());
    navigationRestored = true;
    organizationModel->replace(controller->workspace(), showArchived->isChecked(), navigationMode->currentIndex() == 1);
+   organizationModel->setReparentingEnabled(controller->isReady() && !controller->isBusy() && navigationMode->currentIndex() == 0);
    QModelIndex selected = organizationModel->index(selection == "independent" ? 1 : 0, 0);
    for (const auto &index : organizationModel->organizationIndexes()) {
       const auto token = QString::number(index.data(OrganizationTreeModel::KIND_ROLE).toInt()) + ":" + index.data(OrganizationTreeModel::ID_ROLE).toString();
@@ -394,7 +439,7 @@ void PersistentTaskWindow::updateScope() {
    filter->setIncludeArchived(showArchived->isChecked());
    filter->setOrganizationScope(organizationModel->keyAt(navigation->currentIndex()), navigation->currentIndex().data(OrganizationTreeModel::SCOPE_ROLE).toInt() == 1);
 }
-void PersistentTaskWindow::editOrganization(std::optional<taskcompass::OrganizationKind> createKind) {
+void PersistentTaskWindow::editOrganization(std::optional<taskcompass::OrganizationKind> createKind, bool rootPillar) {
    const auto original = createKind ? std::optional<taskcompass::OrganizationEntity>() : selectedOrganization();
    if (!createKind && !original) { return; }
    const auto selected = selectedOrganization();
@@ -403,18 +448,19 @@ void PersistentTaskWindow::editOrganization(std::optional<taskcompass::Organizat
       const auto key = taskcompass::organizationKey(*selected);
       if (key.kind != taskcompass::OrganizationKind::OBJECTIVE && (!createKind || *createKind != taskcompass::OrganizationKind::PILLAR || key.kind == taskcompass::OrganizationKind::PILLAR)) { parent = key; }
    }
+   if (rootPillar) { parent.reset(); }
    if (original) { parent = taskcompass::organizationParent(*original); }
    else if (navigation->currentIndex().data(OrganizationTreeModel::EFFECTIVE_ARCHIVE_ROLE).toBool()) { parent.reset(); }
    const auto kind = createKind ? *createKind : taskcompass::organizationKey(*original).kind;
    OrganizationEditDialog dialog(controller->workspace(), kind, original, parent, this);
    if (dialog.exec() == QDialog::Accepted) { controller->execute(dialog.command()); }
 }
-void PersistentTaskWindow::moveOrganization() {
+void PersistentTaskWindow::moveOrganization(std::optional<taskcompass::OrganizationKey> destination) {
    const auto entity = selectedOrganization();
    if (!entity) { return; }
    const auto snapshot = controller->workspace();
    const auto key = taskcompass::organizationKey(*entity);
-   OrganizationMoveDialog dialog(snapshot, key.kind, taskcompass::organizationParent(*entity), key, true, this);
+   OrganizationMoveDialog dialog(snapshot, key.kind, destination ? destination : taskcompass::organizationParent(*entity), key, true, this);
    if (dialog.exec() != QDialog::Accepted) { return; }
    QString message = "Move this item and its subtree?\n" + subtreeImpact(snapshot, key);
    if (dialog.archivedDestination()) { message += "\nThe destination is archived. Moved work will be hidden unless Show Archived is enabled."; }
@@ -450,7 +496,6 @@ void PersistentTaskWindow::closeEvent(QCloseEvent *event) {
    settings.setValue("windowGeometry", saveGeometry());
    settings.setValue("splitterState", splitter->saveState());
    settings.setValue("showNavigation", navigationAction->isChecked());
-   settings.setValue("showArchived", showArchived->isChecked());
    settings.setValue("objectiveView", navigationMode->currentIndex() == 1);
    settings.setValue("navigationSelection", navigationSelection());
    QStringList expanded;
@@ -460,4 +505,30 @@ void PersistentTaskWindow::closeEvent(QCloseEvent *event) {
    settings.setValue("expandedOrganization", expanded);
    settings.sync();
    QMainWindow::closeEvent(event);
+}
+
+void PersistentTaskWindow::populateCreationMenu(QMenu *menu) {
+   menu->clear();
+   menu->addAction(newAction);
+   menu->addSeparator();
+   const auto entity = selectedOrganization();
+   const bool active = entity && !navigation->currentIndex().data(OrganizationTreeModel::EFFECTIVE_ARCHIVE_ROLE).toBool();
+   if (active) {
+      const auto kind = taskcompass::organizationKey(*entity).kind;
+      auto add = [&](const QString &label, taskcompass::OrganizationKind createdKind) {
+         auto *action = menu->addAction(label, this, [this, createdKind]() { editOrganization(createdKind); });
+         action->setEnabled(newAction->isEnabled());
+      };
+      if (kind == taskcompass::OrganizationKind::PILLAR) { add("New Subpillar...", taskcompass::OrganizationKind::PILLAR); }
+      if (kind != taskcompass::OrganizationKind::OBJECTIVE) {
+         add(kind == taskcompass::OrganizationKind::PROJECT ? "New Subproject..." : "New Project...", taskcompass::OrganizationKind::PROJECT);
+         add("New Objective...", taskcompass::OrganizationKind::OBJECTIVE);
+      }
+   }
+   if (!menu->actions().back()->isSeparator()) { menu->addSeparator(); }
+   auto *pillar = menu->addAction("New Pillar...", this, [this]() {
+      // This action always means a root pillar; New Subpillar uses the selection.
+      editOrganization(taskcompass::OrganizationKind::PILLAR, true);
+   });
+   pillar->setEnabled(newAction->isEnabled());
 }

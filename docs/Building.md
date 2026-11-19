@@ -1,5 +1,9 @@
 # Development guide
 
+Build/validation metadata is collected automatically; see
+[automatic environment and build notes](BuildNotes.md) for Linux/Windows report
+paths, change tracking and server-evidence provenance.
+
 The Phase 0.1 prototype is accepted (owner-reported Linux/Windows builds, launches
 and CLI/Qt connectivity). Historical observations below remain dated evidence.
 Phase 1.1 adds separate executables. The owner reports the isolated integration
@@ -26,14 +30,17 @@ checkpoints. No live operations are performed by help or --print-plan.
 
 Use [TestingPhase1.2.md](TestingPhase1.2.md) for the numbered offline build/review
 and separately gated new-target setup/testing steps. Both CMake live-test options
-must remain OFF for ordinary builds. Current `TaskCompass` requires schema 2 and
-will reject the unchanged accepted schema-1 database; it never migrates on startup.
+must remain OFF for ordinary builds. Current `TaskCompass` requires schema2 and never migrates on startup. Both
+development upgrades and final runtime privileges passed B7.5 on Linux/Windows
+(owner-reported); live GUI acceptance remains distinct from that verification.
 Do not run the old Phase 1.1 disposable scripts against preserved restored databases.
 The Phase 1.1 commands below remain historical/reference procedures for that phase.
 
-No Phase 1.2 migration has run. The new test target is **taskcompass_phase12_test**,
-not taskcompass_integration or taskcompass_dev. Runtime/dev grant changes, live GUI,
-real-data upgrades and expanded backup/restore each remain later approval stages.
+The populated **taskcompass_phase12_test** rehearsals and both development schema2
+upgrades passed (see the Phase1.2 milestone). Preserve those databases; do not rerun
+reset-capable tests against them. Use [B7.7](Phase1.2B77.md) for current GUI acceptance
+and automatic environment evidence. Expanded backup/restore and final acceptance
+remain separately gated.
 
 ## Phase 1.1 executables and safety
 

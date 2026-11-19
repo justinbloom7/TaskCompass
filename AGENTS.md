@@ -160,6 +160,11 @@ does not authorize database access, migration execution or dependency installati
 - Run relevant builds and automated tests after changes. For documentation-only
   work, validate Markdown references and consistency; explain why application
   build/tests were not rerun when they are unaffected.
+- Build/validation procedures needing platform, Qt, database server or source
+  revision evidence should call `scripts/environment-report.sh` automatically.
+  Preserve its timestamped reports/change notes rather than asking the owner to
+  gather known version information manually. Label saved server metadata provenance;
+  the reporter must not add database connections or credential storage.
 - Preserve Linux/Windows compatibility. Distinguish tests actually executed from
   tests pending owner execution or unavailable platforms/services.
 - Do not claim validation success without evidence. Record failures, relevant

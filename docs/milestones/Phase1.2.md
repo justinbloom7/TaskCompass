@@ -2,7 +2,7 @@
 
 # Phase 1.2 — Organizational Management
 
-**Status: Stage 1B isolated integration, B7.1 read-only development preflight, B7.2 populated schema-1 capture/private review and B7.3 populated restore/full preservation checks passed on Linux/MariaDB 10.5.29 and Windows/MariaDB 13.0.2 (owner-reported, 2026-11-17). All exact source snapshots/evidence are retained; both populated rehearsal clones are now schema2. B7.4a narrow-migrator grant transition and clone-only migration002 approved for operator execution on both platforms (2026-11-17); all four stages passed on Linux and Windows (owner-reported, 2026-11-17). No live database procedure performed by agent. B7.4b runtime-role rehearsal approved for operator execution on both platforms; all three stages passed on Linux and Windows (owner-reported, 2026-11-17). Linux B7.5 stages01/02 and reviewed schema2 preservation completion passed (owner-reported, 2026-11-17), following the recorded implicit FK-index comparison correction. Linux runtime transition04 and final verification05 passed (owner-reported, 2026-11-17): schema2, preserved original data and final least-privilege grants. Windows B7.5 stages01–05 passed (owner-reported, 2026-11-17): schema2, original preservation, final least-privilege grants and health verified. Both development upgrades are verified; earlier authentication failures remain historical. GUI/restart and schema2 backup/restore remain separately gated. Phase 1.2 is not accepted.**
+**Status: B7.1–B7.5 (including final runtime transition) verified on Linux/MariaDB10.5.29 and Windows/MariaDB13.0.2 by owner report on2026-11-17. Both development/rehearsal schemas2, original preservation and final grants/health passed; historical failures and corrections remain below. B7.7 Linux-first GUI acceptance package prepared on2026-11-18; no live GUI write or manual acceptance executed by agent. Linux02 preflight passed (owner-reported,2026-11-18); the initial placeholder-path launch rejection remains historical. Owner now reports GUI functional testing has gone well and requests a focused usability refinement before acceptance; refinement review/retest is pending; Windows separately gated after Linux review. Manual GUI/restart acceptance, schema2 populated backup/isolated restore and final owner acceptance remain pending. Phase1.2 is not accepted.**
 Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
 Only this document and the roadmap were changed by Step A. Its designs/SQL were
 proposals. Step A itself authorized no SQL; the dated Step B reports below record
@@ -6223,3 +6223,725 @@ query, grant, migration, backup/restore, reset/cleanup or dependency installatio
 Build/CTest not repeated for documentation-only evidence recording; prior actual
 24/24 offline results preserved. Markdown references/fences and git diff --check
 validated. No commit/push/merge/tag.
+
+## 2026-11-18 — B7.7 persistent GUI acceptance preparation (no live testing)
+
+### Review, current prerequisites and exact Phase1.2 scope
+
+Read AGENTS and current requirements/architecture/interactions/data model/roadmap,
+TestingPhase1.2, this milestone and B7.7's reviewed original checklist. B7.5 including
+former-B7.6 final grants passed on both development databases by owner report;
+preserved backups, original rows/history, schemas2/UUIDs, health and exact runtime
+matrix are the prerequisites, not new claims of agent live access. No completed
+rehearsal, migration or reset test was rerun against actual databases.
+
+Reviewed PersistentMain/TaskWindow/TaskController/TaskModel/TaskFilter, organization
+tree and edit/move dialogs; Task/OrganizationRules, CommandService/receipts/history,
+WorkspaceRepository and MariaDbWorkspaceRepository/DatabaseConnection/lease.
+Reviewed current core, command, desktop, codec, storage-safety and existing isolated
+integration tests to separate covered invariants from pending manual/native tests.
+Production UI supports create/edit/rename/move/archive/restore, nested pillars/
+projects, flat objectives with approved single owners, optional task ownership,
+independent capture, project/objective presentations, completion, visible archive
+controls and one shared chronology. No new relationships, GUI redesign or Phase1.3
+features are proposed or implemented.
+
+### Prepared files and operator package
+
+Added:
+
+- `docs/Phase1.2B77.md`: full manual G01–G09 plan/expected results, protection and
+  coverage limits, safe errors, defect/retest protocol and remaining gates.
+- `docs/Phase1.2B77Linux.md`, `docs/Phase1.2B77Windows.md`: separate unchecked owner
+  checklists, exact platform commands, named identities and result records.
+- `scripts/phase12/b77/01-build.sh`, `02-preflight.sh`, `03-launch.sh`,
+  `04-checkpoint.sh`, shared `run.sh` and offline `validate-evidence.py`.
+- `tests/GuiAcceptanceEvidenceTests.py` and
+  `tests/Phase12GuiAcceptanceScripts.test.sh`; registered in CMakeLists.
+
+Updated current pointers in this milestone, TestingPhase1.2 and Roadmap; corrected
+stale testing text implying development upgrades still pending. No production C++,
+SQL, schema/migration, grants, manifests, diagrams, prior validation scripts or
+backup/rehearsal evidence changed. Python standard library only; Python3 is already
+an existing documented/schema-tool/test dependency, not a new installation. No
+packages/editor/IDE configuration or frameworks added. Naming/style follows the
+existing Python/Bash tests; Python unittest's required setUp override is retained.
+
+The build wrapper delegates existing01-build (both live test options OFF).
+Preflight02 uses definition-only B7.5 helpers, checks all original B7.2/B7.3/B7.4/
+B7.5 private seals/receipts and source/binary migration pins, revalidates current
+schema2/UUID, pristine B7.5 full data, reviewed DDL, final grants, health and no
+other dev clients before creating a fresh private QA run directory. No GUI or SQL
+DML. Generated qa-names.tsv is a local copy/paste template, not seeded DB records.
+
+Launch03 requires sealed initial run evidence and correct platform/receipt, then
+verifies schema2 using taskcompass_app only and launches the existing persistent
+TaskCompass executable. No migration/provisioning/reset helper is called. It is the
+only script capable of starting deliberate GUI writes, and requires explicit live
+QA stage authorization. No typed confirmation phrase. Exit0 is not manual PASS.
+Restart uses the identical03 command; second deliberate QA session also uses03.
+Passwords remain memory-only; root stays native socket/sudo or Windows prompt;
+Windows secret path conversion exclusions are reused. Never log credentials.
+
+Checkpoint04 requires both GUI sessions closed, exact final privileges/quiescence,
+fresh schema2/UUID and unchanged DDL. Exports nine tables and all59 CHECK/FK health
+rules; validates against immutable B7.5 baseline, repeats whole export to detect
+mid-capture writes and seals a fresh label. Optional --compare previous-label
+requires all nine tables byte-identical across a read-only restart interval.
+No old file is overwritten; any unsealed previous checkpoint blocks further
+launch/checkpoint pending review. Private Linux owner700/Windows owner-only ACL
+checks are preserved for QA paths under the already private sealed capture.
+
+### QA records, identifiers and preservation algorithm
+
+Each platform gets its own B77-QA-platform-timestamp-PID title prefix and local
+qa-names.tsv. All create/rename title values retain prefix+space. Original task
+inspection is read-only; after that Ctrl+F prefix filters old task rows away.
+Create only QA roots/descendants, never attach QA children to protected owners.
+Duplicates are permitted by product design and distinguished by UUID/path/type.
+No automatic deletion or purge; deliberate Undo Create softly removes only new QA
+records while retaining their rows/receipts/outbox and UUID inventory.
+
+No special QA-only application mode is introduced: helpers detect original edits
+after close, they cannot prevent a manual GUI misclick. Never edit original tasks
+to test a control and never automatically restore/repair an accidental change.
+
+Initial protected-inventory.tsv exposes original UUID/title/status/tombstone/
+revision fields privately without notes/history payloads. Every checkpoint's
+inventory.tsv records all new QA UUIDs, owner kind/ID, title, explicit/effective
+archive, tombstone/status/revision. Use it to record individual test identities;
+GUI names are not identities and task dialogs do not show UUIDs.
+
+Offline HEX parser validates table/count coverage, unique stable row IDs and typed
+encodings using the actual schema2 manifest. Every original B7.5 row in all nine
+tables must remain token-for-token identical (including metadata row2/journal,
+completed/tombstoned tasks and byte-exact raw JSON/outbox history). New additions
+are permitted only for prefix-qualified QA domain records and their new typed
+command/outbox rows. Reject new immutable metadata, writes/audits targeting original
+records, cross-dataset links, contradictory/missing owners, hierarchy cycles,
+live entities under removed owners, QA under protected parents and compensations
+against protected/missing history. Every new command must pair with one outbox
+operation with matching typed target/revision/timestamp/immutable payload. All old
+history remains immutable. Iterative graph checks impose no arbitrary depth cap.
+This checks observed evidence consistency, not a substitute for repository atomicity
+or owner-observed undo results. Health SQL and registered Qt verification remain
+separate checks; no count-only data preservation claim.
+
+### Exact manual coverage and gaps/limits identified
+
+- G01: original active/completed views unchanged, old tombstones stay hidden but
+  exported unchanged, table/filter/sort/keyboard/dialog/splitter basics.
+- G02/G03: QA root/subpillars, project/subproject, pillar/subpillar/project objectives,
+  direct/objective/independent tasks, rename/description, duplicate-name identity,
+  all legal parent changes and illegal/cancel/empty/oversize input rejection.
+- G04/G05/G06: subtree moves preserve descendant IDs/owners/flags; shared Undo/Redo
+  for create/edit/move/archive/restore/task ownership/lifecycle; new edit invalidates
+  redo; explicit versus inherited archive/ancestor location; completion timestamps
+  and independent Show Archived/Completed combinations.
+- G07/G08: close normally only when work settles, capture IDs, restart with the
+  same runtime account, values/relationships/archive/completion/UI preferences
+  persist, undo/redo starts empty; read-only restart yields nine-table equality.
+- G09: two deliberate QA sessions exercise stale edit/inverse and dependency
+  guards. Missing-parent case uses B Undo Create of its new empty QA project while
+  A has an unsaved child dialog; dependent-parent inverse uses a B-created QA child.
+  No physical deletion, SQL injection, original-record edit or privilege change.
+
+Source-reviewed limitations requiring honest reporting, not silent feature changes:
+
+1. No Copy Task UUID / visible task-ID editor and no Show Deleted UI. Private
+   inventories cover IDs/tombstones; neither is a required new feature here.
+2. Conflicted inverse refuses without advancing history; F5 refreshes data but
+   does not clear the chronological stack. A fresh successful mutation observing
+   a changed tracked revision invalidates older history; unknown commit clears it;
+   restart clears it. Blanket invalidation on every conflict is not implemented.
+   Existing tests explicitly cover this conservative policy. Owner must review the
+   precise semantics rather than assume F5 clears everything. No automatic merge.
+3. Potential recovery gap: F5 reuses an existing session/connection. Recovery of a
+   dead native connection is not yet proven; normal close/relaunch is the fallback.
+   If confirmed manually, propose a targeted session-reconnect fix retaining commit-
+   uncertainty/history rules; do not silently change behavior during preparation.
+4. Show Completed intentionally starts off after restart; Show Archived/view/UUID
+   selection/expansion/geometry/splitter persist. QSettings is per-user/application,
+   shared across windows, so test restart prefs with one main session.
+5. True live GUI connection interruption/permission-denied writes are not safely
+   exercised by changing dev grants or killing the valuable server/session. Record
+   them NOT EXECUTED, distinguish offline injected failures/unknown commit tests and
+   prior isolated live lease/rollback evidence. Request a separately safe fault-test
+   scope if owner requires manual coverage; none is implied by this package.
+6. No unfinished core ownership/archive/CRUD feature was identified by source
+   inspection, but all actual GUI usability/native behavior is still untested here.
+   Inline tree F2 rename is not implemented; use Edit/Rename as designed. No user
+   deletion/project completion, contexts, progress/dates/recurrence/planning/sync are
+   acceptance requirements for this milestone.
+
+The acceptance guide lists expected results and defect reporting fields (testID,
+platform/build, QA UUIDs/prefix, last sealed checkpoint, expected/actual behavior,
+safe error, commit uncertainty and privacy-safe screenshots). Stop on defect or
+unsealed capture; no blind retry/marker removal/rebaseline/cleanup. Proposed fixes
+must be scoped/reviewed; retest03/04 with fresh labels and retained QA records.
+02 deliberately requires pristine B7.5, so do not repeat it after QA mutations.
+No real GUI/manual test is claimed passed by this preparation.
+
+### Actual offline validation
+
+```bash
+python3 tests/GuiAcceptanceEvidenceTests.py
+cmake --build build --parallel 2
+ctest --test-dir build --output-on-failure -E '^(MariaDbIntegrationTests|OrganizationIntegrationTests)$'
+ctest --test-dir build -R '^(GuiAcceptanceEvidenceTests|Phase12GuiAcceptanceScripts)$' --output-on-failure
+sha256sum --check scripts/phase12/b7/ReviewChecksums.sha256
+```
+
+Build succeeded. Full offline CTest **26/26 passed**, zero failures,193.58 seconds.
+Both live integration suites explicitly excluded. New evidence suite0.04 seconds,
+GUI helper mock29.05 seconds; prior organization/command/desktop/safety/migration/
+backup/restore suites also passed. No reset-capable live test was run.
+
+After tightening new JSON snapshot identity/revision/timestamp checks and safe
+error diagnostics, affected suites reran **2/2 passed**, zero failures,29.16
+seconds. Added static comparison of the actual schema2-export SELECT field order
+with SchemaManifest columns and reran the Python suite: **7 tests passed**,0.015
+seconds. No new-code failure observed. The helper mocks exercise both platform
+branches, pristine B7.5 seals, no approval/preview side effects, runtime-only GUI
+configuration, QA additions and UUID inventory, read-only restart equality,
+existing-label refusal, active-session rejection and protected-data corruption
+leaving an unsealed checkpoint that blocks further launch. The fake executable
+never starts a real GUI; it changes temporary fixture files only.
+
+Python tests cover original completed/tombstoned tasks, Unicode/tab field values,
+raw historical JSON whitespace preservation, metadata immutability, non-QA additions,
+original-target audits, cycles/contradictory/missing owners, archive inheritance,
+missing/mismatched outbox companions, invalid snapshot identity/revision and
+malformed/duplicate/missing-table exports. Inventory/graph checks are distinct
+from previously tested C++ domain/transaction behavior and owner manual evidence.
+
+All20 pinned review-package entries passed. Accepted Phase1.1 report, migration001,
+migration002 and SchemaManifest hashes remained unchanged. New/modified script
+syntax, Python syntax, Markdown references/fences, checksum-file boundaries and
+`git diff --check` are final reporting checks below. No installation, native Windows
+execution, live SQL, private backup read, actual QA record creation or GUI acceptance
+performed by agent. All manual checkboxes remain explicitly unchecked.
+
+### Approval Requested — Linux B7.7 QA acceptance only
+
+Approve owner execution first on **CentOS Stream9/Qt6 Widgets, feledria/MariaDB10.5.29,
+taskcompass_dev@127.0.0.1:3306**, expected dataset
+`21be9da7-b767-4578-b972-cc9a35122ddb`, only after fresh B7.5 preservation/final grants/
+health checks pass. Scope: new private QA evidence child directory, existing
+runtime TaskCompass GUI via taskcompass_app, manual G01–G09 mutations exclusively
+on new records retaining that run's generated B77-QA-linux prefix, read-only
+checkpoints and normal restart. Two deliberate QA runtime sessions are included
+only for stale/conflict/dependency/missing-parent checks on those new records.
+
+Allowed GUI operations: create/edit/rename/move/archive/restore QA organizations,
+QA task ownership/completion/reopening, chronological Undo/Redo (including recorded
+soft Undo Create of new QA data), normal close/relaunch. No original user record
+may be saved/mutated or used as QA parent; no QA purge, automated cleanup, grants,
+password/plugin changes, migrations, SQL DML injection, server/service stop,
+connection KILL, reset, restore or backup creation. Existing GUI impact warning
+dialogs remain product behavior; scripts request no confirmation phrases.
+
+**After Linux approval**, from repository root:
+
+```bash
+scripts/phase12/b77/01-build.sh
+scripts/phase12/b77/02-preflight.sh --approved --platform linux
+qaDirectory='/actual/private/b77-directory/printed/by/preflight'
+scripts/phase12/b77/03-launch.sh --approved --platform linux --qa-dir "$qaDirectory"
+```
+
+Perform [Linux checklist G01–G07](../Phase1.2B77Linux.md) using generated title
+copy/paste templates, record UUIDs/observations and close all GUI work normally:
+
+```bash
+scripts/phase12/b77/04-checkpoint.sh --approved --platform linux \
+   --qa-dir "$qaDirectory" --label before-restart
+scripts/phase12/b77/03-launch.sh --approved --platform linux --qa-dir "$qaDirectory"
+```
+
+Perform G08 with no database mutations, close and require exact restart equality:
+
+```bash
+scripts/phase12/b77/04-checkpoint.sh --approved --platform linux \
+   --qa-dir "$qaDirectory" --label after-restart --compare before-restart
+```
+
+Then G09 in two03-launch terminals, QA-only, close both and capture:
+
+```bash
+scripts/phase12/b77/04-checkpoint.sh --approved --platform linux \
+   --qa-dir "$qaDirectory" --label final
+```
+
+Expected machine PASS covers protected original rows, QA owner/cycle/history
+invariants, final privileges, all59 health counts0 and sealed evidence. Owner must
+separately report every observed GUI/restart/conflict result and explicit unexecuted
+fault cases. Failed/uncertain operation: stop, preserve records/artifacts and
+history, no blind retry or automatic repair. If a checkpoint fails, do not delete
+its unsealed directory or rebaseline to make it pass. A specific inspected defect/
+recovery decision is needed; backup rollback is not presumed authorized.
+
+After Linux results review, request independent Windows B7.7 authorization on
+feldria-w10/MariaDB13.0.2, dataset `457bb52b-fea4-4347-9c47-675c6b035c90`, own QA
+prefix/evidence, same approved commands with --platform windows. Windows checklist
+is prepared but unexecuted/unauthorized. Linux results do not prove Windows GUI.
+
+### Remaining Phase1.2 gates
+
+1. Linux owner GUI checklist + checkpoint/restart/conflict results and review of
+   actual history/reconnection policy and unexecuted fault cases; resolve defects.
+2. Separate Windows authorization and corresponding owner GUI/machine results.
+3. B7.8 fresh populated schema2 backup/all-nine-table evidence, separately approved.
+4. B7.9 new isolated restore/compare preserving existing rehearsal/integration data,
+   provisioning/restore separately approved with exact SQL/artifacts.
+5. B7.10 independent evidence review and explicit owner final milestone acceptance.
+
+No Phase1.3 feature work, commit, merge, tag or push. Stop after preparation and
+report the implementation limits and exact Linux sequence for owner review.
+
+Final reporting checks passed: new/modified Markdown references and fenced blocks,
+individual Bash/Python syntax, no new typed-confirmation reads and git diff --check.
+No conflicting repository instruction or new naming/framework exception found;
+actual conflict-history and native reconnection limitations are explicitly recorded
+for review rather than changed. Preparation stops here; no live B7.7 authorization
+or manual result has been inferred.
+
+## 2026-11-18 — Owner Linux offline build: remove unintended ripgrep test dependency
+
+Owner ran `scripts/phase12/b77/01-build.sh`. CMake/build succeeded (Ninja no work);
+CTest reported28 entries:22 passed,2 failed,2 live integration suites correctly
+skipped,161.37 seconds. Failures were exclusively:
+
+```text
+Phase12ReviewedCompletionScripts: line12: rg: command not found
+Phase12UpgradeInspectionScripts: line14: rg: command not found
+```
+
+No application compilation or database failure is indicated. ripgrep was an
+unintended test-only dependency introduced by the agent, not a declared runtime/
+build prerequisite; owner does not need to install it. Existing26/26 agent offline
+results remain historical, not evidence that this owner's unpatched run passed.
+No B7.7 manual GUI test or live database stage was executed by this build.
+
+### Focused correction
+
+Added builtin-only countDevMutations to the shared fixture definitions in
+`tests/Phase12DevelopmentUpgradeScripts.test.sh`. Replaced all four rg mutation
+count calls in `tests/Phase12ReviewedCompletionScripts.test.sh` and
+`tests/Phase12UpgradeInspectionScripts.test.sh`. Match only the original exact
+three fake operation lines; zero matches now reliably returns count0/success rather
+than inheriting a search utility's no-match exit status. A final unterminated line
+is counted correctly. No grep/ripgrep/Python subprocess is needed for this helper.
+
+Both affected suites now shadow rg with a test-local executable sentinel that
+always fails, proving no hidden invocation depends on a host ripgrep installation.
+Added zero-match/prefix-lookalike and three exact-match/unterminated-last-line
+assertions. Updated TestingPhase1.2 with the narrow owner retest command. No CMake,
+application, operator script, SQL, migration, grants or private evidence changed.
+No dependency installed or live operation performed.
+
+### Actual checks and owner retest
+
+Agent executed:
+
+```bash
+ctest --test-dir build -R '^Phase12(ReviewedCompletion|UpgradeInspection)Scripts$' --output-on-failure
+bash -n tests/Phase12ReviewedCompletionScripts.test.sh
+bash -n tests/Phase12UpgradeInspectionScripts.test.sh
+bash -n tests/Phase12DevelopmentUpgradeScripts.test.sh
+```
+
+Both affected suites passed **2/2**, zero failures,36.07 seconds (28.25/7.82 seconds),
+with the failing rg sentinel present. Shell syntax and git diff --check passed.
+No application rebuild was necessary for test-script-only changes; owner's build
+already succeeded and no production source changed. No broad test repeat beyond
+the affected suites was needed. Owner CentOS/Linux retest is still pending, not
+claimed passed. Updated Markdown local references/fences checked for this report.
+
+After updating checkout, owner should run the same focused CTest command above;
+there is no need to repeat successful B7.5 database operations or install packages.
+Keep B7.7 live QA separate and gated; the preparation approval request/results
+remain unchanged. Preserve all historical failures and original database/backups/
+rehearsal evidence. No commit/push/merge/tag.
+
+## 2026-11-18 — Owner Linux portability retest passed; proceeding to read-only02
+
+Owner executed:
+
+```bash
+ctest --test-dir build \
+   -R '^Phase12(ReviewedCompletion|UpgradeInspection)Scripts$' \
+   --output-on-failure
+```
+
+Owner-reported **2/2 passed**, zero failures,34.71 seconds (27.20/7.51 seconds).
+Together with the preceding full run's other passes and successful compilation,
+this resolves the reported two missing-ripgrep test failures; it is not claimed as
+an entirely rerun full suite or a manual GUI acceptance result. Earlier failures
+and agent results remain preserved.
+
+Owner states they will continue with step2. This identifies the prepared Linux
+read-only B7.7 preflight, not GUI writes or Windows acceptance:
+
+```bash
+scripts/phase12/b77/02-preflight.sh --approved --platform linux
+```
+
+Close TaskCompass/client sessions first. Expected outcome: fresh B7.5/schema2/UUID/
+data/final-grants/health verification, new private QA directory and generated QA
+prefix/template names, no database record creation. Save its printed path for
+--qa-dir in later commands and report any failure. No new live result is yet
+reported; GUI mutation authorization/results are not inferred from this retest or
+intent to run02. Agent performed no live SQL, GUI launch, private artifact access,
+database/grant/backup modification, cleanup or package installation.
+
+Updated only TestingPhase1.2's current retest note and this dated milestone entry.
+No code or test change; no build/CTest repeated because the owner evidence is the
+subject of this documentation-only update. Markdown references/fences and
+`git diff --check` validated. No commit/push/merge/tag.
+
+## 2026-11-18 — Linux B7.7 preflight passed; placeholder launch rejected safely
+
+Owner ran `02-preflight.sh --approved --platform linux`. All retained snapshot/
+rehearsal/B7.5 seals passed; migrator and runtime Qt verified schema2 and dataset
+`21be9da7-b767-4578-b972-cc9a35122ddb`. Original data/DDL, full B7.5 equality,
+exact final privileges/no unexpected authority or active sessions, protected rows,
+ownership/graph/audit/outbox and health passed. No GUI writes occurred. Output:
+
+```text
+PASS: B7.7 pristine B7.5 baseline/final grants/health. No GUI writes.
+QA directory: /home/justin/temp/TaskCompassBackups/Phase1.2-schema1-linux-20261117-013703/b77-linux-20261118-102657-195100
+QA prefix: B77-QA-linux-20261118-102657-195100
+```
+
+These are owner-reported live read-only preflight results; agent did not access the
+private directory or query databases. Preserve its initial seal, protected inventory
+and generated title templates. No actual QA task/organization record is reported.
+
+Owner assigned `qaDirectory='/actual/directory/printed/by/preflight'` literally,
+then attempted the Linux03 launch. The private-directory guard rejected that
+placeholder before runtime authentication/Qt verification or executable launch:
+
+```text
+STOP: Expected private B7.7 run directory inside approved capture.
+```
+
+Inspected source order: private77/initial manifest/path checks precede verify75
+and the GUI invocation. Thus the failed03 attempt did not launch GUI, create/modify
+database records, change grants or produce a checkpoint. No database/artifact
+repair, cleanup, reset or repeated preflight is needed. The example was a placeholder
+requiring substitution; provide the already known exact value directly now.
+
+Operator correction:
+
+```bash
+qaDirectory='/home/justin/temp/TaskCompassBackups/Phase1.2-schema1-linux-20261117-013703/b77-linux-20261118-102657-195100'
+scripts/phase12/b77/03-launch.sh --approved --platform linux --qa-dir "$qaDirectory"
+```
+
+Use generated qa-names.tsv/prefix for all new records and perform the Linux G01–G07
+checklist; original records remain read-only. Owner's explicit attempted03 identifies
+intent to launch the described Linux runtime QA step, not Windows, reset/restore,
+service control, grant changes or later milestones. Actual GUI writes/manual results
+remain unreported. Close normally before subsequent checkpoints; do not rerun02.
+
+Reporting-only files: this milestone and TestingPhase1.2 current status pointer.
+Preserve earlier observations/results; no source/application/SQL/script or private
+artifact changed by agent. No live SQL/GUI execution by agent. No build/tests rerun
+for documentation/source-order review; existing actual results preserved.
+Markdown local links/fences and git diff --check validated. No commit/push/merge/tag.
+
+### 2026-11-18 — Automatic environment evidence for G01 and build notes
+
+Owner requested automatic Linux/Windows collection of platform, Qt, server and
+source revision, with changes recorded in repository build notes. Implemented a
+shared offline reporter; manual G01 version transcription is superseded by the
+script output. Manual GUI observations and acceptance remain owner-reported and
+pending; no GUI result is inferred from metadata collection.
+
+Created scripts/environment-report.py and its Bash wrapper, tests/EnvironmentReportTests.py
+and docs/BuildNotes.md. Updated CMakeLists.txt, scripts/phase12/01-build.sh,
+scripts/phase12/b77/run.sh, docs/Building.md, the B7.7 guide and platform checklists,
+and AGENTS.md's validation convention. Existing unrelated working-tree changes
+and all historical milestone evidence remain preserved.
+
+Both platforms use scripts/environment-report.sh. Build wrappers invoke it before
+configuration and after successful compilation, before CTest. Reports capture
+OS/kernel/architecture/MSYS2, compiler/CMake/generator/build type, CMake-selected
+QtCore/Widgets package versions, Git revision/branch/dirty state, source-content
+fingerprint and desktop executable hash. Package metadata does not establish the
+runtime DLL loaded by an existing process; checkout and executable fingerprints
+do not imply unbuilt edits were compiled. Unavailable values are labeled explicitly.
+
+Machine-local dated before/after notes live inside the ignored repository build
+directory: build/validation-notes/BuildNotes.md on Linux and
+build-ucrt64/validation-notes/BuildNotes.md on Windows. Every invocation creates a
+unique JSON snapshot. Only changed field values append history; context, timestamp
+and a changed server-evidence filename alone do not create false version changes.
+No generated reports are automatically committed. Credentials/environment dumps,
+Git remotes, raw diffs and task content are excluded.
+
+B7.7 preflight/checkpoint attach SERVER metadata from their existing fresh checks;
+launch labels saved B7.5 server evidence explicitly. There are no additional SQL
+connections or password requests. Snapshots/checksums are new flat sidecar files
+in the private QA directory, compatible with existing seals. Standalone reporting
+is offline by default. The agent did not read owner backup/server evidence or
+execute database/GUI operations. No migration, application C++ or grant SQL changed.
+No backup/evidence cleanup or reset was performed.
+
+Exact operator commands and options are in ../BuildNotes.md. An existing G01 run
+does not need another preflight or GUI restart for bookkeeping. Run
+scripts/environment-report.sh for the offline report; optionally attach the saved
+server file as documented. Subsequent normal launch/checkpoint scripts report
+metadata automatically. Windows uses the same helper under MSYS2 UCRT64.
+
+Agent validation (Linux, CentOS Stream9, CMake-selected Qt6.10.3):
+
+- python3 tests/EnvironmentReportTests.py: final six tests passed, including change
+  history, Windows paths/saved metadata, source hashing, missing Git and secret
+  environment removal. No live database is used.
+- cmake --build build --parallel 2: passed.
+- ctest --test-dir build -R '^(EnvironmentReportTests|Phase12GuiAcceptanceScripts)$'
+  --output-on-failure: 2/2 passed, 29.40 seconds.
+- scripts/environment-report.sh --build-dir build --context implementation-check:
+  passed offline; actual source revision 38e4469df3738c4fdbb608521931f50fe6f6527c,
+  dirty checkout correctly reported; server explicitly not queried.
+- scripts/phase12/01-build.sh: configure/build passed; 27 offline CTest entries
+  passed and two opt-in integration entries skipped; zero failures, 192.44 seconds.
+  Build-start/output reports demonstrated changed-source tracking followed by an
+  unchanged report without duplicate change notes. Final six-test direct unit run
+  also covers the subsequent missing-Git truthfulness correction.
+
+Native Windows execution of the new reporter remains pending; Windows package
+paths and saved server evidence are covered by offline tests. Manual Linux G01–G07,
+Windows GUI acceptance and remaining milestone gates are unchanged. This metadata
+work requires no new live authorization. No commit, push, merge or tag performed.
+
+### 2026-11-18 — Owner-authorized focused GUI usability refinement
+
+Owner reports Phase1.2 functional GUI testing has gone well, without supplying
+individual final acceptance results, and explicitly authorizes this refinement.
+This supersedes the earlier independent-global New Task default and exclusion of
+organizational reparenting gestures only. Task priority/manual ordering, other
+Phase1.3 scope, live operations, cleanup and commits remain excluded.
+
+Implemented in OrganizationTreeModel.h/.cpp, PersistentTaskWindow.h/.cpp and
+OrganizationMoveDialog.cpp, with OrganizationDesktopTests.cpp coverage:
+
+- Replace toolbar New Pillar with an accessible + instant menu. A shared builder
+  supplies toolbar and right-click creation entries: New Task first, separator,
+  legal organizational children, separator when needed, New Pillar last. Pillars
+  offer Subpillar/Project/Objective, projects offer Subproject/Objective, objectives
+  and archived/global selections have no child creation actions. Bottom New Pillar
+  defaults to root; parent picker still allows valid alternatives. Context editing
+  actions follow the creation group. No typed phrase or approval gate added.
+- Add a nonselectable visual hierarchy separator after All Tasks/Inbox; parent
+  pickers filter it out. All five entity types have visible prefixes, type/path/UUID
+  tooltips and selection details. Duplicate-name UUID disambiguation remains.
+- Sort raw sibling titles case-insensitively within pillar/project/objective groups,
+  with typed UUID tie-break; no stored order or migration. Existing iterative flat
+  model storage and UUID selection/expansion restoration remain in use.
+- New Task defaults to a selected active objective/project everywhere. Independent
+  remains selectable; pillar/global/archived selections default Independent. Existing
+  task editing preserves its actual owner. Show Archived already defaulted false;
+  retained it and added fresh-profile/saved-preference coverage, without touching
+  owner settings.
+- Add same-model organizational drops onto legal pillar/project parents in the
+  project-oriented tree. Generation-specific MIME rejects foreign/stale drags;
+  domain rules reject cycles/illegal parent shapes before showing preview. Busy
+  and objective-oriented views disable reparenting; between-row/manual-order,
+  unchanged-parent and global/Inbox/objective destinations are rejected. Root
+  promotion remains in Move's No parent choice. No task dragging implemented.
+- Drops emit intent only and defer modal interaction until Qt finishes the event.
+  The existing Move picker is preselected to the destination; existing subtree
+  preview/archive warning, expected-workspace/revision checks, CommandService,
+  repository transaction and global undo/redo own the operation. Cancellation never
+  changes model/repository state. No duplicate persistence or history engine added.
+
+Interactions.md appends the superseding behavior; Roadmap.md and
+TestingPhase1.2.md link the refinement/retest. Earlier reports remain historical.
+No domain/storage behavior, schema, migrations001/002, identity, grant matrix,
+accounts, private captures, QA data or restored rehearsal database changed by agent.
+No live SQL, database connection, reset-capable live test or GUI database write ran.
+No commit/push/merge/tag. No separate implementation item is deferred; pointer-level
+platform observation and root promotion through Move remain explicit limitations.
+
+Offline tests include menu content across root/pillar/project/objective, real
+right-click menu parity with +, selected-owner defaults, separator filtering/type
+roles/group sorting, archived default and saved preference, refresh state retention,
+stale/cyclic/illegal/copy/between-row drag rejection, cancelled preview, successful
+command-backed move, task preservation and shared undo/redo using the in-memory
+repository. Existing deep-hierarchy and archive/restart regression cases remain.
+Validation results are recorded below after completion; native Windows and manual
+visual/pointer/restart acceptance of this refinement remain owner work.
+
+Exact Linux review sequence (run by owner; build is offline; reuse existing QA run,
+not a new preflight). Close the existing GUI before rebuilding/relaunching. All new
+records must use B77-QA-linux-20261118-102657-195100; originals are read-only:
+
+```bash
+scripts/phase12/b77/01-build.sh
+qaDirectory='/home/justin/temp/TaskCompassBackups/Phase1.2-schema1-linux-20261117-013703/b77-linux-20261118-102657-195100'
+scripts/phase12/b77/03-launch.sh --approved --platform linux --qa-dir "$qaDirectory"
+```
+
+Perform the focused checklist in TestingPhase1.2.md, then close normally. Continue
+normal documented B7.7 checkpoint/restart stages, preserving previous captures;
+no repeat preflight, database reset or cleanup. Report visual/menu/drop findings
+and actual checkpoint results before acceptance. Windows remains a separate native
+review after Linux results; neither this source change nor offline tests claim
+manual acceptance or authorize later database backup/restore stages.
+
+Agent validation completed on Linux/CentOS Stream9 with Qt6.10.3:
+
+- cmake --build build --parallel 2: succeeded throughout incremental review.
+- ctest --test-dir build -R '^(OrganizationDesktopTests|PersistentDesktopTests|PrototypeTests)$'
+  --output-on-failure: 3/3 passed, 3.05s (initial focused coverage).
+- ctest --test-dir build -R '^(OrganizationDesktopTests|PersistentDesktopTests)$'
+  --output-on-failure: 2/2 passed, 3.63s after modal drop/menu tests and final
+  navigation refresh/accessibility review. Final additional type-role assertions:
+  ctest --test-dir build -R '^OrganizationDesktopTests$' --output-on-failure,
+  1/1 passed, 2.55s.
+- scripts/phase12/b77/01-build.sh: configure/build passed; full CTest registered29,
+  27 offline entries passed, two live integration entries skipped intentionally,
+  zero failures, 193.68s. Final GUI test executable (including all review edits)
+  also passed within this full run, 2.56s. No observed build/test failures.
+- Documentation local links/fences and git diff --check passed. No migration,
+  domain, application-service or storage diff. Updated B7.7 guide/Linux checklist
+  to replace the obsolete global-independent G03 expectation and add retests.
+
+The build wrapper recorded environment/source/binary metadata offline. These
+results do not establish native Windows behavior, pointer-level visual quality or
+manual acceptance. No additional approval is needed to review the completed source;
+owner live QA stays within the existing Linux B7.7 scope and prefix restrictions.
+
+
+### 2026-11-18 — Toolbar creation control placement correction
+
+Owner's visual review requests removing the redundant standalone New Task toolbar
+button and placing + in its first position. PersistentTaskWindow.cpp now adds +
+first, followed by Edit/Complete/Undo/Redo; the obsolete trailing separator is
+removed. New Task remains first in the shared creation menus and in the Task menu
+with Ctrl+N. No command, ownership, database or preference behavior changes.
+This supersedes the previous toolbar arrangement only. No live operations or
+commits; prior QA evidence preserved. Validation results follow below.
+
+Agent Linux validation: cmake --build build --parallel 2 passed;
+ctest --test-dir build -R '^(PersistentDesktopTests|OrganizationDesktopTests)$'
+--output-on-failure passed 2/2, 3.48s; git diff --check passed. Full suite was not
+repeated for this toolbar-only placement change; the preceding refinement's full
+27-offline-pass/two-live-skip result remains historical. Native Windows and owner
+visual confirmation of the new placement are pending. Close/relaunch the existing
+Linux QA application using the same b77/03-launch.sh command and QA directory;
+no new preflight is needed.
+
+
+### 2026-11-18 — Pillars separator, session archive filter, subtree counts and icons
+
+Owner reports the latest GUI refinements look good and explicitly requests these
+additional changes before acceptance. This supersedes the earlier type-prefix and
+saved Show Archived decisions only; prior reports remain historical. Phase1.2 is
+not accepted. Source changes are in OrganizationTreeModel.h/.cpp,
+PersistentTaskWindow.cpp and OrganizationDesktopTests.cpp. Updated Interactions,
+Roadmap, TestingPhase1.2, B7.7 guide/platform checklists and this milestone.
+
+Implemented:
+
+- Nonselectable separator now reads Pillars with its existing horizontal-rule
+  presentation/layout. All Tasks/Inbox retain their positions.
+- Show Archived always starts false; constructor ignores historical QSettings and
+  close no longer persists the option. Session toggling remains available. Other
+  UI settings are untouched; archived selections hidden on startup fall back to
+  All Tasks. No owner settings file was reset or modified by the agent.
+- Organizational labels append an open-task count, including zero. Each eligible
+  task contributes once at its objective/direct-project owner, then subtree sums
+  propagate through project/pillar ancestors. Completed, tombstoned, effectively
+  archived and independent tasks never contribute. Tombstoned organizational
+  ancestry also blocks contributions. Counts are independent of task selection,
+  search and Show Completed/Archived. Flat-objective navigation uses the same sums.
+- Aggregation is an iterative parent-before-child inheritance pass, one direct-task
+  tally and a reverse-order rollup over the loaded snapshot, using maps; no per-item
+  database queries, recursive depth cap, persisted counters or redundant ownership.
+  Existing workspace refresh after committed mutations/undo/redo recalculates sums.
+- Remove full type prefixes and redundant path text in normal flat objective labels.
+  Keep duplicate-name disambiguation and raw-name grouped sorting/UUID tie-breaks.
+  UUID-based navigation restoration is unchanged. Tooltips and accessible roles
+  expose type/path/UUID/open count/archive state; selection details retain full type.
+- Qt QIconEngine renders application-owned vector geometry at requested size:
+  columns/pillar, folder/project, target/objective, small nested corner variation.
+  Qt palette Text/HighlightedText and Disabled colors support light/dark/selection;
+  no emoji, system icon names, bitmap assets or added dependencies. Native Windows,
+  themes and HiDPI visual acceptance remain owner-observed requirements.
+- Toolbar remains + first followed by editing/history controls; no standalone
+  New Task or New Pillar buttons. Shared creation menus and selected-owner defaults,
+  Independent choice, existing move previews/commands/transactions are unchanged.
+
+Offline test coverage added/updated: separator, all descendant ownership routes,
+completed/tombstoned/independent/archive exclusions, zero counts, flat objectives,
+name-only sorting, icon shape differences and rendered black/white palette pixels,
+absence of prefixes, tooltip/accessibility metadata, ignored historical saved-true
+archive value, restart with archive hidden, toolbar-only + and shared menu parity,
+count refresh after create/complete/reopen/ownership edits, move, archive/restore,
+undo/redo, and selection/expansion through count refresh with an excluding search.
+All use memory repositories/temporary UI settings; no live database access.
+
+Schema/migrations/accounts/grants/dataset identities/audit payloads, original user
+records, QA records and backup/rehearsal evidence are unchanged by the agent.
+No integration resets, live SQL, live GUI launch/write, dependency installation,
+commit, merge, tag or push. Validation results follow when complete.
+
+Linux operator review (close the currently running GUI first; no repeat preflight):
+
+```bash
+scripts/phase12/b77/01-build.sh
+qaDirectory='/home/justin/temp/TaskCompassBackups/Phase1.2-schema1-linux-20261117-013703/b77-linux-20261118-102657-195100'
+scripts/phase12/b77/03-launch.sh --approved --platform linux --qa-dir "$qaDirectory"
+```
+
+Use only existing QA prefix/records for changes. Check totals and icon clarity,
+then enable Show Archived, close/reopen with the same launch command and verify
+it resets off while underlying archive states persist. Continue B7.7 checkpoint/
+restart observations with fresh labels, preserving earlier evidence. Windows uses
+the same build wrapper in UCRT64 and its independently recorded QA directory with
+--platform windows after Linux review; no Linux path reuse. Remaining gates:
+manual Linux/Windows refinement/restart results, separately approved populated
+schema2 backup/isolated restore validation, and final owner acceptance. No Phase1.3.
+
+Agent Linux validation (CentOS Stream9, Qt6.10.3):
+
+- cmake --build build --parallel 2 passed after incremental source/test changes.
+- ctest --test-dir build -R '^(OrganizationDesktopTests|PersistentDesktopTests)$'
+  --output-on-failure: initial 2/2 passed, 1.95s; final 2/2 passed, 1.92s.
+- scripts/phase12/b77/01-build.sh configured/built successfully, recorded offline
+  environment reports and ran all29 CTest registrations: 27 offline tests passed,
+  two opt-in live integration suites skipped, zero failures, 194.65s. Final GUI
+  test executable including the toolbar-only +/restart assertions also passed
+  within the full run (1.20s). No observed build/test failures.
+- Documentation local Markdown references/fences and git diff --check passed.
+  No migration, storage, application-service or domain source diff was introduced.
+
+Theme tests render 48px vector pixmaps using black/white palette foregrounds,
+verify visible foreground pixels and distinct pillar/project/objective shapes.
+This is offline rendering evidence, not native Windows, platform theme, selected
+row or HiDPI visual acceptance. Those observations and manual restart/checkpoint
+results remain pending. No live database was contacted by this validation.
+
+
+### 2026-11-18 — Compact task-list rows
+
+Owner requests shorter task-list text boxes. The persistent task list uses table
+cells rather than embedded text editors; interpreted this as reducing row height.
+PersistentTaskWindow.cpp now uses single-line rows with height based on the larger
+of current font height and platform checkbox indicator, plus six logical pixels
+of padding. This scales with the platform font/DPI without shrinking text or
+clipping checkboxes. Rows remain manually resizable. Task dialogs and data are
+unchanged; no schema, grant, QA record or live database operations. No commits.
+Focused build/GUI regression results follow. Native Windows and actual compact
+appearance remain owner review; use the existing Linux b77/03-launch.sh command
+and QA directory after closing/relaunching, without repeating preflight.
+
+Agent Linux validation: cmake --build build --parallel 2 passed;
+ctest --test-dir build -R '^(PersistentDesktopTests|OrganizationDesktopTests)$'
+--output-on-failure passed 2/2 in1.96s; git diff --check passed. Full suite was not
+repeated for this presentation-only sizing change; prior full-suite evidence is
+preserved. No new implementation-mirroring test added for the sizing constants.

@@ -1,5 +1,11 @@
 # Implementation roadmap
 
+Current refinement: owner-requested Phase1.2 GUI usability pass (2026-11-18),
+including context-aware creation, organizational reparenting, derived open-task
+counts, scalable type icons and a session-only archive filter; see the
+[milestone](milestones/Phase1.2.md). No Phase1.3 priority/manual-order dragging.
+Manual refinement retest and final acceptance remain pending.
+
 **Phase 1.1 was accepted by the owner on 2026-11-14.** Linux and Windows validation
 evidence is preserved in the milestone, including confirmed Windows GUI restart
 with persisted data intact. Preserve backups, exports and restored integration
@@ -34,7 +40,10 @@ Linux runtime transition04 and final verification05 also passed (owner-reported,
 2026-11-17). Linux development upgrade/final privileges/preservation/health are
 verified; Windows B7.5 stages01–05 also passed (owner-reported, 2026-11-17).
 Both development upgrades, final least-privilege grants, original preservation and
-health are verified; earlier authentication failures remain historical. GUI and schema2 backup/restore remain separately gated.
+health are verified; earlier authentication failures remain historical. B7.7 [GUI acceptance guide](Phase1.2B77.md) and separate
+[Linux](Phase1.2B77Linux.md)/[Windows](Phase1.2B77Windows.md) checklists are prepared
+(2026-11-18); live Linux QA authorization and manual results remain pending.
+GUI and schema2 backup/restore remain separately gated.
 Phase 1.2 is not accepted.** See the
 [scripted Windows sequence](WindowsPhase1.1.md). Live provisioning, grants and
 migrations remain behind their specific approval checkpoints. Phase 0.1 is accepted on owner

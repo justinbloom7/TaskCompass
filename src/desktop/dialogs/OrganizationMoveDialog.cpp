@@ -38,6 +38,7 @@ public:
 protected:
    bool filterAcceptsRow(int row, const QModelIndex &parent) const override {
       const auto index = sourceModel()->index(row, 0, parent);
+      if (index.data(OrganizationTreeModel::SCOPE_ROLE).toInt() == -1) { return false; }
       if (index.data(OrganizationTreeModel::SCOPE_ROLE).toInt() == 1) { return false; }
       const auto key = static_cast<OrganizationTreeModel *>(sourceModel())->keyAt(index);
       if (!key) { return !kind || *kind == OrganizationKind::PILLAR; }

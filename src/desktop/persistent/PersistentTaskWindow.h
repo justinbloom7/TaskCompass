@@ -13,6 +13,8 @@ class QSplitter;
 class QTreeView;
 class QAction;
 class QComboBox;
+class QMenu;
+class QLabel;
 class OrganizationTreeModel;
 
 class PersistentTaskWindow : public QMainWindow {
@@ -26,8 +28,10 @@ protected:
 private:
    void refresh();
    void editTask(bool create, std::optional<taskcompass::TaskOwner> initialOwner = {});
-   void editOrganization(std::optional<taskcompass::OrganizationKind> createKind);
-   void moveOrganization();
+   void editOrganization(std::optional<taskcompass::OrganizationKind> createKind, bool rootPillar = false);
+   void moveOrganization(std::optional<taskcompass::OrganizationKey> destination = {});
+   void populateCreationMenu(QMenu *menu);
+   QLabel *selectionDetails;
    void archiveOrganization(bool restore);
    void rebuildNavigation();
    void updateScope();

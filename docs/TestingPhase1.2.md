@@ -25,10 +25,13 @@ Linux runtime transition04 and final verification05 also passed (owner-reported,
 verified; Windows B7.5 stages01–05 also passed (owner-reported, 2026-11-17).
 Both development upgrades, final least-privilege grants, original preservation and
 health are verified; earlier authentication failures remain historical.
-No live procedure was performed by the agent. Development upgrades and subsequent
-privilege/GUI/backup gates remain pending and require separate approval.** Do not execute
-steps 3 or 4 without separate approval for that step, platform and target. None of
-these steps upgrades taskcompass_dev. Preserve taskcompass_integration, all accepted
+No live procedure was performed by the agent. B7.7 GUI acceptance preparation
+is now available in the [guide](Phase1.2B77.md), [Linux checklist](Phase1.2B77Linux.md)
+and [Windows checklist](Phase1.2B77Windows.md). Linux read-only02 preflight passed (owner-reported,2026-11-18). The first03 launch
+was rejected for a placeholder directory; GUI/manual results remain pending.
+Windows GUI QA remains separately gated. Backup/restore and final acceptance remain separately gated.** Do not execute
+steps 3 or 4 without separate approval for that step, platform and target. The earlier isolated steps below do not upgrade taskcompass_dev; completed
+B7.5 development results are recorded separately above. Preserve taskcompass_integration, all accepted
 Phase 1.1 records and private backups/exports. Do not use its old reset scripts here.
 
 Use Bash on CentOS Stream 9 or the MSYS2 **UCRT64** terminal on Windows. Prerequisites
@@ -39,6 +42,20 @@ steps. No script installs packages or changes service/TLS settings. CTest uses o
 fake clients/in-memory repositories unless explicitly opted into a live suite.
 
 ## 1 — Build and run offline tests (safe now)
+
+**2026-11-18 portability correction:** owner's Linux B7.7 build compiled, but two
+offline tests failed because they accidentally invoked optional ripgrep. The tests
+now count fake mutations with Bash built-ins; no ripgrep installation is required.
+Both corrected tests passed agent rerun with an executable rg sentinel that fails
+if invoked. Owner Linux focused retest subsequently passed2/2 (34.71 seconds,
+2026-11-18); the original failure remains recorded. Focused retest command:
+
+```bash
+ctest --test-dir build -R '^Phase12(ReviewedCompletion|UpgradeInspection)Scripts$' --output-on-failure
+```
+
+The two live integration suites were correctly skipped in the owner's full run.
+This correction does not authorize live GUI testing or touch any database.
 
 From the repository root:
 
@@ -280,3 +297,54 @@ live capture results are pending. Later grants, restores and migration remain
 separately gated. Approvals/results remain in the milestone.
 Do not rerun disposable integration tests on a populated clone or reuse retained
 taskcompass_integration/Phase 1.1 artifacts as scratch space.
+
+
+## Focused usability retest — 2026-11-18
+
+The owner reports GUI functional testing has gone well; this is not final acceptance.
+Retest the refinements in [Interactions](Interactions.md#phase-12-usability-refinement--2026-11-18)
+on Linux first, then Windows after Linux review. Use only the existing QA prefix
+and records. Preserve all originals and previous checkpoints. No reset/cleanup.
+
+1. Compare + and right-click creation menus for All Tasks, Inbox, pillar,
+   subpillar, project, subproject, objective and visible archived entity. New Task
+   is first and New Pillar last in the creation section; only legal children appear.
+2. Check the navigation separator, every entity's type label, tooltip and selected
+   details, and alphabetical sibling order within type groups (including mixed
+   case and duplicate names). Refresh/reload and verify selection/expansion.
+3. Open New Task under a project/objective and check its default owner. Choose
+   Independent as an alternative; pillars never become task owners. Cancel editors
+   when observation alone suffices.
+4. On QA organizations only, drop onto a valid parent; inspect the existing Move
+   destination and subtree/archive preview. First cancel, then complete a move.
+   Undo/redo and verify unchanged task UUIDs and derived paths. Try invalid cyclic,
+   pillar-to-project, objective-target, unchanged-parent and between-row drops;
+   none must write. Archived destinations retain the explicit warning. Root
+   promotion uses Move, not a row-position drop. Objective view disables dragging.
+5. Verify Show Archived always starts off, including after closing with it on.
+   This supersedes saved-preference restoration. Existing archived records remain
+   archived and hidden initially; enable the filter to observe them. Other UI
+   preferences retain their existing behavior. Complete normal before/after-restart
+   B7.7 checkpoints as documented.
+
+Offline coverage lives in OrganizationDesktopTests: shared menu content, all
+selected-owner defaults, type roles, grouped sorting, disabled separator, session-only
+archive defaults, refresh state, stale/invalid drag rejection, cancellation,
+command-backed move and undo/redo with task preservation. Native platform pointer
+interaction and visual quality still require owner observation. Use the normal
+B7.7 launch/checkpoint scripts; do not rerun preflight on an existing QA run.
+
+
+### Tree count/icon retest
+
+Check the Pillars separator and names with counts (including zero), without verbose
+type prefixes. On prefix-qualified QA data only, verify objective, direct project,
+subproject, subpillar and ancestor counts after create/complete/reopen, ownership
+changes, moves, archive/restore and undo/redo. Completed/tombstoned/effectively
+archived tasks never count, even with Show Archived/Completed enabled. Search and
+scope changes must not change these totals. Check alphabetical order independently
+of counts and selection/expansion after updates. Observe distinct pillar/project/
+objective icons on Linux/Windows, light/dark themes and available HiDPI; inspect
+full type/path/UUID tooltips. Enable Show Archived, close and reopen: it starts off
+and hides archived entities; re-enable only for observation. No original-row writes,
+settings reset, QA cleanup, migration or privilege change is needed.
