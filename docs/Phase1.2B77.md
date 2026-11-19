@@ -173,6 +173,10 @@ smallest targeted source fix for review rather than changing accepted semantics.
 
 ## Manual acceptance procedure (all steps need owner observation)
 
+For Windows use the [numbered click-by-click walkthrough](Phase1.2B77Windows.md)
+with explicit checkpoint stops and exact generated QA names. The G01–G09 sections
+below describe coverage; they are not a substitute for that execution order.
+
 ### G01 — Legacy views and interaction baseline
 
 - [ ] All tasks + cleared search shows original active records; Show Completed

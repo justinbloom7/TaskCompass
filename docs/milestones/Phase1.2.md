@@ -6945,3 +6945,98 @@ ctest --test-dir build -R '^(PersistentDesktopTests|OrganizationDesktopTests)$'
 --output-on-failure passed 2/2 in1.96s; git diff --check passed. Full suite was not
 repeated for this presentation-only sizing change; prior full-suite evidence is
 preserved. No new implementation-mirroring test added for the sizing constants.
+
+### 2026-11-18 — Owner Linux completion report and protected-task checkpoint stop
+
+Owner reports Linux functional GUI testing completed, but omitted intermediate
+checkpoints. This is owner-reported functional evidence only: missing before/after
+captures cannot be retroactively inferred. The recommended final checkpoint was
+then attempted with --label final and stopped after schema2/UUID, final account
+matrix, sessions, health and DDL checks at:
+
+```
+STOP: Protected record changed/missing: Task/24dd11c3-59df-4e23-ac21-422bcf2a1e3a; preserve files for review.
+```
+
+Source inspection confirms this is raw protected-row inequality/missing-row detection
+against b75-final.hex.tsv, not missing checkpoints. Without --compare, earlier
+checkpoints are not required. The script wrote final/data.hex.tsv and health.tsv
+before this stop; final remains unsealed, without a successful checkpoint receipt.
+Do not rerun in place, delete/alter final, rebaseline, restore or undo tasks to hide
+the difference. Existing launch/checkpoint guards will reject that unsealed folder;
+this must be resolved through explicit review, not bypassed. No cause (owner edit
+versus application defect), changed field or data loss is yet established. Even an
+edit followed by Undo can alter revision/timestamps, but that is only a possibility.
+
+Prepared scripts/phase12/b77/inspect-protected.py for offline operator inspection:
+checks the original QA baseline's initial checksum, parses both saved exports using
+the existing manifest/parser, reports all changed protected UUID/field names and
+new-row counts without exposing field values. It neither reads a live database nor
+writes a file, completes a checkpoint or authorizes recovery. The failed capture
+is unsealed, and inspection is explicitly not fresh current-state verification.
+Agent did not access owner capture contents. Exact Linux command:
+
+```bash
+python3 scripts/phase12/b77/inspect-protected.py --qa-dir "$qaDirectory" --checkpoint final
+```
+
+Share field-name-only output; keep task contents private. Review before proceeding
+to Windows, recovery or acceptance. Current Linux preservation is unverified and
+must not be marked passed. No live SQL, backup, reset, cleanup, data/history/grant
+change or commit/push/merge/tag. Tests/GuiAcceptanceEvidenceTests.py now exercises
+changed/missing/unchanged field-only inspection; python3 tests/GuiAcceptanceEvidenceTests.py
+passed8/8 offline (0.014s). git diff --check passed. No application source changed,
+so no C++ build or full-suite rerun was required for this diagnostic helper.
+
+
+### 2026-11-18 — Clarified Windows click-by-click acceptance and checkpoint stops
+
+Owner explains Linux tests used their own tasks/organization and additional logical
+scenarios rather than the prescribed isolated QA names/structure. This means the
+unchanged-original-row assumption was not followed; it does not by itself establish
+an application defect. Offline inspection of the failed Linux final capture reports
+Task/24dd11c3-59df-4e23-ac21-422bcf2a1e3a changed updatedAt, localRevision and
+objectiveId only among protected rows. New rows: Task6, CommandRecord49,
+LocalChange49, Pillar4, Project2, Objective7; SchemaMigration/Dataset/MigrationAttempt
+zero additions. These are owner-supplied saved-export results, not fresh agent SQL.
+Linux functional completion is owner-reported, preservation remains failed/unresolved,
+and missing restart checkpoint comparison is unverified. Preserve intended user
+organization, original baseline and unsealed final evidence; no automatic reversal,
+rebaseline, cleanup or recovery is approved by this documentation work.
+
+Owner requests exact Windows tasks, clicks, expected outcomes, an explicit drag
+case and checkpoint reminders. Rewrote docs/Phase1.2B77Windows.md into nine ordered
+sections: build/preflight and read actual Windows QA directory; copy generated
+full prefixed names; create the exact hierarchy and three owner-specific tasks;
+CHECKPOINT hierarchy; ownership/editor/menu scenarios; cancelled then completed
+Project-to-Root B drag with Undo/Redo and rejected drops; CHECKPOINT ownership-moves;
+explicit/inherited archive and completion; mandatory before-restart checkpoint;
+read-only restart plus exact after-restart comparison; explicit two-session stale
+edit/inverse/missing-parent/dependent-inverse sequences; mandatory final checkpoint.
+Expected open counts and leave-in-this-state instructions make later steps repeatable.
+Task UUIDs come from private inventory, not nonexistent task UUID tooltips.
+
+Updated docs/Phase1.2B77.md to point to this execution order. No operator scripts,
+application code, schema, SQL, data, artifacts or accounts changed. Commands require
+actual generated titles and Windows passwords, without approval phrases. Every
+checkpoint requires closed GUIs and PASS before the next launch; a failed label
+must be preserved, not rerun/deleted. Native fault injection is excluded; omitted
+cases remain explicitly unexecuted rather than inferred from logical testing.
+
+**Approval Requested — Windows B7.7 walkthrough only:** owner-operated read-only
+preflight/checkpoints and GUI creation/edit/move/archive/restore/completion and
+command undo/redo on newly generated B77-QA-windows-prefixed records in existing
+taskcompass_dev@127.0.0.1:3306 on feldria-w10/MariaDB13.0.2, dataset
+457bb52b-fea4-4347-9c47-675c6b035c90; runtime taskcompass_app only. Keep every original
+row/history immutable. Risk: selecting an original record changes protected data;
+check full names and keep task search on the prefix. On any unexpected result,
+close/preserve actual state and failed captures, report exact output and request a
+specific recovery decision. No reset, repair, grants, migration, restore, cleanup,
+service control, Linux evidence alteration or Phase1.3. No live action executed by
+agent. Linux unresolved preservation/restart evidence remains explicitly outstanding;
+Windows success cannot retroactively close it. No commit/push/merge/tag.
+
+Validation: documentation-only; checked procedure against current creation/menu,
+owner/default/count/archive/drag/history and B7.7 script behavior. Markdown local
+links/fences and git diff --check passed. Application build/tests were not rerun
+because no executable source changed; prior actual test results remain historical.

@@ -83,6 +83,18 @@ def qaRecords(original):
 
 
 class GuiAcceptanceEvidenceTests(unittest.TestCase):
+   def testInspectionReportsOnlyChangedFieldNames(self):
+      spec = importlib.util.spec_from_file_location('inspection', ROOT / 'scripts/phase12/b77/inspect-protected.py')
+      inspection = importlib.util.module_from_spec(spec); spec.loader.exec_module(inspection)
+      before = {name: {} for name in EVIDENCE.TABLES}
+      after = copy.deepcopy(before)
+      before['Task']['id'] = (('old',), {'title': 'private-before', 'localRevision': 1})
+      after['Task']['id'] = (('new',), {'title': 'private-after', 'localRevision': 2})
+      self.assertEqual(inspection.differences(before, after), [('Task', 'id', ['title', 'localRevision'])])
+      after['Task'].clear()
+      self.assertEqual(inspection.differences(before, after), [('Task', 'id', ['MISSING'])])
+      self.assertEqual(inspection.differences(before, before), [])
+
    def setUp(self):
       self.directory = tempfile.TemporaryDirectory()
       self.addCleanup(self.directory.cleanup)
