@@ -7106,3 +7106,28 @@ entries passed, two opt-in integration entries skipped, zero failures,195.55s.
 Bash syntax, Markdown references/fences and git diff --check passed after final
 fixture-diagnostic cleanup. Native Windows nine-test retest remains required;
 Linux success does not prove native encoding/environment behavior resolved there.
+
+
+### 2026-11-18 — Permanent cross-platform prevention instructions
+
+Owner asks whether repeated Windows issues are identical and requests permanent
+instructions. They are related portability-boundary defects, not one proven root
+cause: earlier UTF-8 diagram/report reads used locale defaults; native Python can
+translate fixture/protocol LF to CRLF; platform fixture state and opaque captured
+errors complicate diagnosis. The latest report's UTF-8 read defect is confirmed;
+other latest native Windows fixture failures still require the pending retest.
+Do not retrospectively claim all failures share a demonstrated cause.
+
+AGENTS.md now contains a general Cross-platform text, scripts and offline fixtures
+section requiring explicit UTF-8, intentional canonical LF versus native CRLF
+handling, immutable sealed evidence, explicit simulated platform state, relevant
+boundary regressions, redacted useful fixture diagnostics and fail-closed mock
+isolation. Native Windows validation is required before claiming verification
+there; Linux mocks are not sufficient. These are permanent development rules,
+not new milestone scope or live authorization. Instructions reduce recurrence but
+do not guarantee future defects cannot occur.
+
+Documentation-only change: AGENTS.md and this chronological report. Markdown
+references/fences and git diff --check passed. No application build/test rerun
+because executable source is unchanged; preceding actual test results and pending
+Windows retest remain intact. No live access, evidence changes or commits/pushes.
