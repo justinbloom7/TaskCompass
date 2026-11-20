@@ -2,7 +2,16 @@
 
 # Phase 1.2 — Organizational Management
 
-**Status: B7.1–B7.5 (including final runtime transition) verified on Linux/MariaDB10.5.29 and Windows/MariaDB13.0.2 by owner report on2026-11-17. Both development/rehearsal schemas2, original preservation and final grants/health passed; historical failures and corrections remain below. B7.7 Linux-first GUI acceptance package prepared on2026-11-18; no live GUI write or manual acceptance executed by agent. Linux02 preflight passed (owner-reported,2026-11-18); the initial placeholder-path launch rejection remains historical. Owner now reports GUI functional testing has gone well and requests a focused usability refinement before acceptance; refinement review/retest is pending; Windows separately gated after Linux review. Manual GUI/restart acceptance, schema2 populated backup/isolated restore and final owner acceptance remain pending. Phase1.2 is not accepted.**
+**Current status (2026-11-20): Linux and Windows GUI functional acceptance are
+complete by explicit owner direction; Windows GUI satisfaction and all five B7.7
+Windows checkpoints are confirmed. B7.1–B7.5 development/rehearsal upgrades and
+final grants remain verified as historically recorded. Linux's protected-task
+preservation failure and missing restart comparison remain unresolved evidence
+exceptions, not passed checks. B7.8 populated schema-2 backup, B7.9 isolated
+restore/compare and B7.10 final evidence review/explicit milestone acceptance
+remain outstanding. Phase 1.2 as a whole is NOT accepted. See the dated
+2026-11-20 GUI acceptance entry at the end for the current gate list.**
+
 Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
 Only this document and the roadmap were changed by Step A. Its designs/SQL were
 proposals. Step A itself authorized no SQL; the dated Step B reports below record
@@ -7292,3 +7301,75 @@ owner acceptance remain separately gated. No new live action authorized here.
 Documentation-only update; local Markdown references/fences and git diff --check
 passed. No application build/tests rerun because executable source unchanged.
 No live queries, account/grant changes, resets, repair or commit/push/merge/tag.
+
+
+### 2026-11-20 — Explicit owner Windows GUI acceptance; both platform GUI gates complete
+
+Owner explicitly states: “I confirm that Windows GUI testing is satisfactory.”
+Owner directs recording Windows GUI acceptance complete alongside Linux GUI
+acceptance, and confirms Windows hierarchy, ownership-moves, before/after restart
+and final checkpoints passed. This entry supersedes earlier pending GUI acceptance
+status only. All detailed historical implementation, failures, comparisons, private
+paths/digests and owner-reported test evidence above remain preserved.
+
+| Acceptance/evidence item | Current disposition |
+| --- | --- |
+| Linux GUI functional acceptance | Complete by owner direction, following previously reported satisfactory functional testing using the owner's own records/structure. This is functional acceptance, not a strict preservation or restart-comparison pass. |
+| Windows GUI functional acceptance | Explicitly accepted by owner on 2026-11-20 as satisfactory; complete. |
+| Windows B7.7 hierarchy/ownership-moves/before-restart/after-restart/final machine checkpoints | Owner confirms all passed; detailed successful outputs, exact restart equality, runtime account, original-row preservation, final grants and health remain recorded above. |
+| Linux original-data preservation during B7.7 | Unresolved exception: failed final checkpoint identified Task/24dd11c3-59df-4e23-ac21-422bcf2a1e3a. Saved-export inspection reports changed updatedAt/localRevision/objectiveId. Owner explains broader testing used existing records; the task's specific reassignment/history has not received a final documented disposition. Do not mark unchanged or repaired. |
+| Linux B7.7 before/after restart equality | Unverified: intermediate checkpoints were missed. No retrospective exact comparison can be inferred from functional acceptance or the Windows comparison. |
+| Final Phase1.2 milestone acceptance | Not granted; remaining gates below. |
+
+Windows acceptance applies to the previously recorded Windows10/UCRT64/Qt6.12.0/
+MariaDB13.0.2 run on feldria-w10, dataset457bb52b-fea4-4347-9c47-675c6b035c90,
+QA run b77-windows-20261118-204828-79876. No new execution or new per-case results
+are invented. Optional native fault-injection/oversized-input scenarios not actually
+reported remain NOT EXECUTED; GUI satisfaction is not a claim those cases ran.
+
+#### Exact remaining gates before final Phase1.2 acceptance
+
+1. **Linux evidence exception review and explicit disposition.** Review the recorded
+   protected-task objective reassignment and relevant history as needed, distinguish
+   intended user changes from any defect, and explicitly decide how this deviation
+   satisfies or is accepted as an exception to the original preservation criterion.
+   Separately decide the disposition of the missing Linux restart comparison. This
+   GUI acceptance does not waive either evidence requirement. No automatic undo,
+   rebaseline, evidence rewrite, cleanup or repeated GUI testing is authorized.
+   Any supplemental live inspection/work requires its specific scope to be approved.
+2. **B7.8 — fresh populated schema-2 backup/evidence on BOTH platforms.** Obtain
+   separate operator authorization; stop writers, use fresh private timestamped
+   directories, verify identities/schema/grants, capture all nine tables and complete
+   exports, unchanged before/after comparisons, checksums and private dump review.
+   Preserve all schema-1/Phase1.1/QA/rehearsal artifacts. The Phase1.1 five-table
+   backup procedure cannot establish schema-2 completeness. See
+   [B7.8 procedure](../Phase1.2B7.md#b78--fresh-schema-2-backup-and-complete-evidence).
+3. **B7.9 — isolated schema-2 restore/compare on BOTH platforms.** Separately approve
+   provisioning of the exact fresh restore target/account and then restoration of
+   the exact reviewed backup/hash. Preserve taskcompass_integration and both populated
+   taskcompass_phase12_test rehearsal databases. Verify restored structure, dataset,
+   all nine tables/counts and exact data/audit/outbox equality against the approved
+   snapshot; preserve restore evidence. The proposed CLI-only target is
+   taskcompass_phase12_restore, not either development or existing rehearsal target.
+   See [B7.9 procedure](../Phase1.2B7.md#b79--isolated-schema-2-restore-preserve-populated-rehearsal).
+4. **B7.10 — final evidence reconciliation and explicit owner milestone acceptance.**
+   Review the complete Linux/Windows build/test/migration/grant/GUI/backup/restore
+   record and explicit exception dispositions. The native Windows offline retest
+   result for the earlier nine tooling failures has not been separately supplied
+   in this record; obtain/reconcile that result rather than infer it from GUI
+   acceptance or Linux tests. Record actual unexecuted optional fault cases and
+   resolve any remaining defect/required coverage decision. Only then request
+   explicit final Phase1.2 acceptance. See
+   [B7.10 procedure](../Phase1.2B7.md#b710--final-evidence-review-no-automatic-acceptance).
+
+This entry authorizes no database work, GUI test repetition, service/account/grant
+change, backup/restore execution, QA deletion, Phase1.3 work or final milestone
+acceptance. Next operational actions need their own exact-target/artifact approval;
+this update is solely an acceptance/evidence record. All original QA and failed
+Linux captures remain intact.
+
+Files changed for this request: this milestone only, including its current-status
+pointer. Documentation local references/fences and git diff --check passed. No
+application build/tests rerun: executable source is unaffected, and owner explicitly
+requests no test repetition. No live SQL/database access, GUI action, application
+code change, data deletion or commit/push/merge/tag performed by agent.
