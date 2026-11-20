@@ -7131,3 +7131,164 @@ Documentation-only change: AGENTS.md and this chronological report. Markdown
 references/fences and git diff --check passed. No application build/test rerun
 because executable source is unchanged; preceding actual test results and pending
 Windows retest remain intact. No live access, evidence changes or commits/pushes.
+
+### 2026-11-18 — Owner-reported Windows hierarchy checkpoint passed
+
+Owner supplies G01/partial G02 progress and successful Windows command:
+
+```bash
+scripts/phase12/b77/04-checkpoint.sh --approved --platform windows \
+   --qa-dir "$qaDirectory" --label hierarchy
+```
+
+Reported run directory:
+/c/Users/justin/TaskCompassBackups/Phase1.2-schema1-windows-20261117-064917/b77-windows-20261118-204828-79876
+
+Owner output verifies schema2/dataset457bb52b-fea4-4347-9c47-675c6b035c90 on
+feldria-w10/MariaDB13.0.2, exact final account grants, no unexpected authority/
+active sessions, accepted schema2 DDL, every protected B7.5 row unchanged and
+consistent QA ownership/graph/audit/outbox. Snapshot/earlier evidence checks passed;
+hierarchy checkpoint sealed with private inventory at hierarchy/inventory.tsv.
+Environment: Windows10 build19045, UCRT64, Qt6.12.0; source
+fb7d4acd7c62147d099771676b767dca52bd7b59, clean; source SHA256
+7e4b1c499ebd9af5c802018a8e22d7d5da5bb141ddf2510124a4aefdd7b4b11a.
+Automatic environment report timestamp2026-11-19T051325.818733Z (local Nov18).
+This is owner-executed evidence only; agent performed no live access or GUI work.
+
+Next: relaunch using the same Windows QA directory and continue numbered Windows
+walkthrough section3 (editors/ownership/validation/menus), then section4 including
+drag/drop and shared history. Close before ownership-moves checkpoint and wait
+for PASS. Do not repeat preflight or hierarchy capture. Later before-restart,
+read-only restart comparison and final checkpoint remain required. This report
+does not independently establish all visual G02 checks, omitted offline retest
+results, later scenarios or final milestone acceptance. Linux preservation/restart
+gaps remain unresolved and separate; Windows success does not erase that history.
+
+Documentation-only update; local links/fences and git diff --check passed. No
+build/tests rerun because executable source is unchanged. No commit/push/merge/tag.
+
+### 2026-11-19 — Owner-reported Windows ownership-moves checkpoint passed
+
+Owner reports successful execution:
+
+```bash
+scripts/phase12/b77/04-checkpoint.sh --approved --platform windows \
+   --qa-dir "$qaDirectory" --label ownership-moves
+```
+
+Same Windows QA run b77-windows-20261118-204828-79876 inside the preserved
+Phase1.2-schema1-windows-20261117-064917 capture. Output reports prior hierarchy
+seal verified; schema2 and dataset457bb52b-fea4-4347-9c47-675c6b035c90 verified;
+feldria-w10/MariaDB13.0.2 exact final grants, no unexpected authority/active sessions;
+accepted schema2 DDL; every protected B7.5 row unchanged; new QA ownership/graph/
+audit/outbox consistent; ownership-moves checkpoint sealed. Private inventory:
+ownership-moves/inventory.tsv within that QA run.
+
+Owner-supplied environment: Windows10 build19045/UCRT64, Qt6.12.0, clean source
+fb7d4acd7c62147d099771676b767dca52bd7b59, source SHA256
+7e4b1c499ebd9af5c802018a8e22d7d5da5bb141ddf2510124a4aefdd7b4b11a.
+Report timestamp2026-11-20T051922.817400Z (local Nov19). Agent did not query any
+server or inspect private files. A helper PASS establishes these machine invariants,
+not independent observation of each GUI/drag/undo scenario; omitted manual cases
+remain unverified unless owner explicitly reports them.
+
+Next walkthrough section5: archive/restore and completion, using only prefixed QA
+records. Section6: close GUI and require before-restart checkpoint PASS before
+relaunch. Section7 is read-only GUI observation, then close and capture after-restart
+--compare before-restart before any additional writes. Two-session cases and final
+checkpoint remain later. Do not repeat preflight or existing checkpoint labels.
+Linux protected-task/restart evidence gap remains separate; no final acceptance,
+backup/restore, cleanup or Phase1.3 authorization inferred.
+
+Documentation-only update. Markdown references/fences and git diff --check passed;
+application build/tests not rerun because executable source is unchanged. No live
+operations or commit/push/merge/tag performed by agent.
+
+### 2026-11-20 — Owner-reported Windows restart interval and exact comparison passed
+
+Owner supplies successful command/output sequence in the existing Windows QA run
+b77-windows-20261118-204828-79876 (within the preserved
+Phase1.2-schema1-windows-20261117-064917 capture):
+
+```bash
+scripts/phase12/b77/04-checkpoint.sh --approved --platform windows \
+   --qa-dir "$qaDirectory" --label before-restart
+scripts/phase12/b77/03-launch.sh --approved --platform windows --qa-dir "$qaDirectory"
+scripts/phase12/b77/04-checkpoint.sh --approved --platform windows \
+   --qa-dir "$qaDirectory" --label after-restart --compare before-restart
+```
+
+Both checkpoints sealed. Owner output reports prior seals/checksums valid,
+schema2/dataset457bb52b-fea4-4347-9c47-675c6b035c90 verified on feldria-w10/
+MariaDB13.0.2, exact final grants/no unexpected authority or active sessions,
+accepted schema2 DDL, all protected B7.5 rows unchanged, consistent new QA graph/
+ownership/audit/outbox and health. The --compare path completed successfully,
+establishing exact exported nine-table equality before/after the restart interval,
+not merely equal counts. Private inventories are before-restart/inventory.tsv and
+after-restart/inventory.tsv in that same QA directory.
+
+Launch authenticated/verified taskcompass_app, opened the persistent runtime GUI,
+and reported GUI exited0. Reported environment: Windows10 build19045/UCRT64,
+Qt6.12.0, clean sourcefb7d4acd7c62147d099771676b767dca52bd7b59, source SHA256
+7e4b1c499ebd9af5c802018a8e22d7d5da5bb141ddf2510124a4aefdd7b4b11a.
+Report timestamps UTC2026-11-20T170606.831555 (before),170753.169919 (launch),
+170959.549180 (after); server metadata provenance is labeled in script output.
+These are owner-executed results only; no agent database/private-evidence access.
+
+Machine evidence establishes preservation/restart equality and successful runtime
+reconnection; individual visual archive/completion/filter/selection/expansion and
+empty-undo observations remain owner-observed checklist items, not inferred from
+helper PASS. Next is Windows walkthrough section8 (two-session conflict cases),
+then close BOTH GUI sessions and section9 final checkpoint. Retain the same QA
+names/run, do not repeat preflight or sealed labels. No further writes were needed
+within the now-completed read-only restart interval.
+
+Linux protected-task preservation deviation/missed restart comparison remains
+separate. Final Windows result, any omitted manual cases, separately approved
+schema2 backup/restore and final owner acceptance remain outstanding. No cleanup,
+restore, migration, grant change, Phase1.3 or milestone acceptance inferred.
+Documentation-only update; Markdown references/fences and git diff --check passed;
+no application build/tests rerun because executable source is unchanged. No live
+operation, commit, push, merge or tag performed by agent.
+
+### 2026-11-20 — Owner-reported Windows final checkpoint passed; trailing paste error
+
+Owner reports 'Everything looks good' and successful final command:
+
+```bash
+scripts/phase12/b77/04-checkpoint.sh --approved --platform windows \
+   --qa-dir "$qaDirectory" --label final
+```
+
+Existing Windows run b77-windows-20261118-204828-79876: final checkpoint sealed,
+private inventory final/inventory.tsv. Supplied output verifies prior seals,
+schema2/dataset457bb52b-fea4-4347-9c47-675c6b035c90, feldria-w10/MariaDB13.0.2,
+exact final grants, no unexpected authority/active sessions, accepted DDL,
+protected B7.5 originals unchanged and valid QA graph/ownership/audit/outbox/health.
+Environment Windows10 build19045/UCRT64/Qt6.12.0, clean source
+fb7d4acd7c62147d099771676b767dca52bd7b59; source SHA256
+7e4b1c499ebd9af5c802018a8e22d7d5da5bb141ddf2510124a4aefdd7b4b11a.
+Report timestamp2026-11-20T175822.939512Z. All these results are owner-executed,
+not agent live access or independent observation of private captures.
+
+After the successful final-seal output, Bash reports a command-not-found for a
+standalone U+2029 Unicode paragraph separator, also visible as an extra pasted
+line in the owner's submitted command. This is consistent with an extra clipboard
+character being executed by the parent shell after the script returned, not a
+checkpoint failure. The supplied text establishes that the final seal completed;
+no re-execution/deletion/repair is called for. Avoid copying trailing rich-text
+blank lines; plain-text code-block copies or manually entering this one command
+avoid the extra character. A parent-shell last status after that error would refer
+to the stray character, not reliably to the preceding successful checkpoint.
+
+Windows hierarchy, ownership-moves, before/after restart comparison and final
+machine checkpoints are now owner-reported passed. Owner's general positive GUI
+report is recorded without inventing per-case detailed observations or native
+fault injection results. Preserve all QA rows/artifacts; no cleanup or final
+Phase1.2 acceptance inferred. Linux protected-task assignment deviation and missed
+restart comparison remain unresolved; populated schema2 backup/restore and final
+owner acceptance remain separately gated. No new live action authorized here.
+
+Documentation-only update; local Markdown references/fences and git diff --check
+passed. No application build/tests rerun because executable source unchanged.
+No live queries, account/grant changes, resets, repair or commit/push/merge/tag.
