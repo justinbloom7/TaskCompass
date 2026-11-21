@@ -7921,3 +7921,126 @@ this result. No backup cleanup or application/database/account/grant changes.
 Documentation-only update to this milestone/current pointer. Markdown references/
 fences and git diff --check passed. No application build/tests repeated because
 executable source unchanged. No commit/push/merge/tag.
+
+### 2026-11-20 — Owner native Windows offline B7.8 gates passed; Windows02 requested
+
+Owner supplies successful native UCRT64 commands:
+
+```bash
+scripts/phase12/b77/01-build.sh
+scripts/phase12/b78/01-check.sh --platform windows
+```
+
+Configure/build passed. Full CTest31 registrations:29 offline entries passed,
+two live integration entries skipped, zero failures,1578.92s. New schema2 backup
+unit/scripts passed0.52s/360.26s; previously failing backup/restore/environment/GUI
+acceptance/inspection/reviewed completion/development/runtime/migration tooling
+entries all passed. This supplies the previously outstanding native Windows
+portability retest evidence; preserve earlier failures rather than erasing them.
+It does not resolve the separate Linux preservation/restart exceptions.
+
+Stage01 verified both review manifests and all pinned dependencies, installed
+MariaDB13.0.2 native client15.2 and dump10.20, embedded migrations and tools;
+explicit offline PASS, no connection/backup. Native Windows runtime/service/live
+permissions or new snapshot success are not inferred from offline mocks/tool checks.
+Environment Windows10 build19045/UCRT64/Qt6.12.0, clean source
+c7e94d505385a261bc8760dc331a76e00ebd1bfa, source SHA256
+8a09205bf5fe7071f7feaf4965c63fc2c530f2450416879bed05232e533a628c.
+Environment reports UTC2026-11-21T043835.313725/043838.731398 (build) and
+052117.682746 (stage01), corresponding to local Nov20. All are owner-reported;
+agent ran no native Windows command or database operation.
+
+#### Approval Requested — Windows B7.8 stage02 ONLY (read-only preflight)
+
+With every TaskCompass GUI/other database writer closed, authorize OWNER execution:
+
+```bash
+scripts/phase12/b78/02-preflight.sh --approved --platform windows
+```
+
+Exact target: existing taskcompass_dev@127.0.0.1:3306 on feldria-w10/MariaDB13.0.2,
+dataset457bb52b-fea4-4347-9c47-675c6b035c90, schema2/nine InnoDB tables. Scope:
+read existing B7.2–B7.7 sealed evidence and all five Windows GUI seals/restart
+equality; migration/runtime/diagnostic identity/schema/fingerprint/completed-journal
+probes; native root metadata/PUBLIC/final-account-privilege/closed-writer checks;
+reviewed zero-health SELECTs; one complete source export streamed to SHA256 for
+exact final-capture comparison without a data export file; local version notes.
+Use Windows account passwords. No backup directory/dump, application/data mutation,
+account/grant/password/plugin/TLS change, migration, restore/reset or QA cleanup.
+On unexpected output stop/preserve/report; no automatic retry or repair. Expected
+PASS: exact Windows identity/final grants/health, originals unchanged and source
+matches the retained final checkpoint.
+
+Linux backup/private-review seal remains complete and preserved; Linux B7.7
+exceptions remain UNRESOLVED. Windows03 capture and04 sealing require subsequent
+separate approval; Linux authorization does not cover Windows. B7.9/B7.10/Phase1.3
+not begun/authorized. Windows02 approval/result is not inferred from these outputs.
+
+Documentation-only result/approval request; Markdown local links/fences and
+ git diff --check passed. No build/test repeat because executable source unchanged;
+no agent live operation, artifact modification, commit/push/merge/tag.
+
+### 2026-11-20 — Explicit owner approval: Windows B7.8 stage02 ONLY
+
+Owner replies “I approve” to the immediately preceding Windows B7.8 stage02-only
+request. Authorization covers OWNER execution after closing all GUI/other database
+writers:
+
+```bash
+scripts/phase12/b78/02-preflight.sh --approved --platform windows
+```
+
+Fixed scope: read-only preflight of existing taskcompass_dev@127.0.0.1:3306 on
+feldria-w10/MariaDB13.0.2, dataset457bb52b-fea4-4347-9c47-675c6b035c90,
+schema2/nine tables. Reviewed historical/B7.7 evidence and restart seals, existing
+migration/runtime/diagnostic identity/schema/journal checks, native root metadata/
+PUBLIC/exact final grants/no-writer checks, health SELECTs and full-data stream
+hashed against retained final evidence; local environment/version records.
+Windows account passwords only. No new backup/dump/data export file, data or
+account/grant/password/plugin/TLS change, restore/reset, cleanup or prior-artifact
+rewrite. Stop/preserve/report errors, without automatic retry/repair. Stage03/04,
+B7.9/B7.10/Phase1.3 remain unauthorized. Linux exceptions remain unresolved.
+
+Owner execution/result pending; agent performed no live/private-file operation.
+Documentation-only entry; local Markdown links/fences and git diff --check passed.
+No application build/tests repeated because executable source unchanged; no
+commit/push/merge/tag.
+
+### 2026-11-20 — Owner Windows02 stops on existing QA ACL; read-only diagnosis prepared
+
+Owner's approved Windows B7.8 stage02 passed package and prior B7.2–B7.5 evidence
+checks, then stopped with PowerShell 'Private backup ACL differs'. No credential
+prompt, fresh78 call, live database login or new snapshot-directory creation is
+shown. Source order places this at private78 of the existing Windows B7.7 QA root,
+before initial QA seal checking and before fresh database operations. Do not retry,
+change permissions, recreate QA evidence or clean anything up.
+
+Source review identifies a stricter policy difference: B7.7 private77 checked that
+its effective DACL had exactly one Allow/FullControl entry for the current SID.
+B7.8 private78 additionally demands matching owner and AreAccessRulesProtected=true
+(inheritance disabled). B7.7 mkdir/checkpoint directories inherit the already
+private parent DACL and did not explicitly disable inheritance or set their owner.
+Inherited owner-only access can therefore have passed B7.7 yet fail this newer
+check. This is a likely compatibility issue, not established ACL exposure or a
+confirmed owner/inheritance diagnosis until native inspection reports values.
+No existing guard has been bypassed or weakened, and no ACL was changed.
+
+Added scripts/phase12/inspect-windows-qa-acl.ps1: fixed previously recorded QA root
+and five sealed checkpoint directories only; Get-Item/Get-Acl and current SID,
+printing owner-match, inheritance protection, effective rule count/rights/type/
+inheritance flags, without task data, credentials, database or write operations.
+Rejects non-directories/reparse points. Exact UCRT64 operator command:
+
+```bash
+powershell.exe -NoProfile -NonInteractive -File "$(cygpath -w scripts/phase12/inspect-windows-qa-acl.ps1)"
+```
+
+Share this metadata output to identify the exact mismatch before proposing a
+specific source-policy correction/retry decision. The B7.8 reviewed package itself
+and Linux sealed receipt/checksum dependencies are unchanged. New snapshots must
+continue enforcing protected owner-only ACLs before files exist. Native diagnostic
+execution is pending; PowerShell is unavailable to the Linux agent, so no native
+syntax/ACL result is claimed. No application change/build/test repeat; read-only
+PowerShell source reviewed and documentation links/fences/git diff --check passed.
+No agent live database or private evidence access, backup, grant/ACL repair,
+commit/push/merge/tag. Windows02 remains failed/pending review, not passed.
