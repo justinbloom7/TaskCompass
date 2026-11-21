@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location('guiEvidence', ROOT / 'scripts/phase12/b77/validate-evidence.py')
 EVIDENCE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(EVIDENCE)
-MANIFEST = json.loads((ROOT / 'migrations/mariadb/SchemaManifest.json').read_text())['2']
+MANIFEST = json.loads((ROOT / 'migrations/mariadb/SchemaManifest.json').read_text(encoding="utf-8"))['2']
 DATASET = '21be9da7-b767-4578-b972-cc9a35122ddb'
 PREFIX = 'B77-QA-linux-offline'
 
@@ -112,7 +112,7 @@ class GuiAcceptanceEvidenceTests(unittest.TestCase):
    def testSelectOrderMatchesActualSchemaManifest(self):
       actual = {}
       table = None
-      source = (ROOT / 'scripts/phase12/b7/schema2-export.sql').read_text()
+      source = (ROOT / 'scripts/phase12/b7/schema2-export.sql').read_text(encoding="utf-8")
       for line in source.splitlines():
          match = re.match(r"SELECT '([^']+)' AS tableName,", line)
          if match:
@@ -133,8 +133,8 @@ class GuiAcceptanceEvidenceTests(unittest.TestCase):
       new, parents = self.checkCurrent()
       path = Path(self.directory.name) / 'inventory.tsv'
       EVIDENCE.writeInventory(path, self.parsed(self.current), new, parents)
-      self.assertIn(identity(13), path.read_text())
-      self.assertIn('True', path.read_text())
+      self.assertIn(identity(13), path.read_text(encoding="utf-8"))
+      self.assertIn('True', path.read_text(encoding="utf-8"))
 
    def testProtectedValuesAndPayloadBytesCannotChange(self):
       for field, value in [('title', 'changed'), ('completedAt', 99), ('deletedAt', None), ('objectiveId', identity(12))]:

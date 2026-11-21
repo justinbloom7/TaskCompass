@@ -35,6 +35,7 @@ PY
 fi
 GUI
 chmod +x "$temporaryDirectory/bin/mariadb" "$temporaryDirectory/build with spaces/TaskCompass"
+[[ "${TASKCOMPASS_B78_FIXTURES_ONLY:-0}" != 1 ]] || return 0
 for platform in linux windows; do
  export MSYSTEM=''
  unset MOCK_QA_CURRENT

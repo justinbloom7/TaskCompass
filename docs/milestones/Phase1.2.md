@@ -7,10 +7,12 @@ complete by explicit owner direction; Windows GUI satisfaction and all five B7.7
 Windows checkpoints are confirmed. B7.1–B7.5 development/rehearsal upgrades and
 final grants remain verified as historically recorded. Linux's protected-task
 preservation failure and missing restart comparison remain unresolved evidence
-exceptions, not passed checks. B7.8 populated schema-2 backup, B7.9 isolated
-restore/compare and B7.10 final evidence review/explicit milestone acceptance
-remain outstanding. Phase 1.2 as a whole is NOT accepted. See the dated
-2026-11-20 GUI acceptance entry at the end for the current gate list.**
+exceptions, not passed checks. Linux B7.8 capture/private review/final sealing
+passed by owner report; preserve the reviewed schema-2 snapshot. Windows B7.8
+offline validation and separately approved live stages remain pending. B7.9 isolated
+restore/compare and B7.10 final evidence review/explicit milestone acceptance remain
+outstanding. Phase 1.2 as a whole is NOT accepted. See the latest dated B7.8
+entries for current results and approval scope.**
 
 Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
 Only this document and the roadmap were changed by Step A. Its designs/SQL were
@@ -7373,3 +7375,549 @@ pointer. Documentation local references/fences and git diff --check passed. No
 application build/tests rerun: executable source is unaffected, and owner explicitly
 requests no test repetition. No live SQL/database access, GUI action, application
 code change, data deletion or commit/push/merge/tag performed by agent.
+
+### 2026-11-20 — B7.8 preparation begun; owner-requested stop before completion
+
+Owner authorizes preparation ONLY of fresh populated schema2 backup/evidence on
+Linux/MariaDB10.5.29 and Windows/UCRT64/MariaDB13.0.2. Reviewed AGENTS.md,
+B7.8–B7.10, B7.5 verifier/grant/session infrastructure, B7.7 records and schema2
+export/DDL/health/dump flags. Both GUI functional acceptances remain recorded;
+Linux's task objective/revision/time modification and missing restart comparison
+remain unresolved exceptions, not repaired or waived. No live approval inferred.
+
+Draft files: scripts/phase12/b78/{01-check.sh,02-preflight.sh,03-capture.sh,
+04-review.sh,run.sh,inspect-snapshot.py,ReviewChecksums.sha256};
+tests/Phase12Schema2BackupTests.py, tests/Phase12Schema2BackupScripts.test.sh;
+docs/Phase1.2B78.md. Existing tests/Phase12GuiAcceptanceScripts.test.sh gains a
+fixture-definition-only entry point for reuse; tests/GuiAcceptanceEvidenceTests.py
+uses explicit UTF-8 on fixture reads. No application/SQL/migration/grant changes.
+
+Draft reuses B7.5 definitions/checked manifests, credential handling, exact final
+matrix/session/identity/health checks. Proposes fresh private timestamped external
+snapshot directories with Windows ACL checks, native dump no-DROP/no-lock flags,
+exact full-data/raw-DDL before/after comparisons, SHA manifests and explicit offline
+--dump-reviewed attestation (no typed phrases). Offline SQL tokenizer verifies
+nine CREATE tables/column order and exact dumped row values/history against the
+canonical export; it is not an SQL execution engine or a substitute for full
+private SQL review and later B7.9 restore verification. Windows uses sealed B7.7
+final/restart evidence. Linux permits only the known protected Task's three fields
+to differ, reports it UNRESOLVED, and requires current bytes to match the preserved
+unsealed failed final capture without modifying or sealing that earlier evidence.
+
+Actual agent checks: python3 tests/Phase12Schema2BackupTests.py passed4/4 (latest
+0.021s), covering Unicode/escapes/LF/CRLF, omitted/changed data/history, unsafe SQL
+and narrow known-Linux exception handling. Bash draft syntax passed. First offline
+shell harness failed at tests/Phase12Schema2BackupScripts.test.sh line83 during
+02-preflight: migration/runtime fake verification and root final-grant/session
+checks passed; diagnostic-account authentication then stopped with:
+
+```
+STOP: Login/identity check for taskcompass_dev failed for a reason other than a confirmed password rejection; not retried.
+```
+
+This was synthetic temporary fixture state only, not a live connection. Captured
+fixture output includes the known exception notice. Do not call this package
+validated. CMake test registration, full build/CTest, finalized guides/commands,
+comprehensive shell failure coverage and review checksums remain incomplete.
+
+Owner then requests stopping soon for internet disconnection. Stopped at this
+source-only checkpoint; no background test remains running. Draft run.sh now has
+an explicit unconditional execution-disable guard after help parsing; no operator
+stage can reach database operations until preparation is completed and reviewed.
+ReviewChecksums.sha256 was regenerated for the paused draft sources. Resumption
+must fix/retest the harness and remove that guard only when the package is ready;
+no live operations are authorized by removing a source guard. Draft guide clearly
+marks NOT READY. No Linux/Windows live authorization request is issued yet.
+
+Remaining review items on resume: inspect confidentiality/path/no-overwrite/ACL/
+receipt/manifest behavior; make environment sidecars part of a coherent evidence
+policy (draft keeps original timestamped files plus environment.json); verify
+SQL-dump syntax support against realistic offline MariaDB samples without silently
+widening accepted SQL; ensure all interrupted/failed capture/review cases refuse
+replay. Finish both platform operator instructions and exact Linux-first scope.
+No B7.9/B7.10/Phase1.3 implementation or execution. No database export, backup,
+SQL query, GUI write, account/grant/service change, evidence cleanup or alteration
+of preserved data occurred. No commit, push, merge or tag. Documentation local
+links/fences and git diff --check passed at stopping point; no full suite claimed.
+
+
+### 2026-11-20 — B7.8 preparation resumed and completed; Linux02 approval requested
+
+Owner explicitly resumes the previously paused preparation. This entry supersedes
+NOT READY/disabled draft status above; it preserves the failed test and stopping
+record. The package is now prepared and offline-tested, with separate numbered
+Linux/Windows instructions. No live backup/export/query/grant/restore or other
+database operation was executed by agent. Existing GUI acceptance and all Linux
+exceptions retain their earlier disposition. Phase1.2 is not accepted.
+
+#### Findings, correction and final design
+
+The paused shell failure was traced to an actual I/O ordering defect, not a proven
+server or password problem: query75 attempted diagnostic authentication for the
+first time after SQL had been redirected into stdin. It therefore consumed SQL
+text instead of the password. fresh78 now checks/caches the diagnostic credential
+in the main shell before any SQL redirection, alongside migration/runtime identity
+checks. This corrects the earlier tentative fixture-only characterization. All
+subsequent queries reuse memory-only checked credentials without re-entry. Capture
+also reuses the existing read-only admin client session for before/after metadata
+checks, avoiding repeated root password prompts; --skip-reconnect/lost-session
+failure handling remains intact, and cleanup closes the client on error.
+
+Prepared source files:
+
+- scripts/phase12/b78/01-check.sh,02-preflight.sh,03-capture.sh,04-review.sh and
+  run.sh: fixed taskcompass_dev pair, explicit platform/stage opt-in, shared
+  reviewed B7.5/B7.7 evidence/identity/fingerprint/grant/health/session guards;
+  fresh external private snapshot; exact before/after full-data/raw-DDL/grant
+  comparisons; one no-DROP/no-lock native dump; explicit private-review seal.
+- scripts/phase12/b78/inspect-snapshot.py: offline complete source health stream
+  validation and SQL-dump table/column/value inspection using the existing schema
+  manifest/HEX parser. Every row/column, raw historical JSON payload, migration row
+  and attempt journal value must match the full export. No SQL is executed. This
+  is not a general SQL interpreter/full CREATE semantic validator: unsupported
+  syntax stops; private SQL review remains mandatory and B7.9 restore validation
+  is still required separately.
+- scripts/phase12/b78/ReviewChecksums.sha256: independent pin of the new guides,
+  source, reused actual operator dependencies and schema manifest. Its final digest
+  is46dbffef69d1d85eabbc9982a190dbff81466190a075810ab259200d3a4ed4b5.
+  It joins the new attempt/capture receipt, so changing the reviewed package cannot
+  silently seal an earlier capture. The historical B7 ReviewChecksums is untouched.
+- docs/Phase1.2B78.md plus Phase1.2B78Linux.md/Phase1.2B78Windows.md: exact tools,
+  commands/SQL-file inventory, source constraints, passwords/account roles, expected
+  results, explicit stage approvals, destination/private review and failure policy.
+- tests/Phase12Schema2BackupTests.py and Phase12Schema2BackupScripts.test.sh,
+  registered in CMakeLists.txt. Reused GUI acceptance fixture definitions via a
+  test-only source entry in Phase12GuiAcceptanceScripts.test.sh; explicit UTF-8
+  reads in GuiAcceptanceEvidenceTests.py. No live-client fallback is introduced.
+- .gitattributes now specifies LF for reviewed Python/Markdown/JSON/SQL/SHA sources
+  and itself, extending the existing Bash LF convention for reproducible Windows
+  checkouts. No renormalization or content rewrite of historical migrations,
+  private artifacts or sealed evidence occurred. Roadmap/TestingPhase1.2/current
+  milestone pointers identify preparation and separate Linux-first authorization.
+
+No application/domain/storage/schema/migration/diagram or grant SQL changes.
+Existing source files migrations001/002, accepted Phase1.1 record, B7.2 dumps,
+rehearsal/integration databases, B7.5 evidence and all B7.7 QA records remain intact.
+B7.8 never calls the old Phase1.1 five-table backup or any prior mutation stage.
+
+#### Preservation, destination, evidence and failure boundaries
+
+Linux still has the documented original Task24dd11c3-59df-4e23-ac21-422bcf2a1e3a
+updatedAt/localRevision/objectiveId difference and missed restart comparison. The
+package explicitly prints/stores UNRESOLVED, requires all other original fields/
+rows/history/metadata unchanged, and compares current full data against the retained
+failed final export. That export remains UNSEALED; matching it is a consistency
+check, not retrospective acceptance or repair. Windows requires every B7.7 seal,
+restart equality and exact final/current data match. Any new discrepancy stops.
+Neither platform is rebaselined to a new B7.5 or GUI preservation baseline.
+
+Future stage03 defaults to a NEW directory (no supplied existing destination):
+
+- Linux: $HOME/temp/TaskCompassBackups/Phase1.2-schema2-linux-YYYYmmdd-HHMMSS-PID.
+- Windows: $HOME/TaskCompassBackups/Phase1.2-schema2-windows-YYYYmmdd-HHMMSS-PID.
+
+Physical parents must be outside Git and outside earlier captures; Linux current-
+user700/600, Windows protected owner-only FullControl directory and per-file ACL
+checks. ACL success precedes artifact writes. mkdir/no-clobber/attempt markers
+preserve failure state. No ACL fix, overwrite, cleanup, automatic retry, partial
+capture completion or partial review replay exists. A new attempt after failure
+needs explicit review/authorization; failure recovery never restores a database.
+
+Source/dump evidence covers ALL NINE tables: SchemaMigration, Dataset, Task,
+CommandRecord, LocalChange, MigrationAttempt, Pillar, Project, Objective. Capture
+produces full before/after canonical HEX/count exports, raw DDL exports, health and
+final-grant metadata, schema2.sql/dump-exit.txt, preservation/dump-validation reports,
+prior-evidence hashes, client/dump versions, timestamped environment JSON/sidecar
+plus stable environment copy and origin file, attempt and complete receipts. All
+primary/generated environment artifacts join capture.sha256. Only after explicit
+private review via --dump-reviewed does stage04 add private-review.txt and seal/
+verify schema2-evidence.sha256 (including capture.sha256). Existing files are not
+rewritten. Raw DDL/data comparisons remain exact; native LF/CRLF input is parsed
+without altering prior evidence. No per-item database queries or persisted counters.
+
+Source checks use existing SELECT/SHOW-only preflight.sql, PUBLIC grants on Windows,
+schema2-export.sql, ddl2-export.sql, schema2-health.sql and TaskCompassMigrate
+--verify --to-version2 (argv: --verify --to-version 2), never --apply. Source
+schema/checksum/fingerprint/completed journal/UUID and expected nine InnoDB tables
+must verify; every health count zero. Read-only diagnostic dumps use the exact
+reviewed B7.8 flags, including single-transaction, skip-lock-tables, no-tablespaces,
+skip-triggers/add-drop-table/add-locks/disable-keys, no-create-db and hex-blob.
+No privilege changes. Private SQL review checks every statement against the guide;
+automatic dump value inspection does not replace it or later restored-schema proof.
+All GUI/other writers must remain closed: session checks are point-in-time and
+cannot prevent a new external writer from connecting between checks.
+
+#### Actual agent validation, limits and earlier command error
+
+Available platform: CentOS Stream9, Qt6.10.3; branch jb_20261114_ms1p2, base source
+b21247b94ebb4733f2eaf188d0da20aebe8c06dc. Native Windows new-package execution is
+PENDING; Linux mocks exercise both simulated platforms, not native ACL/tool behavior.
+
+- python3 tests/Phase12Schema2BackupTests.py: initial4/4, extended5/5, final6/6
+  passed. Coverage includes Unicode/quotes/escapes/raw historical payloads, CRLF/LF,
+  extended INSERT/constraints, missing/changed rows/tables, unsafe/unsupported SQL,
+  complete zero-valued health streams and narrow Linux exception handling.
+- bash tests/Phase12Schema2BackupScripts.test.sh: Linux and Windows fake workflows
+  passed. Both fixed targets, passwords-before-SQL, receipts, complete capture,
+  no overwrite/private review/sealing, writer/wrong identity/UUID/grant/health/path/
+  Windows ACL refusal, dump failure/empty/unsafe/interruption/drift, tampering and
+  interrupted-review refusal; B7.8 adds zero mock database mutation calls.
+- scripts/phase12/b77/01-build.sh: configure/build succeeded; full CTest31 entries,
+  29 offline passed/two live integration skips/zero failures,243.48s. No reset-capable
+  integration test executed against any database. Shared offline environment reports
+  were generated automatically.
+- ctest --test-dir build -R '^Phase12Schema2Backup(Tests|Scripts)$' --output-on-failure:
+  focused reruns after final privacy/review/credential-session guards passed2/2;
+  latest54.00s (scripts53.85s). Earlier focused passes52.27s and53.83s retained.
+- scripts/phase12/b78/01-check.sh --platform linux: actual installed client/dump
+  version-only and embedded SQL/tool checks passed offline, MariaDB client/dump
+  10.5.29; shared reporter explicitly says server not queried. No native DB session.
+- A review-manifest generation command initially named a nonexistent comparator
+  Python file. The actual comparator is the existing Bash file; dependency list was
+  corrected and checksums regenerated/verified before final tests. This was a
+  preparation command error, not live evidence failure or missing dependency install.
+- Bash syntax, local Markdown links/fences and git diff --check passed. Historical
+  B7 review manifest verifies. No data files were read from owner backup directories
+  by the agent; shell tests use only newly generated temporary synthetic fixtures.
+
+#### Approval Requested — FIRST LIVE STAGE: Linux B7.8/02 ONLY
+
+Authorize OWNER execution of the following one stage after stopping every GUI/
+TaskCompass database writer:
+
+```bash
+scripts/phase12/b78/02-preflight.sh --approved --platform linux
+```
+
+Exact target: feledria/MariaDB10.5.29, taskcompass_dev@127.0.0.1:3306, dataset
+21be9da7-b767-4578-b972-cc9a35122ddb, schema2. Scope: read existing B7.2–B7.7
+private evidence; read-only credential/schema/UUID/fingerprint/journal checks using
+existing migration/runtime/diagnostic accounts; existing sudo/socket root metadata
+for exact tables/grants/closed-writer checks; reviewed health SELECTs; a complete
+nine-table export stream hashed in memory for retained-data comparison (no data
+export file); version/environment notes. No new backup directory/dump, database
+write, privilege/account/plugin/password/TLS change, restore/reset or cleanup.
+Any discrepancy stops for specific review; no automatic retry/repair. Expected
+PASS includes current health/grants/identity/data consistency and explicit Linux
+UNRESOLVED notices, not waiver of the exceptions.
+
+After owner supplies Linux02 PASS, request separate Linux03 capture authorization
+with the fresh destination policy above, then Linux04 private-review/seal authority.
+After Linux reviewed backup passes, request independent Windows authorization;
+Linux approval does not imply Windows. All reviewed commands and expected artifact
+names are in the new platform guides, but these later commands are NOT yet live-
+authorized. No B7.9, B7.10 or Phase1.3 work begun. No commit/push/merge/tag. Stop at
+this preparation/review checkpoint; actual backup/evidence validation remains pending.
+
+### 2026-11-20 — Owner-reported Linux B7.8 offline prerequisites passed
+
+Owner supplies successful commands:
+
+```bash
+scripts/phase12/b77/01-build.sh
+scripts/phase12/b78/01-check.sh --platform linux
+```
+
+Build/configuration succeeded (Ninja no work). CTest31 registrations:29 offline
+entries passed, two live integration entries skipped, zero failures,232.59s.
+New schema2 backup unit/script tests passed (0.15s/50.87s). Stage01 verified both
+review manifests/all pinned dependencies, installed MariaDB client/dumper10.5.29,
+embedded migrations and existing tools; final output explicitly says no connection
+or backup. Environment CentOS Stream9/kernel5.14.0-749.el9.x86_64, Qt6.10.3,
+sourceb21247b94ebb4733f2eaf188d0da20aebe8c06dc dirty=True; source SHA256
+29d97b4c8cf29c9b8badd4e19df7cf11e24162064fe78102bf6a20cfda6eab78.
+Reports UTC2026-11-21T032251.598109/032251.952008 (build) and
+032703.465449 (stage01), corresponding to local Nov20. These are owner-reported
+results, distinct from preceding agent offline validation. No live stage/result
+or authorization is inferred from successful offline tests.
+
+Next remains the exact previously documented Approval Requested: Linux B7.8/02
+read-only preflight ONLY, after all writers closed, on feledria/MariaDB10.5.29,
+taskcompass_dev@127.0.0.1:3306, dataset21be9da7-b767-4578-b972-cc9a35122ddb.
+Scope: existing evidence reads, identity/schema/fingerprint/journal/final grants/
+health/session checks, full source export streamed to hash without data file,
+and local environment metadata. No backup directory/dump, write/grant/account
+change, restore/reset or cleanup. Linux exceptions remain unresolved. Stages03/04
+and Windows still need separate authorization; do not run them on this evidence
+alone. On any unexpected preflight output stop/preserve/report, never auto-repair.
+
+Documentation-only update; local references/fences and git diff --check passed.
+No build/test repetition because executable source is unchanged; no agent database
+operation, GUI action, commit, push, merge or tag.
+
+### 2026-11-20 — Explicit owner approval: Linux B7.8 stage02 ONLY
+
+Owner explicitly states: “I approve Linux B7.8 stage02.” Authorization covers
+owner-operated read-only preflight on feledria/MariaDB10.5.29,
+taskcompass_dev@127.0.0.1:3306, dataset21be9da7-b767-4578-b972-cc9a35122ddb,
+after all GUI/other TaskCompass writers close. Exact command:
+
+```bash
+scripts/phase12/b78/02-preflight.sh --approved --platform linux
+```
+
+Scope is the reviewed existing-evidence, account identity, schema2/fingerprint/
+completed journal, exact final grants, health and writer/session checks; current
+nine-table source stream hashed without a data export file; local version notes.
+No new backup directory/dump, database write, account/grant/plugin/password change,
+restore/reset or cleanup. No Linux03/04 or Windows authorization. Linux B7.7
+preservation/restart exceptions remain unresolved. Stop/preserve/report unexpected
+results; no automatic retry or repair. Closing windows is a required precondition,
+not a second approval prompt. Owner execution/result is pending; agent did not
+execute the command or any live database operation.
+
+Documentation-only approval entry; local Markdown references/fences and
+ git diff --check passed. No application build/tests rerun because source is
+unchanged. No commit/push/merge/tag or Phase1.3 work.
+
+### 2026-11-20 — Owner Linux B7.8 stage02 passed; stage03 approval requested
+
+Owner executed the approved command:
+
+```bash
+scripts/phase12/b78/02-preflight.sh --approved --platform linux
+```
+
+Supplied output verifies all pinned package/SQL and historical evidence checks;
+B7.7 initial seal; known Linux exception only (Task24dd11c3-59df-4e23-ac21-422bcf2a1e3a:
+updatedAt/localRevision/objectiveId). Printed retained counts: SchemaMigration2,
+Dataset1, Task10, CommandRecord77, LocalChange77, MigrationAttempt1, Pillar4,
+Project2, Objective7. Source full-data hash matched retained final data by the
+successful preflight branch. The known failed Linux final capture remains unsealed;
+its consistency is not a passed original-data or restart comparison.
+
+Migration credential failed two confirmed read-only password probes and succeeded
+on attempt3; runtime and diagnostic credential probes succeeded on attempt1.
+Both migration/runtime schema2 verifications report dataset
+21be9da7-b767-4578-b972-cc9a35122ddb. Existing sudo/socket root metadata confirms
+feledria/MariaDB10.5.29 exact final account grants, no unexpected authority/active
+sessions; complete current CHECK/FK health rules all zero. Final stage02 PASS.
+No dump or backup directory was created. All are owner-reported results; no agent
+server or private-evidence access.
+
+Environment CentOS Stream9/kernel5.14.0-749.el9.x86_64/Qt6.10.3; source
+b21247b94ebb4733f2eaf188d0da20aebe8c06dc dirty=True, source SHA256
+0307ce11227b15bb355eb6eda7712f457e714926a402a1c9a46ff7cdd822d47b;
+report UTC2026-11-21T033959.409391 (local Nov20). Server report provenance correctly
+labels saved B7.5 metadata, alongside independently passed fresh admin checks.
+
+#### Approval Requested — Linux B7.8 stage03 ONLY (fresh capture)
+
+Authorize owner execution, after keeping ALL GUI/other database writers closed:
+
+```bash
+scripts/phase12/b78/03-capture.sh --approved --platform linux
+```
+
+Exact unchanged target: taskcompass_dev@127.0.0.1:3306 on feledria/MariaDB10.5.29,
+dataset21be9da7-b767-4578-b972-cc9a35122ddb, schema2/nine InnoDB tables.
+Scope: repeat fresh reviewed read-only verification/health/grant/session/data
+checks; diagnostic SELECT-only exports and exactly one consistent native dump;
+new private external directory only:
+$HOME/temp/TaskCompassBackups/Phase1.2-schema2-linux-YYYYmmdd-HHMMSS-PID,
+current-user700 directory/600 files, no overwrite or nesting in earlier captures.
+No parent/destination override is included in this request.
+
+Expected evidence: all nine tables' before/after canonical data/counts and raw DDL,
+zero-health and equal-grant reports, schema2.sql/nonzero-size/exit0, exact offline
+row/history/journal dump comparison, preserved prior-reference hashes and explicit
+UNRESOLVED Linux exceptions, client/tool/environment records, attempt/completion
+receipts and capture.sha256. Success must end PRIVATE REVIEW PENDING. Stage03
+does not attest private SQL review or seal reviewed schema2-evidence.sha256.
+
+No data write, account/grant/password/plugin/TLS change, migration, restore/reset,
+QA cleanup, prior-evidence alteration or automatic retry. If any dump/export,
+health, comparison or permission step fails, retain actual state and all partial
+files/markers; stop and request a specific decision, never repair/replay/delete.
+Writers must stay stopped; point-in-time session checks are not a writer lock.
+Linux04 sealing and every Windows live stage require separate approval. B7.9,
+B7.10 and Phase1.3 remain excluded. No stage03 approval/result inferred here.
+
+Documentation-only update; Markdown references/fences and git diff --check passed.
+No application build/tests repeated because executable source unchanged. No agent
+live database operation, backup, commit/push/merge/tag or cleanup.
+
+### 2026-11-20 — Explicit owner approval: Linux B7.8 stage03 ONLY
+
+Owner states: “I approve Linux stage03.” In the immediately preceding B7.8
+stage03 request, this authorizes OWNER execution of:
+
+```bash
+scripts/phase12/b78/03-capture.sh --approved --platform linux
+```
+
+Scope is the reviewed fresh capture of taskcompass_dev@127.0.0.1:3306 on
+feledria/MariaDB10.5.29, dataset21be9da7-b767-4578-b972-cc9a35122ddb,
+with ALL GUI/other database writers closed. Repeat read-only preflight checks,
+create one NEW timestamp/PID private directory under
+$HOME/temp/TaskCompassBackups/Phase1.2-schema2-linux-YYYYmmdd-HHMMSS-PID,
+perform one diagnostic SELECT-only nine-table dump plus before/after full exports,
+raw DDL/health/grant evidence, comparisons and capture checksums. No destination
+or parent override is approved. Preserve originals/old artifacts/QA records and
+all unresolved Linux preservation/restart exceptions; no rebaseline/repair/waiver.
+
+Expected successful stopping point is capture.sha256 with PRIVATE REVIEW PENDING,
+not a reviewed seal. On failure preserve actual state/partial files/attempt markers
+and report; no automatic retry, overwrite, deletion or recovery. No application/data,
+account/grant/password/plugin/TLS change, migration, restore/reset or cleanup.
+Linux04 sealing and all Windows live stages remain unauthorized; no B7.9/B7.10/
+Phase1.3 work. Owner execution/result pending; agent did not perform capture or
+any live database operation.
+
+Documentation-only approval record; local Markdown references/fences and
+ git diff --check passed. Application tests/build not rerun because source unchanged.
+No commit/push/merge/tag.
+
+### 2026-11-20 — Owner Linux B7.8 stage03 capture passed; private review pending
+
+Owner executed the approved command:
+
+```bash
+scripts/phase12/b78/03-capture.sh --approved --platform linux
+```
+
+New private snapshot directory (owner output):
+/home/justin/temp/TaskCompassBackups/Phase1.2-schema2-linux-20261120-204710-103433
+
+Supplied output verifies pinned review/historical/QA initial evidence, known Linux
+exception only, schema2/dataset21be9da7-b767-4578-b972-cc9a35122ddb under migration
+and runtime accounts, feledria/MariaDB10.5.29 exact final grants/no unexpected
+sessions or authority, and complete zero health before/after. All credentials
+succeeded first probe. Source row counts remain SchemaMigration2, Dataset1, Task10,
+CommandRecord77, LocalChange77, MigrationAttempt1, Pillar4, Project2, Objective7.
+Known protected Task24dd11c3-59df-4e23-ac21-422bcf2a1e3a differs only in
+updatedAt/localRevision/objectiveId; preservation and missed restart exceptions
+remain explicitly UNRESOLVED. No waiver/rebaseline is inferred.
+
+Stage03 reports successful complete nine-table capture/data+raw-DDL equality/
+health/dump contents. capture.sha256 checks passed for dump-exit, attempt/complete
+receipts, schema2.sql, before/after data/DDL/health/grants, prior references,
+preservation/dump-validation, versions and stable/timestamped environment records
+and sidecar. This establishes capture integrity and the scripted successful dump
+path, not owner private SQL review, restored-schema verification or final sealing.
+Output explicitly ends private SQL review PENDING. Dump SHA256 itself has not been
+supplied in conversation; do not invent it. Agent did not read private files or
+connect to the database.
+
+Environment CentOS Stream9/kernel5.14.0-749.el9.x86_64/Qt6.10.3; base source
+b21247b94ebb4733f2eaf188d0da20aebe8c06dc dirty=True; source SHA256
+ba46c364a2d64a6e7859b63fd5186895daa000329db02dc8684c0d33f8005781;
+report UTC2026-11-21T034710.695130 (local Nov20). Server provenance points to the
+new capture's freshly checked grants-after.tsv. Preserve the entire capture and
+all older records; do not rerun03 or reuse its directory.
+
+#### Approval Requested — Linux B7.8 stage04 ONLY, offline private review/seal
+
+First privately inspect every SQL statement in the actual new dump; do not execute
+SQL or share private task contents. These commands only select the already known
+new path and display the private file:
+
+```bash
+snapshotDirectory='/home/justin/temp/TaskCompassBackups/Phase1.2-schema2-linux-20261120-204710-103433'
+LESSHISTFILE=- LESSSECURE=1 less -- "$snapshotDirectory/schema2.sql"
+```
+
+Expect exactly nine plain tables and their data, source-matching definitions,
+normal session-only settings/comments; reject unsafe/unexpected SQL as specified
+in docs/Phase1.2B78.md. If anything is unexpected, stop and report; no sealing,
+editing or retry. After completed private review and separate Linux04 approval:
+
+```bash
+scripts/phase12/b78/04-review.sh --approved --platform linux \
+   --snapshot-dir "$snapshotDirectory" --dump-reviewed
+```
+
+Requested scope: offline read of this completed capture plus reviewed historical
+references/tool version/embedded SQL checks; verify privacy/ACLs, capture hashes,
+receipt/package/historical references, raw DDL/data equality, health and all dump
+values; add ONLY private-review.txt and schema2-evidence.sha256 to this new directory
+and verify the final seal. --dump-reviewed explicitly attests actual owner review;
+no typed confirmation phrases. No database connection, new dump/export, grants,
+account/data write, restore/reset or cleanup. Failed/partial sealing leaves all
+artifacts untouched for a specific decision; no replay/delete/repair. Existing
+files/sealed evidence and unresolved Linux exceptions remain unchanged. Windows,
+B7.9/B7.10/Phase1.3 stay unauthorized. Stage04 approval/review/result not inferred.
+
+Documentation-only result/approval request. Markdown local references/fences and
+ git diff --check passed; application build/tests not repeated because executable
+source unchanged. No live action, capture, commit/push/merge/tag by agent.
+
+### 2026-11-20 — Owner private SQL review satisfactory; Linux B7.8 stage04 approved
+
+Owner explicitly states: “The dump looked good. I approve Linux stage04.” Record
+this as owner-confirmed satisfactory private review of schema2.sql in the completed
+Linux capture:
+/home/justin/temp/TaskCompassBackups/Phase1.2-schema2-linux-20261120-204710-103433
+
+Approval authorizes OWNER execution of the exact offline validation/seal command:
+
+```bash
+snapshotDirectory='/home/justin/temp/TaskCompassBackups/Phase1.2-schema2-linux-20261120-204710-103433'
+scripts/phase12/b78/04-review.sh --approved --platform linux \
+   --snapshot-dir "$snapshotDirectory" --dump-reviewed
+```
+
+Scope: read and independently recheck completed capture/historical references,
+package receipt, private permissions, checksums, data/raw DDL/health/dump values;
+add private-review.txt and schema2-evidence.sha256 to this new capture only and
+verify the final seal. The supplied flag attests the already reported review;
+no additional approval strings or redundant prompts. No database connection,
+new capture/export/dump, database/account/grant/password change, restore/reset,
+QA deletion, prior-file rewrite or cleanup. Preserve partial sealing artifacts
+and stop on error; do not delete/replay/repair. Linux's protected-task modification
+and missing restart comparison remain UNRESOLVED. Windows live stages, B7.9,
+B7.10 and Phase1.3 are not authorized. Seal execution/result is still pending;
+no agent live or private-file operation occurred.
+
+Documentation-only approval record; local Markdown links/fences and
+ git diff --check passed. No build/tests repeated because executable source
+unchanged. No commit/push/merge/tag.
+
+
+### 2026-11-20 — Owner Linux B7.8 private review/seal passed; Linux backup complete
+
+Owner supplies private less review and successful authorized offline command:
+
+```bash
+snapshotDirectory='/home/justin/temp/TaskCompassBackups/Phase1.2-schema2-linux-20261120-204710-103433'
+scripts/phase12/b78/04-review.sh --approved --platform linux \
+   --snapshot-dir "$snapshotDirectory" --dump-reviewed
+```
+
+Reported final PASS: owner-reviewed B7.8 schema2 snapshot sealed. New
+private-review.txt and schema2-evidence.sha256 verified alongside capture.sha256,
+dump-exit/attempt/completion receipts, schema2.sql, both full data/raw DDL/health/
+grant exports, prior references, preservation/dump validation, versions, stable and
+timestamped environment records/checksum. Source DDL comparison passed with only
+the previously reviewed identical LocalChange index alias allowance. Dump validator
+confirms exactly nine table definitions and every exported value, including raw
+historical payloads. Counts: SchemaMigration2, Dataset1, Task10, CommandRecord77,
+LocalChange77, MigrationAttempt1, Pillar4, Project2, Objective7. Prior package/
+historical evidence checks passed; owner had explicitly reported SQL review good.
+No exact dump/final-manifest digest was included in this output; do not invent one.
+
+Linux B7.8 capture/private review/final sealing is complete by OWNER report. This
+is not a restore-validation pass or final Phase1.2 acceptance. The protected Task
+24dd11c3-59df-4e23-ac21-422bcf2a1e3a updatedAt/localRevision/objectiveId modification
+and missed Linux B7.7 restart comparison remain UNRESOLVED, as explicitly reported
+again by the validator. No repair, rebaseline or waiver. Preserve this entire new
+snapshot, all older artifacts, QA records and retained rehearsal/integration data.
+Do not rerun03 or04 on this completed capture. Agent did not read private files,
+execute database operations or perform the review/seal.
+
+Next: native Windows offline build/tests and stage01 tool/package check:
+
+```bash
+scripts/phase12/b77/01-build.sh
+scripts/phase12/b78/01-check.sh --platform windows
+```
+
+These offline commands need no database authorization. Review native results before
+requesting separate Windows02 read-only preflight authorization; no Windows live
+approval is inferred from Linux success. Windows03 capture and04 private-review/
+sealing will also remain separate. B7.9/B7.10/Phase1.3 not begun or authorized by
+this result. No backup cleanup or application/database/account/grant changes.
+
+Documentation-only update to this milestone/current pointer. Markdown references/
+fences and git diff --check passed. No application build/tests repeated because
+executable source unchanged. No commit/push/merge/tag.

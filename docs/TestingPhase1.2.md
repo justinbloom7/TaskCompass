@@ -2,6 +2,12 @@
 
 # Phase 1.2 source review and isolated validation
 
+**Current pointer (2026-11-20): both platform GUI functional acceptances are
+recorded. Linux preservation/restart exceptions remain unresolved. B7.8 backup
+preparation and its Linux-first approval scope are in [the operator guide](Phase1.2B78.md);
+no live B7.8 operation has been performed by the agent. Earlier pending statements
+below are historical and superseded by the milestone's current status.**
+
 The [milestone record](milestones/Phase1.2.md) is authoritative for approvals and
 actual results. **Linux Stage 1A and corrected Stage 1B passed (owner-reported);
 Windows Stage 1A and Stage 1B also passed. B7.1 read-only development preflight,
@@ -365,3 +371,30 @@ ctest --test-dir build-ucrt64 --rerun-failed --output-on-failure
 
 Stop and share remaining offline fixture failures; do not repair databases or alter
 backup evidence. Resume the Windows checklist only when its build gate is green.
+
+
+## B7.8 populated schema-2 backup package
+
+Guides: [overview/safety/evidence](Phase1.2B78.md), [Linux](Phase1.2B78Linux.md),
+[Windows UCRT64](Phase1.2B78Windows.md). New CTest entries are entirely offline:
+
+```bash
+ctest --test-dir build -R '^Phase12Schema2Backup(Tests|Scripts)$' --output-on-failure
+```
+
+Use build-ucrt64 on Windows. Tests use synthetic temporary snapshots and fake
+clients/dump/verifier/admin ACL tools, never real databases or preserved captures.
+They cover exact Unicode/escaping/historical payload values, nine-table completeness,
+LF/CRLF dump input, extended INSERT/constraints, complete health rules, narrow Linux
+exception reporting, platform/UUID/grant/writer refusal, outside-repository/fresh
+private paths, Windows ACL creation failure, interrupted/empty/failed/unsafe/drifting
+dumps, checksums/tampering/private-review gates and no repeated sealing. Existing
+fake mutation counters must not increase during B7.8. The diagnostic password is
+checked before SQL redirection; pipeline stdin must never be interpreted as a password.
+
+Live testing is not part of this package preparation. Linux02 read-only preflight
+approval is the next checkpoint; capture03 and offline sealing04 require their
+separate approvals. Windows follows only after Linux results/private review and
+independent authorization. An offline mock pass does not establish native Windows
+permissions/tooling behavior. No reset-capable integration test is run against
+any development, retained rehearsal or integration database.

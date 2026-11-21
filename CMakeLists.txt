@@ -74,6 +74,11 @@ if(BUILD_TESTING)
          add_test(NAME Phase12RestoreScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12RestoreScripts.test.sh")
          set_tests_properties(Phase12RestoreScripts PROPERTIES TIMEOUT ${TASKCOMPASS_PHASE11_SCRIPT_TIMEOUT}
                               ENVIRONMENT "TASKCOMPASS_TEST_PYTHON=${Python3_EXECUTABLE}")
+         add_test(NAME Phase12Schema2BackupTests COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12Schema2BackupTests.py")
+         set_tests_properties(Phase12Schema2BackupTests PROPERTIES TIMEOUT 30)
+         add_test(NAME Phase12Schema2BackupScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12Schema2BackupScripts.test.sh")
+         set_tests_properties(Phase12Schema2BackupScripts PROPERTIES TIMEOUT 600
+                              ENVIRONMENT "TASKCOMPASS_TEST_PYTHON=${Python3_EXECUTABLE}")
          add_test(NAME EnvironmentReportTests COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/EnvironmentReportTests.py")
          set_tests_properties(EnvironmentReportTests PROPERTIES TIMEOUT 30)
          add_test(NAME GuiAcceptanceEvidenceTests COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/GuiAcceptanceEvidenceTests.py")

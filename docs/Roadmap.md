@@ -1,10 +1,12 @@
 # Implementation roadmap
 
-Current refinement: owner-requested Phase1.2 GUI usability pass (2026-11-18),
-including context-aware creation, organizational reparenting, derived open-task
-counts, scalable type icons and a session-only archive filter; see the
-[milestone](milestones/Phase1.2.md). No Phase1.3 priority/manual-order dragging.
-Manual refinement retest and final acceptance remain pending.
+Current status (2026-11-20): Phase1.2 Linux and Windows GUI functional acceptance
+is recorded. Linux's preservation/restart evidence exceptions remain unresolved.
+[B7.8 backup preparation](Phase1.2B78.md) targets fresh full schema2 snapshots on
+both platforms; Linux read-only stage02 is the first requested live approval.
+No live B7.8 operation has been executed by the agent. Backup/restore evidence,
+exception disposition and explicit final Phase1.2 acceptance remain outstanding.
+No Phase1.3 work. Earlier dated pending statements below remain historical.
 
 **Phase 1.1 was accepted by the owner on 2026-11-14.** Linux and Windows validation
 evidence is preserved in the milestone, including confirmed Windows GUI restart
