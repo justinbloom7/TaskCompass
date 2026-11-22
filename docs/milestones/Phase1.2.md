@@ -8787,3 +8787,77 @@ remain separately unauthorized. Linux B7.7 exceptions remain unresolved.
 Documentation-only result/approval-scope entry; command/hash consistency and git
  diff --check passed. No code change or build/test repeat, agent live operation,
 commit, push, merge or tag.
+
+
+### 2026-11-21 — Linux B7.9 stage03 exact-file restore approved
+
+Owner explicitly approved Linux stage03 only: import the sealed Linux B7.8
+schema2.sql, SHA256
+81d6e16b45d141343ddad7dcb8700019f891af30f66ea01588a4e1d61d7ed0b4,
+once into the newly provisioned taskcompass_phase12_restore on feledria, using
+only taskcompass_phase12_restore@127.0.0.1. Before import reverify source checksums,
+stage01/stage02 evidence, target identity, empty database, exact account privileges
+and absence of conflicting sessions. Run evidence remains
+/home/justin/temp/TaskCompassBackups/Phase1.2-restore-linux-20261121-234712-217a2dd622f3.
+
+Do not modify taskcompass_dev, existing rehearsal databases, other accounts or
+sealed evidence. No migrations, new Dataset initialization, privilege changes
+or cleanup. On any failure stop and preserve every database object and artifact;
+no automatic retry, repair, reset or resume. Operator command:
+
+```bash
+scripts/phase12/b79/03-restore.sh --approved --platform linux \
+   --run-dir "$restoreDirectory"
+```
+
+This records approval, not execution or success. No agent live operation performed.
+After owner-reported PASS, record the result and request separate stage04 full
+verification approval. Stage04, stage05, Windows B7.9, B7.10 and Phase1.3 remain
+unauthorized. Linux B7.7 evidence exceptions remain unresolved. Documentation-only
+scope/command/hash review and git diff --check passed; unchanged builds/tests not
+repeated. No commit/push/merge/tag.
+
+
+### 2026-11-21 — Owner-reported Linux B7.9 stage03 PASS
+
+Owner ran approved 03-restore.sh --approved --platform linux --run-dir
+"$restoreDirectory" and reported 'PASS: B7.9 restore' with evidence directory
+/home/justin/temp/TaskCompassBackups/Phase1.2-restore-linux-20261121-234712-217a2dd622f3.
+Input remained the exact sealed Linux B7.8 schema2.sql SHA256
+81d6e16b45d141343ddad7dcb8700019f891af30f66ea01588a4e1d61d7ed0b4;
+original B7.8 package digest remained
+46dbffef69d1d85eabbc9982a190dbff81466190a075810ab259200d3a4ed4b5.
+Under the reviewed stage implementation, PASS requires prerequisite/source/target
+checks, one import with the dedicated restore account, completion sentinel and
+native client exit0, expected nine-table/85-column post-import inventory, metadata
+and private evidence seal. This is owner-reported execution; no agent private
+file/database access occurred. Full restored data/DDL/health equality is not
+claimed until stage04 passes. No cleanup or grant reduction is inferred.
+
+**Approval Requested — Linux B7.9 stage04 full verification only**
+
+Use the same bound run directory and newly populated taskcompass_phase12_restore
+on feledria/MariaDB10.5.29. Revalidate sealed input and stage01–03 evidence,
+server/dataset/account identity, exact SELECT/INSERT/CREATE privileges, expected
+objects/85 columns and absence of conflicting sessions/stored code/cross-schema
+references. Export canonical complete data and raw DDL via the dedicated restore
+account; compare bytes to the sealed Linux B7.8 source, including every task,
+organizational record, historical payload, both migration records and completed
+MigrationAttempt. Independently check journal checksums/fingerprint and require
+every health rule zero. Record new private comparison/environment/checksum
+evidence without overwriting existing artifacts. No database writes, migrations,
+account/grant changes, recapture or cleanup. Stop on any failure and preserve
+state/evidence; no automatic retry/repair/reset/resume. Approval remains pending.
+
+After separate approval:
+
+```bash
+scripts/phase12/b79/04-verify.sh --approved --platform linux \
+   --run-dir "$restoreDirectory"
+```
+
+Stage05 privilege reduction, Windows B7.9, B7.10 and Phase1.3 remain unauthorized.
+Linux B7.7 protected-task modification and missing restart comparison remain
+unresolved regardless of restore outcomes. Documentation-only transcript/scope/
+command consistency reviewed and git diff --check passed. No application code
+changes or build/test repeat, agent live operation, commit/push/merge/tag.
