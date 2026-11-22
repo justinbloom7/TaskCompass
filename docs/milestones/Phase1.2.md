@@ -8861,3 +8861,94 @@ Linux B7.7 protected-task modification and missing restart comparison remain
 unresolved regardless of restore outcomes. Documentation-only transcript/scope/
 command consistency reviewed and git diff --check passed. No application code
 changes or build/test repeat, agent live operation, commit/push/merge/tag.
+
+
+### 2026-11-22 — Linux B7.9 stage04 explicitly approved
+
+Owner confirmed stage03 success and authorized Linux stage04 only against existing
+taskcompass_phase12_restore, using evidence directory
+/home/justin/temp/TaskCompassBackups/Phase1.2-restore-linux-20261121-234712-217a2dd622f3
+and sealed source
+/home/justin/temp/TaskCompassBackups/Phase1.2-schema2-linux-20261120-204710-103433.
+Scope: revalidate source and stages01–03; check server/Dataset/account/database
+identity, exact SELECT/INSERT/CREATE privileges, expected objects and no conflicting
+sessions; export full restored data/raw DDL via the dedicated restore account;
+compare bytes with sealed source across all nine tables/85 columns, organization,
+tasks, complete command/local-change history and migration/attempt metadata;
+independently verify checksums/fingerprint/FKs/all health rules; record new private
+verification/environment/checksum evidence without overwriting existing artifacts.
+
+No database writes/schema changes, migrations, Dataset initialization, account/
+privilege changes, development/integration/rehearsal changes, sealed-source or
+existing-evidence modification, cleanup, automatic retry, repair, reset or resume.
+On failure stop, preserve database/evidence and report the exact failure before
+requesting specific recovery. Execution remains owner-operated; no agent live
+operation or verified stage04 result is claimed by this approval entry.
+
+```bash
+restoreDirectory='/home/justin/temp/TaskCompassBackups/Phase1.2-restore-linux-20261121-234712-217a2dd622f3'
+scripts/phase12/b79/04-verify.sh --approved --platform linux \
+   --run-dir "$restoreDirectory"
+```
+
+After owner reports PASS, record actual verification results. Remaining Linux
+stage05 requires separate approval to reverify equality/health, execute reviewed
+REVOKE INSERT,CREATE on this restore account only, verify SELECT-only privileges,
+reconnect for final read-only equality/health and retain new private evidence.
+No stage05 action is authorized here. Windows B7.9, B7.10 and Phase1.3 remain
+unauthorized; Linux B7.7 evidence exceptions remain unresolved.
+Documentation-only scope/command/path review; git diff --check passed. No source
+change, build/test repeat, database/private-evidence access, commit/push/merge/tag.
+
+
+### 2026-11-22 — Owner-reported Linux B7.9 stage04 PASS
+
+Owner ran approved 04-verify.sh --approved --platform linux --run-dir
+"$restoreDirectory" and supplied 'PASS: B7.9 verify' for
+/home/justin/temp/TaskCompassBackups/Phase1.2-restore-linux-20261121-234712-217a2dd622f3.
+Source remained sealed Linux B7.8 snapshot ending20261120-204710-103433,
+schema2.sql SHA256
+81d6e16b45d141343ddad7dcb8700019f891af30f66ea01588a4e1d61d7ed0b4,
+original package SHA256
+46dbffef69d1d85eabbc9982a190dbff81466190a075810ab259200d3a4ed4b5.
+
+The reviewed stage04 PASS requires source/prior evidence checks, expected server/
+account/target identity and exact SELECT/INSERT/CREATE rights, nine InnoDB tables/
+85 columns, no conflicting sessions/stored code/cross-schema references, exact
+canonical restored data and raw DDL equality against sealed source, completed
+migration journals/checksums/fingerprint/attempt metadata and every health rule
+present with zero violations. All original and organizational records, task rows,
+CommandRecord and LocalChange payloads/counts are included in the byte comparison.
+Private verify-data.hex.tsv, verify-ddl.txt, verify-health.tsv, comparison report,
+metadata, environment, client-exit/attempt/success records and verify.sha256 are
+required by the successful implementation. This is owner-reported native script
+evidence, not independent agent database/private-file access. No privilege
+reduction or final Linux B7.9 completion is inferred yet.
+
+**Approval Requested — Linux B7.9 stage05 restore-account reduction only**
+
+On the same feledria target/evidence binding, revalidate sealed source and
+successful stages01–04, identity/objects/sessions and exact existing privileges;
+repeat full data/DDL/health comparison before changing rights. Execute only the
+reviewed scripts/phase12/b7/restore-account-readonly.sql to revoke INSERT and
+CREATE from taskcompass_phase12_restore@127.0.0.1 on its exact escaped schema,
+leaving SELECT. Verify the exact final privilege matrix, reconnect with the
+dedicated account, repeat complete read-only equality/health and preserve new
+private evidence/checksums. No database/data/schema changes, other-account/grant
+changes, source/evidence overwrites, restore/import, cleanup or denied-write probe.
+On any unexpected failure preserve actual state and artifacts and stop; no
+automatic retry/repair/reset/resume. Stage05 approval is pending.
+
+After explicit approval:
+
+```bash
+scripts/phase12/b79/05-readonly.sh --approved --platform linux \
+   --run-dir "$restoreDirectory"
+```
+
+Windows B7.9, B7.10 and Phase1.3 remain separately unauthorized. Linux B7.7
+protected-task modification and missing restart comparison remain unresolved;
+restore verification does not repair or waive those historical exceptions.
+Documentation-only transcript/hash/command/scope consistency reviewed and git
+ diff --check passed. Unchanged application build/tests not repeated. No agent
+live operation, commit/push/merge/tag.
