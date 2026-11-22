@@ -2,7 +2,7 @@
 
 # Phase 1.2 — Organizational Management
 
-**Current status (2026-11-21): Linux and Windows GUI functional acceptance are
+**Current status (2026-11-22): Linux and Windows GUI functional acceptance are
 complete by explicit owner direction; Windows GUI satisfaction and all five B7.7
 Windows checkpoints are confirmed. B7.1–B7.5 development/rehearsal upgrades and
 final grants remain verified as historically recorded. Linux's protected-task
@@ -11,10 +11,12 @@ exceptions, not passed checks. Linux B7.8 capture/private review/final sealing
 passed by owner report; preserve the reviewed schema-2 snapshot. Windows B7.8
 fresh capture, owner private review and final sealing also passed by owner report;
 both platform snapshots are sealed. The earlier incomplete Windows capture remains
-retained separately. B7.9 isolated
-restore/compare and B7.10 final evidence review/explicit milestone acceptance remain
-outstanding. Phase 1.2 as a whole is NOT accepted. B7.9 source/operator preparation is complete; see the latest dated B7.9
-entry for offline validation and the Linux stage01-only approval checkpoint.**
+retained separately. Linux B7.9 stages01–05 passed by owner report: the isolated
+restore matches its sealed source and its dedicated account is SELECT-only.
+Windows B7.9 native offline validation and separately approved live stages remain
+pending. B7.10 final evidence review/explicit acceptance remain outstanding.
+Phase 1.2 as a whole is NOT accepted. See the latest dated B7.9 entry for Windows
+prerequisites; no Windows B7.9 live operation is authorized.**
 
 Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
 Only this document and the roadmap were changed by Step A. Its designs/SQL were
@@ -8952,3 +8954,93 @@ restore verification does not repair or waive those historical exceptions.
 Documentation-only transcript/hash/command/scope consistency reviewed and git
  diff --check passed. Unchanged application build/tests not repeated. No agent
 live operation, commit/push/merge/tag.
+
+
+### 2026-11-22 — Linux B7.9 stage05 explicitly approved
+
+Owner confirmed stage04 PASS and approved Linux stage05 only on existing
+taskcompass_phase12_restore, using evidence directory
+/home/justin/temp/TaskCompassBackups/Phase1.2-restore-linux-20261121-234712-217a2dd622f3.
+Scope: revalidate sealed Linux B7.8 source and successful stages01–04; repeat
+complete data/DDL/health comparison; execute only reviewed
+scripts/phase12/b7/restore-account-readonly.sql to revoke INSERT and CREATE from
+ taskcompass_phase12_restore@127.0.0.1 on the exact restore schema, retaining
+SELECT. Verify exact final grants, reconnect with the dedicated restore account,
+repeat complete read-only data/DDL/health checks and retain new private evidence.
+
+Preserve all database contents, sealed backups and existing evidence. No changes
+to other accounts/databases, repeated import, cleanup or denied-write probes.
+On failure stop and preserve actual state/artifacts; no automatic retry/repair.
+Owner-operated command:
+
+```bash
+scripts/phase12/b79/05-readonly.sh --approved --platform linux \
+   --run-dir "$restoreDirectory"
+```
+
+Approval is not execution/PASS: no agent live operation occurred. After owner
+reports stage05 PASS, record Linux completion and report Windows prerequisites:
+synchronize reviewed source, run native offline build/CTest including restore
+and Windows ACL tests, review Linux result and obtain separate Windows stage01
+read-only approval. No Windows live step is authorized here. B7.10 and Phase1.3
+remain unauthorized; Linux B7.7 preservation/restart exceptions remain unresolved.
+Documentation-only scope/command consistency review and git diff --check passed;
+unaffected builds/tests not repeated. No commit/push/merge/tag.
+
+
+### 2026-11-22 — Owner-reported Linux B7.9 stage05 PASS; Linux restore complete
+
+Owner executed approved 05-readonly.sh --approved --platform linux --run-dir
+"$restoreDirectory" and reported 'PASS: B7.9 readonly' for
+/home/justin/temp/TaskCompassBackups/Phase1.2-restore-linux-20261121-234712-217a2dd622f3.
+The source remained the sealed Linux B7.8 snapshot ending20261120-204710-103433,
+exact schema2.sql SHA256
+81d6e16b45d141343ddad7dcb8700019f891af30f66ea01588a4e1d61d7ed0b4,
+original B7.8 package SHA256
+46dbffef69d1d85eabbc9982a190dbff81466190a075810ab259200d3a4ed4b5.
+
+Under the reviewed stage05 implementation, PASS requires source/prior seals and
+complete pre-reduction comparisons, exact reviewed REVOKE INSERT/CREATE on the
+restore account only, verified SELECT-only final privileges, fresh dedicated
+account reconnection, repeated complete data/raw DDL/health equality and private
+readonly evidence seal. Before/after exports, metadata, environment, comparison,
+attempt/success and readonly.sha256 remain in the run directory. This is owner-
+reported native script evidence, not independent agent access to private files.
+All Linux B7.9 stages01–05 are now complete at their isolated restore scope.
+Preserve the populated restore/account, prior rehearsal/integration/development
+databases, both sealed snapshots and all failed/successful evidence. No cleanup
+or denied-write probe was performed or authorized.
+
+Windows preparation before requesting its first live stage:
+1. Owner synchronizes the reviewed source to Windows UCRT64 (no agent push/pull).
+2. Run existing offline build/CTest and the focused restore/native ACL tests:
+
+```bash
+scripts/phase12/b77/01-build.sh
+ctest --test-dir build-ucrt64 \
+   -R '^Phase12(Schema2RestoreTests|RestoreAclTests)$' --output-on-failure
+```
+
+The build helper collects environment evidence. These checks must not opt into
+reset-capable live integration tests. Native ACL test creates/removes only its
+own uniquely named disposable temp fixture, never backup/operator/database data.
+3. Report native offline results, then obtain separate Windows B7.9 stage01
+approval. Proposed command after that approval only:
+
+```bash
+scripts/phase12/b79/01-preflight.sh --approved --platform windows
+```
+
+Windows fixed source is the sealed capture ending20261121-222115-177176; target
+is taskcompass_phase12_restore / same-named account@127.0.0.1 on
+feldria-w10/MariaDB13.0.2. Stage01 verifies private source provenance/checksums/
+UUID/journals, native client/server, absent target/account/host variants and writes
+new private local preflight evidence. No provisioning/import/grant reduction is
+included. Each later Windows stage requires independent approval. No Windows
+live operation is authorized by Linux completion.
+
+Linux B7.7 protected-task modification and missing restart comparison remain
+unresolved for B7.10, without repair/rebaseline/waiver. B7.10, Phase1.3 and final
+Phase1.2 acceptance remain outstanding. Documentation-only current pointer and
+result/commands/scope reviewed; git diff --check passed. No application/source
+change, build/test repeat, agent live operation, commit/push/merge/tag.
