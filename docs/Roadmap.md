@@ -1,13 +1,14 @@
 # Implementation roadmap
 
-Current status (2026-11-22): Phase1.2 GUI acceptance, both sealed schema2 backups
-and all Linux/Windows B7.9 restore/verification/SELECT-only stages are recorded
-complete by owner report. [B7.10 reconciliation proposals](Phase1.2B710.md) are
-prepared under review-only authorization. Both Linux B7.7 exceptions remain OPEN:
-protected-task changes and missing historical restart comparison. Owner disposition
-and explicit final Phase1.2 acceptance remain pending; no automatic retesting,
-live action, cleanup or Phase1.3 work is authorized. Earlier dated pending
-statements below remain historical.
+Current status (2026-11-22): Phase1.2 GUI acceptance, both schema2 backup seals
+and Linux/Windows B7.9 restore/verification/SELECT-only stages are complete by
+owner report. The owner has accepted E1's protected-task variance and E2's
+functional persistence with a historical restart-comparison gap. Original
+checkpoint remains FAILED; restart byte comparison remains NOT CAPTURED.
+[Final acceptance recommendation](Phase1.2B710.md) is ready; Phase1.2 is NOT yet
+formally accepted and awaits the owner's explicit overall decision. Known limits
+remain recorded. No new testing/live action, cleanup, Git publication or Phase1.3
+is authorized. Earlier dated statements below remain historical.
 
 **Phase 1.1 was accepted by the owner on 2026-11-14.** Linux and Windows validation
 evidence is preserved in the milestone, including confirmed Windows GUI restart

@@ -2,13 +2,13 @@
 
 # Phase 1.2 source review and isolated validation
 
-**Current pointer (2026-11-22): native platform/offline and separately approved
-B7.1–B7.9 results are recorded in the milestone; both B7.8 seals and both B7.9
-exact restores/final SELECT-only grants passed by owner report. GUI functional
-acceptance is recorded for both platforms. See [B7.10 review](Phase1.2B710.md)
-for the separate OPEN Linux preservation/restart exceptions, evidence limits and
-proposed owner dispositions. No new test/live operation or final acceptance is
-authorized by this pointer. Older pending statements below remain historical.**
+**Current pointer (2026-11-22): both platform B7.1–B7.9 results and GUI acceptance
+are recorded. E1's protected-task variance and E2's functional persistence have
+explicit owner-accepted dispositions, preserving original checkpoint FAILED and
+historical restart byte comparison NOT CAPTURED. See the
+[final acceptance summary](Phase1.2B710.md) for evidence, known limits and coverage
+gaps. Overall Phase1.2 acceptance remains pending explicit owner approval. No new
+tests/live work are authorized; older pending statements below are historical.**
 
 The [milestone record](milestones/Phase1.2.md) is authoritative for approvals and
 actual results. **Linux Stage 1A and corrected Stage 1B passed (owner-reported);
@@ -487,3 +487,15 @@ and live GUI fault-injection limits remain recorded, without invented PASS.
 No application/tests changed and no live or offline suites were rerun for this
 documentation-only review. Validate links/fences and preserve all private evidence;
 final dispositions and overall acceptance require explicit owner decisions.
+
+
+### B7.10 owner dispositions and final summary — 2026-11-22
+
+Owner accepts the E1 three-field task variance as acceptable GUI testing/current
+organization and E2 functional persistence based on observed restart/supporting
+evidence. These supersede earlier OPEN/pending dispositions, not original results:
+FAILED original-row checkpoint and NOT CAPTURED restart bytes remain so. Final
+summary retains per-case manual/fault-injection/F5 recovery/provenance limitations;
+no additional testing is required or performed by this documentation step.
+Explicit overall Phase1.2 acceptance is still pending. No evidence cleanup or
+code/database modifications; see the milestone for the full owner decision.

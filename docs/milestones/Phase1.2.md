@@ -5,10 +5,10 @@
 **Current status (2026-11-22): Linux and Windows GUI functional acceptance are
 complete by explicit owner direction; Windows GUI satisfaction and all five B7.7
 Windows checkpoints are confirmed. B7.1–B7.5 development/rehearsal upgrades and
-final grants remain verified as historically recorded. Linux's protected-task
-preservation failure and missing restart comparison remain unresolved evidence
-exceptions, not passed checks. Linux B7.8 capture/private review/final sealing
-passed by owner report; preserve the reviewed schema-2 snapshot. Windows B7.8
+final grants remain verified as historically recorded. Linux's three-field
+protected-task variance and functional restart persistence have explicit owner-accepted dispositions; the original checkpoint remains FAILED
+and historical restart byte comparison NOT CAPTURED, not passed checks. Linux
+B7.8 capture/private review/final sealing passed by owner report; preserve the reviewed schema-2 snapshot. Windows B7.8
 fresh capture, owner private review and final sealing also passed by owner report;
 both platform snapshots are sealed. The earlier incomplete Windows capture remains
 retained separately. Linux B7.9 stages01–05 passed and were formally accepted
@@ -17,8 +17,8 @@ dedicated account is SELECT-only.
 Windows B7.9 native offline validation and all stages01–05 passed by owner
 report; both isolated restores match their sealed sources and dedicated restore
 accounts are SELECT-only. B7.10 reconciliation review is authorized and its
-proposed dispositions are documented in [the review](../Phase1.2B710.md). Both
-Linux exception decisions and explicit final acceptance remain outstanding.
+owner dispositions and final recommendation are documented in
+[the review](../Phase1.2B710.md). Explicit overall acceptance remains outstanding.
 Phase 1.2 as a whole is NOT accepted. No further live action or cleanup is authorized.**
 
 Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
@@ -10173,3 +10173,58 @@ Validation: Markdown references/fences/decision-status consistency and git diff
 --check; application build/CTest not rerun because unchanged source and new tests
 cannot manufacture missing historical evidence. No agent live operation,
 commit/push/merge/tag or Phase1.3 work.
+
+
+### 2026-11-22 — Owner accepts E1/E2 dispositions; final acceptance recommendation prepared
+
+Owner explicitly reviewed the B7.10 proposals and decided:
+
+- E1: accepts the specific Task24dd11c3-59df-4e23-ac21-422bcf2a1e3a updatedAt,
+  localRevision and objectiveId variance as an acceptable result of their GUI
+  testing/current data organization. This satisfies the outstanding owner-
+  acceptability decision, not a reconstructed command/session or repair. Original
+  unchanged-record checkpoint remains FAILED and its final capture unsealed.
+- E2: accepts functional Linux GUI persistence based on observed successful
+  restart and supporting evidence. Historical all-row before/after GUI restart
+  byte comparison remains NOT CAPTURED, never PASS. The missing interval is not
+  retroactively verified or recreated.
+
+These are OWNER-ACCEPTED VARIANCE / OWNER-ACCEPTED COVERAGE EXCEPTION dispositions,
+not technical test passes or overall milestone acceptance. Earlier OPEN/pending
+review text is preserved as historical analysis, superseded by these explicit
+owner decisions. No private record, failed artifact, original seal or checksum
+is edited, and no redundant testing/forensics/repair is scheduled.
+
+Updated [Phase1.2B710.md](../Phase1.2B710.md) sections6–7 with the decision table
+and final acceptance summary: delivered hierarchy/ownership/archive/moves/shared
+history/persistent GUI/refinement scope, both schema2 upgrades/final least-
+privilege matrices, native/isolated/offline evidence, both private backup seals
+and exact isolated restores with SELECT-only final accounts. Linux/Windows
+B7.1–B7.9 completion and owner GUI acceptance stand as recorded; no new test or
+private-file/live verification is claimed.
+
+Known limits carried forward: E1's three-field variance (original FAILED result),
+E2's NOT CAPTURED historical comparison, non-exhaustive per-case manual reporting,
+no valuable-dev live GUI outage/permission fault injection (distinct offline/
+isolated coverage), unproven seamless F5 dead-connection recovery with documented
+close/relaunch fallback, time-specific/owner-reported/private-evidence provenance
+limits. No newly identified unresolved in-scope product defect or further
+mandatory execution gate is established by the recorded reconciliation.
+
+**Final Phase1.2 Acceptance Approval Requested — explicit owner decision only**
+
+Recommend accepting the delivered Linux/Windows Phase1.2 scope with E1/E2
+owner dispositions and those transparent limitations preserved. The ONLY
+remaining acceptance gate is the owner's explicit overall Phase1.2 decision;
+accepting the two dispositions does not itself grant that approval. Current
+status: AWAITING FINAL OWNER ACCEPTANCE. Do not mark formally accepted until the
+owner explicitly says so. Acceptance would not authorize cleanup, new live work,
+Git publication or Phase1.3. Every database/account/QA record/backup/failed attempt
+and evidence artifact remains retained.
+
+Changed documentation only: B7.10 report, this milestone, Roadmap/Testing current
+pointers. No application/operator/SQL/schema/migration/source-manifest changes,
+new testing, database/private-evidence access or cleanup. Documentation references,
+fences, decision-status consistency and git diff --check validated; no build/CTest
+rerun because unchanged code and owner prohibits additional test execution.
+No commit/push/merge/tag or Phase1.3 work.

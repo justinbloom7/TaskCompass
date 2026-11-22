@@ -2,10 +2,14 @@
 
 # B7.10 — Phase 1.2 final reconciliation review
 
-Review date: **2026-11-22**. Owner authorized review only and confirmed B7.9
-complete on both platforms. **Phase 1.2 remains unaccepted. Both Linux B7.7
-exceptions remain OPEN pending explicit owner decisions.** This document proposes
-those decisions; it neither closes exceptions nor authorizes new testing.
+Current status: **2026-11-22 — owner dispositions recorded; final Phase 1.2
+acceptance pending.** E1 is an owner-accepted three-field variance; its original
+unchanged-record checkpoint remains FAILED/unsealed. E2 is owner-accepted
+functional persistence; its historical byte comparison remains NOT CAPTURED.
+See sections6–7 for the decisions and final acceptance recommendation.
+The initial review proposals in sections2–5 are preserved as historical analysis,
+superseded by the subsequent explicit owner decisions. No overall acceptance or
+new testing is authorized by this document.
 
 The [milestone](milestones/Phase1.2.md) retains the chronological approvals,
 transcripts, failures, corrections and source/test results. This review reads that
@@ -31,7 +35,7 @@ checks, not a claim that the agent observed private files or the live applicatio
 | B7.7 functional GUI | Owner accepted; broader own-record tests, with two evidence exceptions below | Owner explicitly accepted, 2026-11-20; hierarchy, ownership-moves, before/after restart and final checkpoints passed | Functional acceptance on both platforms stands. No inference that every Linux checkpoint or every individual manual/fault case passed. |
 | B7.8 populated schema2 backup | Complete nine-table capture, before/after data/DDL equality, health, private review and final seal passed | Same; successful fresh capture/private review/seal after inspected ACL/validator failures | Sealed source provenance and all values including history/journals were subsequently checked during B7.9. Earlier incomplete Windows capture remains retained. |
 | B7.9 exact schema2 restore | Stages01–05 passed; formally accepted, 2026-11-22 | Stages01–05 passed; owner confirms both complete | Exact canonical source/restored data and RAW DDL equality, nine tables/85 columns, UUID, completed journal/attempt, health, no extra stored code/cross-schema refs, final SELECT-only restore accounts. |
-| B7.10 review/final acceptance | Review findings prepared here | Same review includes both platforms | Owner exception decisions and explicit overall Phase1.2 acceptance remain pending. |
+| B7.10 review/final acceptance | Review findings prepared here | Same review includes both platforms | Owner exception dispositions recorded in section6; explicit overall Phase1.2 acceptance remains pending. |
 
 No outstanding migration/import attempt is reported uncertain at the completed
 B7.5/B7.9 success endpoints. Earlier failures are preserved, not rewritten as
@@ -233,3 +237,89 @@ record, not backdated into old reports or used to rewrite checksums. No cleanup,
 source/schema/grant changes, Phase1.3, commit/push/merge/tag or live action is
 included. This review is documentation-only; no build/tests were repeated to
 stand in for missing historical evidence.
+
+
+## 6. Explicit owner dispositions — 2026-11-22
+
+These decisions supersede the OPEN/pending language in the initial review above.
+They do not alter a historical machine result, private artifact or checklist.
+
+| Item | Owner decision | Historical result retained | Current disposition |
+| --- | --- | --- | --- |
+| E1: Task24dd11c3-59df-4e23-ac21-422bcf2a1e3a | Owner accepts updatedAt/localRevision/objectiveId variance as an acceptable result of their GUI testing and current data organization. | Original unchanged-record checkpoint FAILED; final capture remains unsealed. No untouched-row PASS or technical repair claimed. | OWNER-ACCEPTED VARIANCE; no outstanding owner-intent decision for this milestone. |
+| E2: Linux GUI restart | Owner accepts functional persistence based on observed successful restart and supporting evidence. | Historical before/after all-row byte comparison NOT CAPTURED, never PASS. | OWNER-ACCEPTED HISTORICAL COVERAGE EXCEPTION. |
+
+E1's owner acceptability/intent question is now explicitly adjudicated; no command-
+by-command forensic reconstruction is claimed. E2's absent historical interval
+remains unmeasured. These are accepted variances/limits, not repaired evidence.
+No additional testing, reversal, rebaseline, artifact sealing or private history
+inspection is required or recommended by these decisions. No earlier failed
+capture, seal, manifest, task record or revision was modified.
+
+## 7. Final Phase 1.2 acceptance summary and recommendation
+
+**Recommendation ready for explicit owner approval; Phase 1.2 is NOT yet formally
+accepted.** Both owner dispositions above have been recorded. The remaining
+acceptance gate is the owner's explicit decision on the milestone as a whole,
+with these dispositions and known limits attached.
+
+Delivered approved scope:
+
+- Persistent pillars/subpillars, projects/subprojects, objectives and independent/
+  project/objective-owned tasks; validated ownership, nested navigation, moves,
+  archive/restore and inherited archive filtering.
+- Shared task/organization session undo/redo, command receipts/local-change history,
+  transactional writes, revision/conflict/dependency guards and restart history
+  reset. Session history is not promised to survive application restart.
+- Owner-approved desktop refinements: context-sensitive +/right-click creation,
+  valid selected-owner defaults, graphical entity types/tooltips, alphabetical
+  groups, derived open-task counts, archive-off startup and compact task rows;
+  validated organization reparenting, without Phase1.3 priority/manual ordering.
+- Migration002 and cumulative nine-table/85-column schema, dataset identity,
+  completed migration history/attempt journal, original migration-time preservation
+  and final least-privilege development/runtime accounts on both platforms.
+- Linux and Windows native build/offline evidence, earlier approved isolated
+  database integration coverage, owner functional GUI acceptance, complete
+  populated schema2 private backups/reviews/seals and exact isolated restores.
+  Both restore accounts now SELECT-only; all populated databases/evidence retained.
+
+Acceptance evidence is summarized in section1 and the chronological milestone;
+live/manual execution remains owner-reported, offline checks remain separately
+identified, and private records were not independently inspected by the agent.
+No extra runtime checks are implied by this summary.
+
+Known limitations and remaining coverage gaps carried into acceptance:
+
+1. E1 remains a specific accepted three-field original-record variance, not
+   unchanged-data verification. The original failed checkpoint remains visible.
+2. E2's historical Linux restart byte comparison remains NOT CAPTURED; functional
+   persistence is accepted with that limitation. A later test could not recreate
+   the original missing interval, and no redundant restart is requested.
+3. Manual per-case GUI observations are not exhaustively recorded. Broad explicit
+   owner functional acceptance does not manufacture individual case PASS entries.
+4. Valuable-dev GUI network-outage/permission-denial fault injection was not run.
+   Offline unknown-commit and native isolated lease/atomicity tests provide useful
+   but different coverage; not every real transport/crash path is proven.
+5. F5 seamless recovery of a dead native connection remains unproven in the record;
+   normal close/relaunch is the documented fallback. No automatic recovery fix
+   or stronger reconnect guarantee is claimed.
+6. Checks establish the states at their recorded times, not continuous monitoring
+   of later owner activity. Original package provenance and failed artifacts
+   remain historical; private-file audits not performed by the agent are not
+   implied. Older Phase1.1 snapshots and all rehearsal/restore/QA data stay retained.
+
+No new unresolved in-scope product defect or additional mandatory execution gate
+was identified by this record-only reconciliation. This supports recommending
+acceptance of the approved scope WITH the transparent limitations above, rather
+than claiming exhaustive testing or retroactive byte-for-byte evidence.
+
+**Final Acceptance Approval Requested:** accept TaskCompass Phase1.2 as delivered
+on Linux and Windows, with E1/E2 owner decisions and the known limitations/coverage
+gaps preserved in the acceptance record. This request is not a declaration that
+approval has been granted. Until the owner explicitly decides, status remains
+AWAITING FINAL OWNER ACCEPTANCE.
+
+Any future enhancement/fault test needs its own scope. Final acceptance would
+not authorize cleanup, account/database removal, evidence rewriting, Git commit/
+push/merge/tag or Phase1.3. No code/schema/privilege/data changes, live operations
+or additional test execution were performed to prepare this summary.
