@@ -15,8 +15,8 @@ retained separately. Linux B7.9 stages01–05 passed and were formally accepted
 by the owner on2026-11-22: the isolated restore matches its sealed source and its
 dedicated account is SELECT-only.
 Windows B7.9 native offline build/restore/ACL validation passed by owner report;
-Windows stage01 preflight passed by owner report; stage02 provisioning approval
-is requested. Later stages remain pending. B7.10 final evidence review/explicit acceptance remain outstanding.
+Windows stages01–02 preflight/provisioning passed by owner report; stage03
+exact-file restore approval is requested. Later stages remain pending. B7.10 final evidence review/explicit acceptance remain outstanding.
 Phase 1.2 as a whole is NOT accepted. See the latest dated B7.9 entry for Windows
 prerequisites; no Windows B7.9 live operation is authorized.**
 
@@ -9747,3 +9747,80 @@ exceptions remain unresolved; Linux B7.9 formal acceptance stands. Documentation
 only output/hash/path/scope/command consistency reviewed and git diff --check
 passed. No application change or tests repeated; no agent live operation or
 commit/push/merge/tag.
+
+
+### 2026-11-22 — Windows B7.9 stage02 explicitly approved
+
+Owner confirms Windows stage01 PASS and approves stage02 only with successful
+evidence directory
+C:/Users/justin/TaskCompassBackups/Phase1.2-restore-windows-20261122-023501-9a92eb740966.
+Revalidate sealed B7.8 source, stage01 records, server identity and absence of
+the proposed restore database/account/all conflicting host variants. Create only
+new taskcompass_phase12_restore and same-named account@127.0.0.1 on feldria-w10,
+with SELECT/INSERT/CREATE only on that exact schema. Use reviewed provisioning
+SQL and interactive password handling. Verify empty target, new login identity
+and exact privileges. Preserve all existing databases, backups, failed attempts
+and evidence. No import, migration, other-account change or cleanup. On unexpected
+failure stop and preserve actual state; no automatic retry/repair/reset/DROP.
+
+Owner-operated command:
+
+```bash
+restoreDirectory='C:/Users/justin/TaskCompassBackups/Phase1.2-restore-windows-20261122-023501-9a92eb740966'
+scripts/phase12/b79/02-provision.sh --approved --platform windows \
+   --run-dir "$restoreDirectory"
+```
+
+This records approval, not execution/PASS; no agent live operation performed.
+After stage02 PASS, record actual result and request separate stage03 approval.
+Stages03–05, B7.10 and Phase1.3 remain unauthorized. Linux B7.7 exceptions remain
+unresolved, without waiver. Documentation-only command/path/scope consistency
+and git diff --check passed; unchanged application build/tests not repeated.
+No commit/push/merge/tag.
+
+
+### 2026-11-22 — Owner-reported Windows B7.9 stage02 PASS
+
+Owner ran approved 02-provision.sh --approved --platform windows --run-dir
+"$restoreDirectory". Source remained the sealed Windows B7.8 directory
+C:/Users/justin/TaskCompassBackups/Phase1.2-schema2-windows-20261121-222115-177176;
+dump SHA25632165acd3b9ae35c955eb8d4a92747b4c396b811ad70aedca946a774ed21ca0d;
+original B7.8 package SHA256
+f0203488fd1b019f8a9475d0c4ac41d940700550c658d3723831cf7e225291ad.
+Windows root/new-account password prompts occurred, followed by
+'PASS: B7.9 provision' for evidence directory
+C:/Users/justin/TaskCompassBackups/Phase1.2-restore-windows-20261122-023501-9a92eb740966.
+
+The reviewed stage PASS requires source/preflight seals and fresh server/absence
+checks, one-shot reviewed creation of only the restore database/account, verified
+new account login, exact SELECT/INSERT/CREATE schema rights, empty target and
+successful client exits/private stage evidence seal. Record as owner-reported
+native execution, not independent agent private-file/database access. No import,
+complete data comparison, privilege reduction or cleanup is inferred.
+
+**Approval Requested — Windows B7.9 stage03 exact-file restore only**
+
+Use the same successful run binding and exact sealed schema2.sql SHA256
+32165acd3b9ae35c955eb8d4a92747b4c396b811ad70aedca946a774ed21ca0d.
+On feldria-w10/MariaDB13.0.2, recheck source manifests/hash and stages01–02,
+server/database/account identity, empty taskcompass_phase12_restore, exact
+SELECT/INSERT/CREATE and no conflicting target sessions. Import the exact dump
+ONCE through taskcompass_phase12_restore@127.0.0.1, not root. Record attempt,
+import completion/exit0, post-import inventory and private environment/checksum
+evidence. No migrations/new Dataset initialization, changes to development/
+rehearsal/integration/other accounts/grants, source evidence edits or cleanup.
+Partial DDL/data may commit; on failure stop and preserve every object/record/
+artifact, no automatic retry/repair/reset/resume/DROP. Full restored data/DDL/
+health equality remains separately approved stage04. Stage03 approval is pending.
+
+After explicit approval:
+
+```bash
+scripts/phase12/b79/03-restore.sh --approved --platform windows \
+   --run-dir "$restoreDirectory"
+```
+
+Stages04–05, B7.10 and Phase1.3 remain unauthorized. Preserve failed attempts;
+Linux B7.7 exceptions remain open for explicit final reconciliation. Documentation-
+only result/path/hash/command/scope review and git diff --check passed. No source
+change or build/test repeat, agent live operation, commit/push/merge/tag.
