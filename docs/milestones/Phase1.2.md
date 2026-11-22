@@ -15,7 +15,8 @@ retained separately. Linux B7.9 stages01–05 passed and were formally accepted
 by the owner on2026-11-22: the isolated restore matches its sealed source and its
 dedicated account is SELECT-only.
 Windows B7.9 native offline build/restore/ACL validation passed by owner report;
-Windows stage01-only live approval is requested. Later live stages remain pending. B7.10 final evidence review/explicit acceptance remain outstanding.
+Windows stage01 preflight passed by owner report; stage02 provisioning approval
+is requested. Later stages remain pending. B7.10 final evidence review/explicit acceptance remain outstanding.
 Phase 1.2 as a whole is NOT accepted. See the latest dated B7.9 entry for Windows
 prerequisites; no Windows B7.9 live operation is authorized.**
 
@@ -9662,3 +9663,87 @@ attempt directories unchanged. Stage02 and later stages remain gated, including
 new stage02 approval after preflight PASS. Linux B7.7 exceptions remain unresolved.
 Markdown links/fences, package pin and git diff --check verified; no application
 build repeat, live DB/ACL/evidence operation, commit/push/merge/tag.
+
+
+### 2026-11-22 — Owner-reported native Windows corrected fixture retest PASS
+
+Owner reran focused native CTest after the test-only Windows-hosted Linux fixture
+correction. Phase12RestoreAclTests passed0.44s and Phase12Schema2RestoreTests
+passed4.15s; 2/2 passed, zero failures,4.60s. This supersedes the seven fixture
+failures for the focused native suite. No production source/package changes were
+needed: approved manifest remains9bb611c67037302cde6b501e45df0686ec0470629006eb21da7f94d4912c0f23,
+previously matched and all entries verified by the owner. No live stage01 PASS
+is inferred from offline test results.
+
+Existing explicit approval for one fresh Windows B7.9 stage01 attempt remains
+available; prior package guard/offline failures did not execute that live attempt.
+Owner may now run the previously supplied hash-gated block, preserving both
+failed output directories. Gate must require the exact9bb package and every file
+checksum before the one read-only preflight/new private evidence directory.
+On any failure stop and preserve artifacts; no automatic retry/repair. After
+stage01 PASS record actual evidence directory, dump hash and checks, then request
+separate stage02 authorization. No new approval request for this same unexecuted
+stage01 scope is necessary. Later stages/B7.10/Phase1.3 remain gated and Linux
+B7.7 evidence exceptions remain unresolved.
+Documentation-only test-result/scope review and git diff --check passed. No code
+change, agent database/evidence operation, commit/push/merge/tag; unchanged Linux
+checks not repeated.
+
+
+### 2026-11-22 — Owner-reported Windows B7.9 stage01 PASS
+
+Owner executed the approved hash-gated block. Exact operator package SHA256
+9bb611c67037302cde6b501e45df0686ec0470629006eb21da7f94d4912c0f23
+matched and every listed checksum passed before preflight executed.
+Sealed source:
+C:/Users/justin/TaskCompassBackups/Phase1.2-schema2-windows-20261121-222115-177176.
+Actual schema2.sql SHA256:
+32165acd3b9ae35c955eb8d4a92747b4c396b811ad70aedca946a774ed21ca0d.
+Original B7.8 package SHA256:
+f0203488fd1b019f8a9475d0c4ac41d940700550c658d3723831cf7e225291ad.
+New private evidence directory:
+C:/Users/justin/TaskCompassBackups/Phase1.2-restore-windows-20261122-023501-9a92eb740966.
+Both the candidate and verified-private path printed, followed by
+'PASS: B7.9 preflight'. This supplies native execution evidence that the new
+owner-only directory creation path succeeded in the actual backup parent.
+
+Under the reviewed runner, PASS requires source privacy/manifests/provenance,
+complete schema2 dump/journal/Dataset457bb52b-fea4-4347-9c47-675c6b035c90/fingerprint/
+health checks, matching native client/server identity on feldria-w10/MariaDB13.0.2,
+and absent proposed taskcompass_phase12_restore database/account including every
+conflicting host variant; no unexpected target authority/objects/sessions. New
+binding/client/preflight metadata, environment, attempt/success and preflight
+checksum evidence were generated. These are owner-reported outcomes, not agent
+private-file/database access. No restore database/account was provisioned and
+no import/grant change occurred. Earlier failed directories remain separately
+preserved; no repair, reuse or cleanup is authorized.
+
+**Approval Requested — Windows B7.9 stage02 provisioning only**
+
+Use exactly this run directory/source/hash/package binding. Revalidate source
+and stage01 seal, native client/server identity and fresh absence of proposed
+database/account/all host variants before creation. On feldria-w10 create only
+new taskcompass_phase12_restore and same-named account@127.0.0.1 with SELECT,
+INSERT,CREATE on the escaped exact schema, using reviewed
+restore-account.template.sql and interactive in-memory password rendering.
+Verify empty target, new account login and exact privileges; preserve new private
+stage02 metadata/environment/markers/checksums without overwriting evidence.
+No existing-database/account/grant changes, import, migration, source/evidence
+modification or cleanup. DDL/account changes may partially commit; on failure
+stop and preserve actual state/artifacts, no automatic retry/repair/reset/drop.
+Earlier conditional approval does not replace this new checkpoint, per owner's
+latest explicit instruction. Await separate stage02 authorization.
+
+After approval only:
+
+```bash
+restoreDirectory='C:/Users/justin/TaskCompassBackups/Phase1.2-restore-windows-20261122-023501-9a92eb740966'
+scripts/phase12/b79/02-provision.sh --approved --platform windows \
+   --run-dir "$restoreDirectory"
+```
+
+Stage03–05, B7.10 and Phase1.3 remain separately unauthorized. Linux B7.7 evidence
+exceptions remain unresolved; Linux B7.9 formal acceptance stands. Documentation-
+only output/hash/path/scope/command consistency reviewed and git diff --check
+passed. No application change or tests repeated; no agent live operation or
+commit/push/merge/tag.
