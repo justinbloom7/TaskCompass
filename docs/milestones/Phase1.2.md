@@ -8313,3 +8313,77 @@ No execution has been performed or authorized by this report. Documentation-only
 update; command/scope consistency and git diff --check passed. Application tests
 not repeated because source is unchanged. No agent database/evidence operations,
 commit, push, merge or tag.
+
+
+### 2026-11-21 — One fresh Windows B7.8 stage03 recovery capture approved
+
+Owner explicitly approved one fresh Windows B7.8 stage03 capture with the
+corrected validator: create a new private backup directory, capture all nine
+schema2 tables from existing Windows taskcompass_dev, verify complete before/
+after data and DDL equality, and generate environment report, completion receipt
+and checksum manifest. Preserve the previous incomplete capture and every
+artifact unchanged; do not reuse its directory, overwrite evidence, modify the
+source database, change privileges or clean up anything.
+
+Before execution the owner must close TaskCompass and all other database writers;
+the script also performs fresh automatic active-session checks. The agent cannot
+confirm the state of the owner's Windows processes remotely. This notice requires
+no typed confirmation phrase. Owner-operated command, once writers are closed:
+
+```bash
+scripts/phase12/b78/03-capture.sh --approved --platform windows
+```
+
+This approval permits one new attempt, not an automatic retry loop. On failure
+stop and preserve all new artifacts. After PASS report the new directory,
+validation results and evidence files, then stop before private dump review or
+stage04 sealing: both require separate approval. No new capture was executed by
+the agent; result remains pending. Linux exceptions and all prior evidence remain
+unchanged. Documentation-only entry, command/scope consistency reviewed and
+git diff --check passed; unaffected builds/tests not repeated. No commit/push/
+merge/tag or live database operation performed.
+
+
+### 2026-11-21 — Owner-reported fresh Windows B7.8 stage03 PASS
+
+Owner executed the explicitly approved single fresh capture. New directory:
+/c/Users/justin/TaskCompassBackups/Phase1.2-schema2-windows-20261121-222115-177176.
+The previous incomplete attempt (20261121-192804-176636) is retained separately;
+no cleanup or modification of that attempt is authorized or reported.
+
+Reported results: retained evidence/checkpoints and protected B7.5 rows passed;
+Windows dataset457bb52b-fea4-4347-9c47-675c6b035c90/schema2 verified using migrator
+and runtime accounts; feldria-w10/MariaDB13.0.2 exact final grants, no unexpected
+authority/active sessions, complete health rules zero. All nine tables captured,
+canonical full-data and raw DDL equality before/after passed, dump contents
+validated, capture-complete receipt and capture manifest produced and checked.
+Counts remain SchemaMigration2, Dataset1, Task6, CommandRecord91, LocalChange91,
+MigrationAttempt1, Pillar6, Project3, Objective5.
+
+Evidence includes schema2.sql; source2-before/after.hex.tsv and .ddl.txt;
+health-before/after.tsv; grants-before/after.tsv; attempt.txt; prior-evidence.txt;
+preservation.txt; dump-exit.txt; dump-validation.txt; client/dump-version.txt;
+environment.json; environment-origin.txt; timestamped environment JSON and its
+SHA256 sidecar; capture-complete.txt; capture.sha256. The captured environment
+report is environment-2026-11-22T052118.653339_0000-7d2a3735.json. Qt6.12.0,
+source eb7bac1b426e64f6f1bcae044a15e770773ae431, clean, source SHA256
+b6fed609e196f199deb9ed2fde009800f89fb8d6d2245266680d2716d7a85dc9.
+This is owner-reported native execution evidence, not agent database access.
+
+**Approval Requested — Windows B7.8 private dump review and stage04 sealing**
+
+Scope: privately inspect every statement of schema2.sql in this exact new
+capture; then run existing offline stage04 with --approved --platform windows,
+--snapshot-dir pointing to this directory and --dump-reviewed only after review.
+Stage04 rechecks ACLs, original evidence references, capture checksums, data/DDL,
+health and dump contents; creates only the new private-review attestation and
+final schema2-evidence checksum manifest in this completed capture. No database
+connection/write, grant change, restore, recapture, cleanup, modification of
+existing evidence or B7.9 execution. On unexpected failure stop and preserve
+all artifacts; no automatic retry/repair. Await separate owner approval; no
+review or stage04 sealing has been performed or inferred from stage03 PASS.
+Linux B7.7 exceptions remain unresolved and the sealed Linux backup unchanged.
+
+Documentation-only transcript/scope review; git diff --check passed. Application
+build/tests unaffected and not rerun. No agent live operations or commit/push/
+merge/tag.
