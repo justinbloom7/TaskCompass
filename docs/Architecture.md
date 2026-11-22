@@ -122,8 +122,8 @@ scheduleWork, recordWork, completeTask and rescheduleAllocation through focused
 repository/transaction interfaces. Both layers must build and be testable without
 Qt Widgets, Qt Quick or QML. The desktop target needs no Qt Quick/QML runtime.
 Domain rules never live in dialog handlers or QML.
-Whether to allow a small Qt Core dependency or use only standard C++ value types
-is an implementation decision; no presentation types may cross these boundaries.
+The implemented domain/application core uses standard C++ value types only; no Qt
+Core, presentation or database-specific types cross those boundaries.
 
 Desktop controllers, item models, delegates and dialogs adapt results to Widgets.
 A future mobile adapter can expose the same services through QObject properties,
@@ -509,3 +509,39 @@ schemas. Fingerprints are conservative: server-version formatting changes may
 require operator review even without a semantic schema change. No automatic
 fingerprint repair is allowed. Detailed decisions, limitations, SQL approval gates
 and actual validation: [Phase 1.1](milestones/Phase1.1.md).
+
+## Phase 1.2 source architecture — 2026-11-16
+
+Source-only implementation extends the accepted foundation with Pillar, Project,
+Objective and TaskOwner, iterative OrganizationRules, and a single CommandService.
+WorkspaceRepository owns the coherent read/prepare/CAS/write/receipt/change/commit
+transaction. MariaDbWorkspaceRepository acquires a database-scoped MutationLease
+before that transaction; revision and parent/dependency validation use fresh state.
+All cooperating mutations, including task edits, take the same lease. Raw SQL and
+old running clients do not honor this protocol: stop all writers before upgrades.
+TaskService is a task-only compatibility facade for schema-1 fixtures/regressions,
+not a second history engine or the production schema-2 write adapter.
+
+Typed receipt masks restore only intended fields; unrelated fields are carried
+from current state. Stale external revisions reject undo/redo rather than overwriting
+concurrent work. Known failures leave session history unchanged; uncertain commits
+clear history and require reload/inspection. Audit and LocalChange rows are durable;
+the bounded mixed-type undo stack is session-only and clears on restart.
+
+PersistentDesktop retains its existing layout, worker-owned SQL connection and
+post-commit refresh. OrganizationTreeModel uses flat node ownership and iterative
+ancestry for deep hierarchies; project/objective views are projections of the same
+UUIDs. Explicit/inherited archive indicators and Show Archived/Locate Archived
+Ancestor controls expose restoration. Parent pickers reject illegal destinations;
+move/archive previews use the full coherent workspace, not the filtered task view.
+
+MigrationRunner now explicitly targets 1 or 2. It verifies source checksums,
+contiguous history, current schema fingerprint, structural registry and completed
+attempt metadata. It never edits row 1 or automatically resumes partial DDL. New
+runtime startup requires schema 2; schema-1 verification/fixtures remain available.
+Only separately approved CLI operations apply DDL. CHECK names and recorded full
+DDL fingerprints are verified; expressions are not independently parsed into a
+canonical semantic representation. Live constraint tests remain necessary.
+
+Live MariaDB 10.5/13, Windows, interactive GUI and expanded backup/restore validation
+are pending; source and offline evidence are in [Phase1.2.md](milestones/Phase1.2.md).

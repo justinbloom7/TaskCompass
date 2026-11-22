@@ -31,6 +31,12 @@ add_executable(TaskCompassPrototype src/desktop/Main.cpp)
 target_link_libraries(TaskCompassPrototype PRIVATE PrototypeDesktop)
 
 include(CTest)
+if(BUILD_TESTING)
+   find_package(Python3 QUIET COMPONENTS Interpreter)
+   if(Python3_Interpreter_FOUND)
+      add_test(NAME DatabaseSchemaTests COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/DatabaseSchemaTests.py")
+   endif()
+endif()
 
 add_executable(TaskCompassDbDiagnostic src/infrastructure/storage/MariaDbDiagnostic.cpp)
 target_link_libraries(TaskCompassDbDiagnostic PRIVATE Qt6::Sql)
@@ -60,6 +66,59 @@ if(BUILD_TESTING)
       add_test(NAME IntegrationDatabaseScripts
                COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/IntegrationDatabaseScripts.test.sh")
       set_tests_properties(IntegrationDatabaseScripts PROPERTIES TIMEOUT ${TASKCOMPASS_SHELL_TEST_TIMEOUT})
+      add_test(NAME Phase12ValidationScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12ValidationScripts.test.sh")
+      set_tests_properties(Phase12ValidationScripts PROPERTIES TIMEOUT ${TASKCOMPASS_PHASE11_SCRIPT_TIMEOUT})
+      add_test(NAME Phase12BackupScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12BackupScripts.test.sh")
+      set_tests_properties(Phase12BackupScripts PROPERTIES TIMEOUT ${TASKCOMPASS_PHASE11_SCRIPT_TIMEOUT})
+      if(Python3_Interpreter_FOUND)
+         add_test(NAME Phase12RestoreScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12RestoreScripts.test.sh")
+         set_tests_properties(Phase12RestoreScripts PROPERTIES TIMEOUT ${TASKCOMPASS_PHASE11_SCRIPT_TIMEOUT}
+                              ENVIRONMENT "TASKCOMPASS_TEST_PYTHON=${Python3_EXECUTABLE}")
+         if(WIN32)
+            find_program(TASKCOMPASS_POWERSHELL_EXECUTABLE NAMES powershell.exe powershell REQUIRED)
+            add_test(NAME Phase12BackupAclPolicyTests COMMAND "${TASKCOMPASS_POWERSHELL_EXECUTABLE}" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12BackupAclPolicyTests.ps1")
+            set_tests_properties(Phase12BackupAclPolicyTests PROPERTIES TIMEOUT 30)
+            add_test(NAME Phase12RestoreAclTests COMMAND "${TASKCOMPASS_POWERSHELL_EXECUTABLE}" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12RestoreAclTests.ps1")
+            set_tests_properties(Phase12RestoreAclTests PROPERTIES TIMEOUT 30)
+         endif()
+         add_test(NAME Phase12Schema2RestoreTests COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12Schema2RestoreTests.py")
+         set_tests_properties(Phase12Schema2RestoreTests PROPERTIES TIMEOUT 90)
+         add_test(NAME Phase12Schema2BackupTests COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12Schema2BackupTests.py")
+         set_tests_properties(Phase12Schema2BackupTests PROPERTIES TIMEOUT 30)
+         add_test(NAME Phase12Schema2BackupScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12Schema2BackupScripts.test.sh")
+         set_tests_properties(Phase12Schema2BackupScripts PROPERTIES TIMEOUT 600
+                              ENVIRONMENT "TASKCOMPASS_TEST_PYTHON=${Python3_EXECUTABLE}")
+         add_test(NAME EnvironmentReportTests COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/EnvironmentReportTests.py")
+         set_tests_properties(EnvironmentReportTests PROPERTIES TIMEOUT 30)
+         add_test(NAME GuiAcceptanceEvidenceTests COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/GuiAcceptanceEvidenceTests.py")
+         set_tests_properties(GuiAcceptanceEvidenceTests PROPERTIES TIMEOUT 30)
+         add_test(NAME Phase12GuiAcceptanceScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12GuiAcceptanceScripts.test.sh")
+         set_tests_properties(Phase12GuiAcceptanceScripts PROPERTIES TIMEOUT 360
+                              ENVIRONMENT "TASKCOMPASS_TEST_PYTHON=${Python3_EXECUTABLE}")
+         add_test(NAME Schema2DdlComparison COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Schema2DdlComparison.test.sh")
+         set_tests_properties(Schema2DdlComparison PROPERTIES TIMEOUT 30)
+         add_test(NAME Phase12ReviewedCompletionScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12ReviewedCompletionScripts.test.sh")
+         set_tests_properties(Phase12ReviewedCompletionScripts PROPERTIES TIMEOUT 360
+                              ENVIRONMENT "TASKCOMPASS_TEST_PYTHON=${Python3_EXECUTABLE}")
+         add_test(NAME Phase12UpgradeInspectionScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12UpgradeInspectionScripts.test.sh")
+         set_tests_properties(Phase12UpgradeInspectionScripts PROPERTIES TIMEOUT 180
+                              ENVIRONMENT "TASKCOMPASS_TEST_PYTHON=${Python3_EXECUTABLE}")
+         add_test(NAME Phase12DevelopmentUpgradeScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12DevelopmentUpgradeScripts.test.sh")
+         set_tests_properties(Phase12DevelopmentUpgradeScripts PROPERTIES TIMEOUT 600
+                              ENVIRONMENT "TASKCOMPASS_TEST_PYTHON=${Python3_EXECUTABLE}")
+         add_test(NAME Phase12RuntimeRehearsalScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12RuntimeRehearsalScripts.test.sh")
+         set_tests_properties(Phase12RuntimeRehearsalScripts PROPERTIES TIMEOUT 360
+                              ENVIRONMENT "TASKCOMPASS_TEST_PYTHON=${Python3_EXECUTABLE}")
+         add_test(NAME Phase12MigrationRehearsalScripts COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase12MigrationRehearsalScripts.test.sh")
+         # Many one-shot positive/negative stages, including streamed admin sessions.
+         if(WIN32)
+            set(TASKCOMPASS_REHEARSAL_SCRIPT_TIMEOUT 360)
+         else()
+            set(TASKCOMPASS_REHEARSAL_SCRIPT_TIMEOUT 120)
+         endif()
+         set_tests_properties(Phase12MigrationRehearsalScripts PROPERTIES TIMEOUT ${TASKCOMPASS_REHEARSAL_SCRIPT_TIMEOUT}
+                              ENVIRONMENT "TASKCOMPASS_TEST_PYTHON=${Python3_EXECUTABLE}")
+      endif()
       add_test(NAME Phase11ValidationScripts
                COMMAND "${TASKCOMPASS_BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/Phase11ValidationScripts.test.sh")
       set_tests_properties(Phase11ValidationScripts PROPERTIES TIMEOUT ${TASKCOMPASS_PHASE11_SCRIPT_TIMEOUT})
@@ -72,7 +131,8 @@ if(BUILD_TESTING)
 endif()
 
 # Phase 1.1: standard-C++ core, Qt SQL adapter and separate persistent desktop.
-add_library(TaskCore STATIC src/domain/Task.cpp src/application/TaskService.cpp)
+add_library(TaskCore STATIC src/domain/Task.cpp src/domain/OrganizationRules.cpp
+            src/application/CommandService.cpp src/application/TaskService.cpp)
 set_target_properties(TaskCore PROPERTIES AUTOMOC OFF)
 target_include_directories(TaskCore PUBLIC src)
 
@@ -81,7 +141,11 @@ add_library(TaskStorage STATIC
             src/infrastructure/storage/DatabaseConnection.cpp
             src/infrastructure/storage/DatabaseConfig.cpp
             src/infrastructure/storage/MigrationRunner.cpp
+            src/infrastructure/storage/SchemaConstraints.cpp
+            src/infrastructure/storage/MutationLease.cpp
             src/infrastructure/storage/MariaDbTaskRepository.cpp
+            src/infrastructure/storage/MariaDbWorkspaceRepository.cpp
+            src/infrastructure/storage/WorkspaceCodec.cpp
             src/infrastructure/storage/Migrations.qrc)
 target_link_libraries(TaskStorage PUBLIC TaskCore Qt6::Sql)
 add_executable(TaskCompassMigrate src/infrastructure/storage/MigrateMain.cpp)
@@ -92,10 +156,21 @@ if(BUILD_TESTING)
    set_target_properties(TaskCoreTests PROPERTIES AUTOMOC OFF)
    target_link_libraries(TaskCoreTests PRIVATE TaskCore)
    add_test(NAME TaskCoreTests COMMAND TaskCoreTests)
+   add_executable(OrganizationRulesTests tests/OrganizationRulesTests.cpp)
+   set_target_properties(OrganizationRulesTests PROPERTIES AUTOMOC OFF)
+   target_link_libraries(OrganizationRulesTests PRIVATE TaskCore)
+   add_test(NAME OrganizationRulesTests COMMAND OrganizationRulesTests)
+   add_executable(CommandServiceTests tests/CommandServiceTests.cpp)
+   set_target_properties(CommandServiceTests PROPERTIES AUTOMOC OFF)
+   target_link_libraries(CommandServiceTests PRIVATE TaskCore)
+   add_test(NAME CommandServiceTests COMMAND CommandServiceTests)
    add_test(NAME MigrationSqlPreview COMMAND TaskCompassMigrate)
 endif()
 
 add_library(PersistentDesktop STATIC
+            src/desktop/dialogs/OrganizationEditDialog.cpp
+            src/desktop/dialogs/OrganizationMoveDialog.cpp
+            src/desktop/models/OrganizationTreeModel.cpp
             src/desktop/persistent/PersistentTaskController.cpp
             src/desktop/persistent/PersistentTaskModel.cpp
             src/desktop/persistent/PersistentTaskFilter.cpp
@@ -109,6 +184,10 @@ if(BUILD_TESTING)
    target_link_libraries(PersistentDesktopTests PRIVATE PersistentDesktop Qt6::Test)
    add_test(NAME PersistentDesktopTests COMMAND PersistentDesktopTests)
    set_tests_properties(PersistentDesktopTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 30)
+   add_executable(OrganizationDesktopTests tests/OrganizationDesktopTests.cpp)
+   target_link_libraries(OrganizationDesktopTests PRIVATE PersistentDesktop Qt6::Test)
+   add_test(NAME OrganizationDesktopTests COMMAND OrganizationDesktopTests)
+   set_tests_properties(OrganizationDesktopTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 90)
 endif()
 
 if(BUILD_TESTING)
@@ -121,10 +200,29 @@ if(BUILD_TESTING)
       add_test(NAME MariaDbIntegrationTests COMMAND MariaDbIntegrationTests)
    endif()
    set_tests_properties(MariaDbIntegrationTests PROPERTIES SKIP_RETURN_CODE 77 LABELS integration TIMEOUT 120)
+   find_package(Threads REQUIRED)
+   add_executable(OrganizationIntegrationTests tests/OrganizationIntegrationTests.cpp)
+   target_link_libraries(OrganizationIntegrationTests PRIVATE TaskStorage Threads::Threads)
+   option(TASKCOMPASS_ENABLE_PHASE12_DB_TESTS "Enable separately approved Phase 1.2 tests on fresh taskcompass_phase12_test only" OFF)
+   if(TASKCOMPASS_ENABLE_PHASE12_DB_TESTS)
+      add_test(NAME OrganizationIntegrationTests COMMAND OrganizationIntegrationTests --run --allow-reset)
+   else()
+      add_test(NAME OrganizationIntegrationTests COMMAND OrganizationIntegrationTests)
+   endif()
+   set_tests_properties(OrganizationIntegrationTests PROPERTIES SKIP_RETURN_CODE 77 LABELS integration TIMEOUT 600)
 endif()
 
 if(BUILD_TESTING)
+   add_executable(SchemaConstraintsTests tests/SchemaConstraintsTests.cpp)
+   target_link_libraries(SchemaConstraintsTests PRIVATE TaskStorage)
+   add_test(NAME SchemaConstraintsTests COMMAND SchemaConstraintsTests)
    add_executable(StorageSafetyTests tests/StorageSafetyTests.cpp)
+   add_executable(WorkspaceCodecTests tests/WorkspaceCodecTests.cpp)
+   target_link_libraries(WorkspaceCodecTests PRIVATE TaskStorage)
+   add_dependencies(WorkspaceCodecTests TaskCompassMigrate OrganizationIntegrationTests)
+   add_test(NAME WorkspaceCodecTests COMMAND WorkspaceCodecTests
+            "${CMAKE_CURRENT_SOURCE_DIR}/migrations/mariadb/002_OrganizationalManagement.sql"
+            $<TARGET_FILE:TaskCompassMigrate> $<TARGET_FILE:OrganizationIntegrationTests>)
    target_link_libraries(StorageSafetyTests PRIVATE TaskStorage)
    add_dependencies(StorageSafetyTests MariaDbIntegrationTests)
    add_test(NAME StorageSafetyTests COMMAND StorageSafetyTests

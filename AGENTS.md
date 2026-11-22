@@ -108,6 +108,16 @@ given for the specific action and scope; do not broaden it. Prepare the concrete
 SQL/procedure and complete safe, authorized source/documentation work before
 requesting the final approval needed for execution.
 
+## Operator interaction
+
+Owner preference: development scripts must not require typing approval phrases,
+restating known targets, or redundant yes/no confirmations. Keep password prompts
+and requests for genuinely missing information only. Show operations and required
+preconditions as notices; preserve automatic target/identity/evidence checks and
+interrupted-operation guards. Existing explicit command-line opt-in flags can
+remain. Do not silently replay a potentially partial database operation after an
+interruption; inspect its actual stage/evidence before proposing recovery.
+
 ## Database safety
 
 - Access only explicitly authorized TaskCompass databases. Never access or modify
@@ -145,11 +155,44 @@ DDL automatically. Record regeneration commands, schema consistency checks, visu
 inspection and renderer limitations in the milestone report. Diagram generation
 does not authorize database access, migration execution or dependency installation.
 
+## Cross-platform text, scripts and offline fixtures
+
+- Specify `encoding="utf-8"` for project text reads and writes in Python, including
+  tests, generated notes, manifests and subprocess text decoding. Do not depend on
+  the Windows locale default. If an external tool requires another encoding,
+  specify and document that boundary rather than silently replacing bad characters.
+- Define line endings at producer/consumer boundaries. Generate canonical UTF-8/LF
+  bytes for checksummed fixtures and machine protocols; native Windows Python text
+  output must not accidentally translate them to CRLF. Accept CRLF explicitly
+  where a native tool legitimately emits it. Never normalize or rewrite sealed
+  evidence to make comparisons pass; keep raw integrity checks distinct from
+  approved semantic comparisons.
+- Offline fixtures must explicitly select each simulated platform and control
+  inherited platform/locale/path-conversion state. Do not assume unsetting a
+  variable emulates another OS. Exercise Linux and Windows paths with spaces,
+  UTF-8 text, LF/CRLF boundaries and inherited MSYS2 state where relevant. Mocked
+  platform tests do not establish native Windows compatibility.
+- Make fixture failures expose the failing stage/line/exit and relevant captured
+  helper output, with secrets redacted. Do not lose unexpected failures inside
+  command substitutions. Keep mocks isolated: a missing fake must fail closed,
+  never fall back to a real database client, service or preserved database.
+- Review these boundaries whenever adding/changing scripts, generators or tests.
+  Add a focused regression for a confirmed portability defect where practical.
+  Run relevant offline checks on available platforms and require native Windows
+  results before declaring a portability fix verified there. Record unavailable
+  validation explicitly; do not infer service/database failure from an offline
+  fixture failure or weaken production safety checks to accommodate a mock.
+
 ## Validation and completion
 
 - Run relevant builds and automated tests after changes. For documentation-only
   work, validate Markdown references and consistency; explain why application
   build/tests were not rerun when they are unaffected.
+- Build/validation procedures needing platform, Qt, database server or source
+  revision evidence should call `scripts/environment-report.sh` automatically.
+  Preserve its timestamped reports/change notes rather than asking the owner to
+  gather known version information manually. Label saved server metadata provenance;
+  the reporter must not add database connections or credential storage.
 - Preserve Linux/Windows compatibility. Distinguish tests actually executed from
   tests pending owner execution or unavailable platforms/services.
 - Do not claim validation success without evidence. Record failures, relevant

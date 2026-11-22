@@ -126,7 +126,7 @@ if [[ "$action" == build ]]; then
    else
       printf 'Qt version query unavailable; include installed Qt package version in your report.\n'
    fi
-   cmake -S "$repositoryDirectory" -B "$buildDirectory" -G Ninja -DCMAKE_BUILD_TYPE=Debug -DTASKCOMPASS_ENABLE_DB_TESTS=OFF
+   cmake -S "$repositoryDirectory" -B "$buildDirectory" -G Ninja -DCMAKE_BUILD_TYPE=Debug -DTASKCOMPASS_ENABLE_DB_TESTS=OFF -DTASKCOMPASS_ENABLE_PHASE12_DB_TESTS=OFF
    cmake --build "$buildDirectory" --parallel 2
    ctest --test-dir "$buildDirectory" --output-on-failure
    exe TaskCompassDbDiagnostic

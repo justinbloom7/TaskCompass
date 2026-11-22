@@ -12,6 +12,10 @@ class QCheckBox;
 class QSplitter;
 class QTreeView;
 class QAction;
+class QComboBox;
+class QMenu;
+class QLabel;
+class OrganizationTreeModel;
 
 class PersistentTaskWindow : public QMainWindow {
    Q_OBJECT
@@ -23,7 +27,16 @@ protected:
 
 private:
    void refresh();
-   void editTask(bool create);
+   void editTask(bool create, std::optional<taskcompass::TaskOwner> initialOwner = {});
+   void editOrganization(std::optional<taskcompass::OrganizationKind> createKind, bool rootPillar = false);
+   void moveOrganization(std::optional<taskcompass::OrganizationKey> destination = {});
+   void populateCreationMenu(QMenu *menu);
+   QLabel *selectionDetails;
+   void archiveOrganization(bool restore);
+   void rebuildNavigation();
+   void updateScope();
+   QString navigationSelection() const;
+   std::optional<taskcompass::OrganizationEntity> selectedOrganization() const;
    void setCompleted(const QString &id, bool completed);
    std::optional<taskcompass::Task> selectedTask() const;
    QSettings settings;
@@ -33,6 +46,12 @@ private:
    QTableView *table;
    QLineEdit *search;
    QCheckBox *showCompleted;
+   QCheckBox *showArchived;
+   QComboBox *navigationMode;
+   OrganizationTreeModel *organizationModel;
+   taskcompass::WorkspaceSnapshot renderedWorkspace;
+   bool navigationRestored = false;
+   std::vector<QAction *> organizationActions;
    QSplitter *splitter;
    QTreeView *navigation;
    QAction *newAction;

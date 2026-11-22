@@ -13,6 +13,7 @@ struct DatabaseConfig {
    void validate() const;
    void validateIdentity(const QString &selectedDatabase, const QString &authenticatedAccount) const;
    static DatabaseConfig fromEnvironment(bool integration = false);
+   static DatabaseConfig fromPhase12Environment();
 };
 
 }

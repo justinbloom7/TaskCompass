@@ -1,5 +1,9 @@
 # Development guide
 
+Build/validation metadata is collected automatically; see
+[automatic environment and build notes](BuildNotes.md) for Linux/Windows report
+paths, change tracking and server-evidence provenance.
+
 The Phase 0.1 prototype is accepted (owner-reported Linux/Windows builds, launches
 and CLI/Qt connectivity). Historical observations below remain dated evidence.
 Phase 1.1 adds separate executables. The owner reports the isolated integration
@@ -8,7 +12,8 @@ passed on the current host. Windows build/CTest, live integration, migration/gra
 and populated backup/restore comparison also passed per owner transcripts on
 MariaDB 13.0.2 / UCRT64, Qt 6.12.0 and GCC 16.2.0. The owner accepted Phase 1.1 on
 2026-11-14 and confirmed Windows GUI restart with persisted data intact. Preserve
-all backup/export artifacts and restored integration databases; Phase 1.2 is not authorized.
+all backup/export artifacts and restored integration databases. Phase 1.2 source-only
+work is authorized; live database work still requires separate approval.
 The authoritative [Phase 1.1 report](milestones/Phase1.1.md) contains SQL, privilege
 separation, backup/recovery, commands, test results and pending approvals.
 
@@ -20,6 +25,22 @@ For a numbered scripted Windows validation route, see
 [WindowsPhase1.1.md](WindowsPhase1.1.md). It automates the reviewed provisioning,
 migration, backup/restore and full data comparisons while preserving approval
 checkpoints. No live operations are performed by help or --print-plan.
+
+## Current Phase 1.2 source branch
+
+Use [TestingPhase1.2.md](TestingPhase1.2.md) for the numbered offline build/review
+and separately gated new-target setup/testing steps. Both CMake live-test options
+must remain OFF for ordinary builds. Current `TaskCompass` requires schema2 and never migrates on startup. Both
+development upgrades and final runtime privileges passed B7.5 on Linux/Windows
+(owner-reported); live GUI acceptance remains distinct from that verification.
+Do not run the old Phase 1.1 disposable scripts against preserved restored databases.
+The Phase 1.1 commands below remain historical/reference procedures for that phase.
+
+The populated **taskcompass_phase12_test** rehearsals and both development schema2
+upgrades passed (see the Phase1.2 milestone). Preserve those databases; do not rerun
+reset-capable tests against them. Use [B7.7](Phase1.2B77.md) for current GUI acceptance
+and automatic environment evidence. Expanded backup/restore and final acceptance
+remain separately gated.
 
 ## Phase 1.1 executables and safety
 
@@ -403,6 +424,17 @@ with failed Qt open calls for plugin/configuration investigation, not architectu
 changes or global grants. The diagnostic's existing exit codes remain documented
 in its source: 0 skipped/success, 2 missing plugin, 3 bad configuration, 4 connection
 failure, 5 query failure. Read the text to distinguish skipped from connected.
+
+### Phase 1.2 read-only constraint verification
+
+On the observed Linux MariaDB 10.5.29 installation, SELECT-only taskcompass_migrate
+could read SHOW CREATE TABLE, FK columns and indexes, but TABLE_CONSTRAINTS exposed
+no CHECK rows. The Phase 1.2 verifier now reads named constraints from SHOW CREATE
+and retains registered-shape/FK checks and the full unchanged DDL fingerprint.
+Do not grant write privileges or edit migration metadata to fix catalog visibility.
+Rebuild before repeating the explicit `--verify --to-version 1` preflight; any
+remaining mismatch stops the upgrade for review. See the dated evidence and
+pending live/platform checks in [Phase1.2.md](milestones/Phase1.2.md).
 
 ### MariaDB client warnings are diagnostics, not query rows
 

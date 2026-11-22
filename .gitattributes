@@ -1,2 +1,10 @@
 # Bash scripts must retain Unix line endings on Windows checkouts.
 *.sh text eol=lf
+# Reviewed source/manifests must hash identically across Linux and Windows.
+/.gitattributes text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.sql text eol=lf
+*.sha256 text eol=lf
+*.ps1 text eol=lf

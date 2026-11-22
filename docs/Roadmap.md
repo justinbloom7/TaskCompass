@@ -1,9 +1,55 @@
 # Implementation roadmap
 
+Current status (2026-11-22): **Phase1.2 FORMALLY ACCEPTED by the owner on Linux
+and Windows**, including completed B7.1–B7.9 and B7.10 reconciliation. E1's accepted
+protected-task variance retains the original FAILED checkpoint; E2's accepted
+functional persistence retains the historical restart comparison as NOT CAPTURED.
+Known limitations/evidence boundaries remain recorded in the
+[final acceptance report](Phase1.2B710.md). Preserve all databases/accounts/QA/
+backups/failed evidence. No new tests, live changes, cleanup, Git publication or
+Phase1.3 implementation is authorized. Phase1.3 planning is a recommended next
+separately authorized activity, not begun here. Earlier pending statements below
+remain historical.
+
 **Phase 1.1 was accepted by the owner on 2026-11-14.** Linux and Windows validation
 evidence is preserved in the milestone, including confirmed Windows GUI restart
 with persisted data intact. Preserve backups, exports and restored integration
-databases. **Phase 1.2 is not authorized and has not begun.** See the
+databases. **Phase 1.2 Step B source-only implementation was authorized on 2026-11-16
+and resumed after the owner-requested pause. Source/offline checks are delivered;
+Linux Stage 1A and corrected Stage 1B passed (owner-reported), including approved
+fixture cleanup. Windows compilation/offline checks passed across the original
+run plus focused portability retest (owner-reported). Windows Stage 1A provisioning
+and Windows Stage 1B also passed (owner-reported). Both isolated platform gates
+are met. The [B7 review package](Phase1.2B7.md) is prepared; read-only development
+preflight passed on both platforms (owner-reported, 2026-11-17), including schema-1
+verification with existing SELECT-only migrators. Corrected-source offline checks
+passed on both platforms (16 tests each; Windows also reported 2 live skips).
+Earlier failures remain in the milestone. B7.2 fresh schema-1 backup/private exports
+are approved for owner execution on both platforms; [numbered operator scripts](Phase1.2B72.md)
+are prepared and offline-mock-tested (Linux 17/17 tests). B7.2 capture/sealing and
+owner-confirmed private SQL review passed on both platforms on 2026-11-17. Retained
+paths/digests and all earlier failures are in the milestone. B7.3 exact-snapshot
+isolated restore/rehearsal is approved for owner execution; [numbered scripts](Phase1.2B73.md)
+are prepared and Linux offline tests passed (18/18). B7.3 populated restore/schema1/
+full-data-and-DDL preservation passed on both platforms (owner-reported); retain
+both populated clones and exact source artifacts. B7.4a narrow-migrator grant
+transition and clone-only migration002 are approved for operator execution on both
+platforms; [four numbered scripts](Phase1.2B74a.md) are prepared with offline mocks.
+B7.4a all four stages passed on Linux and Windows (owner-reported, 2026-11-17),
+preserving original data/history in both schema2 clones. Nothing executed by the agent. B7.4b runtime-role rehearsal is approved for owner execution using
+[three numbered scripts](Phase1.2B74b.md); all three stages passed on Linux and Windows
+(owner-reported, 2026-11-17). B7.5 development upgrade scripts and
+[operator guide](Phase1.2B75.md) are prepared. Linux stages01/02 and reviewed schema2 preservation completion passed
+(owner-reported, 2026-11-17), after the recorded implicit-index comparison correction.
+Linux runtime transition04 and final verification05 also passed (owner-reported,
+2026-11-17). Linux development upgrade/final privileges/preservation/health are
+verified; Windows B7.5 stages01–05 also passed (owner-reported, 2026-11-17).
+Both development upgrades, final least-privilege grants, original preservation and
+health are verified; earlier authentication failures remain historical. B7.7 [GUI acceptance guide](Phase1.2B77.md) and separate
+[Linux](Phase1.2B77Linux.md)/[Windows](Phase1.2B77Windows.md) checklists are prepared
+(2026-11-18); live Linux QA authorization and manual results remain pending.
+GUI and schema2 backup/restore remain separately gated.
+Phase 1.2 is not accepted.** See the
 [scripted Windows sequence](WindowsPhase1.1.md). Live provisioning, grants and
 migrations remain behind their specific approval checkpoints. Phase 0.1 is accepted on owner
 reported Linux/Windows builds, GUI launches and MariaDB diagnostics; earlier dated
@@ -21,6 +67,9 @@ overview and requirements/architecture as the shared design baseline.
 
 - [Phase 1.1 — Persistent Task Foundation](milestones/Phase1.1.md): implementation report, validation evidence and
   concrete database SQL/procedure approval checkpoint.
+- [Phase 1.2 — Organizational Management](milestones/Phase1.2.md): Step A architecture
+  review, proposed incremental migration, staged implementation/testing plan and
+  source-only implementation progress, pause/resume checkpoints and live approval requests. No live database changes authorized.
 
 | Phase | Intended delivery | Dependencies / principal exit gate |
 | --- | --- | --- |
@@ -28,7 +77,7 @@ overview and requirements/architecture as the shared design baseline.
 | 0.1 (accepted) | Desktop technology prototype | Owner accepted; Linux/Windows build, GUI launch and MariaDB diagnostics reported successful. |
 | 0.2 (documentation delivered) | Requirements, interactions, command design, logical schema, roadmap and GPL license | Documentation consistency and licensing review; no production features. |
 | 1.1 (accepted 2026-11-14) | Persistent task foundation with undo from its first edits | Owner accepted Linux/Windows validation, GUI restart/persistence, transaction/history and backup/restore evidence. |
-| 1.2 | Organizational management | 1.1 command/storage core; legal ownership, nested navigation and undoable moves/archive. |
+| 1.2 (source review / validation pending) | Organizational management | B1–B5 source/B6 offline tools delivered; Linux 10.5 isolated integration passed (owner-reported). Windows 13 isolated integration also passed (owner-reported); development migration, narrow privilege validation, GUI and backup/restore remain separate pending gates. |
 | 1.3 | Everyday progress, contexts, numeric priority and drag ordering | 1.1/1.2; context order first, then grouped insertion/atomic moves and undo. |
 | 1.4 | Due/scheduled dates, presentation and basic filters | 1.3; shared calendar logic, minimal persisted day allocations; due/allocation separation. |
 | 2 | Recurrence, dependencies, related/next actions | 1.x; stable occurrence identity and preserved instance history. |
@@ -345,3 +394,15 @@ reset is supported. Phase 1.1 stays incomplete pending approved provisioning,
 migration/live integration checks on MariaDB 10.5/13, Windows validation of the new
 code, and manual restart/backup/usability checks. Full file inventory, actual test
 results, limitations and proposed SQL are in [the milestone](milestones/Phase1.1.md).
+
+## Phase 1.2 Step A planning checkpoint — 2026-11-15
+
+Owner authorized architecture review and an implementation plan on branch
+jb_20261114_ms1p2. [Phase1.2.md](milestones/Phase1.2.md) records the confirmed
+ownership rules, proposed common command/transaction extension, incremental
+migration 002/journal strategy, exact draft SQL/least privileges, isolated test
+target, staged work and acceptance matrix. These are proposals, not implementation
+or migration execution. Phase 1.1 remains accepted on 2026-11-14; its evidence,
+backups/exports and restored integration databases are preserved. Stop at Step A
+for explicit Step B source approval; live SQL/provisioning/backup/restore retain
+separate concrete approval checkpoints. No Phase 1.3+ work is authorized.

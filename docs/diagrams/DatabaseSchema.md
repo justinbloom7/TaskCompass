@@ -1,24 +1,21 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
-# TaskCompass database schema — Phase 1.1 migration 001
+# TaskCompass database schema — cumulative migrations 001–002
 
-Authority: [001_PersistentTaskFoundation.sql](../../migrations/mariadb/001_PersistentTaskFoundation.sql),
-not the preliminary future model. This is the schema defined by migration source;
-it is **not evidence of a deployed database or successful live migration**.
-Only these five tables exist in this migration. No future pillars, projects,
-objectives, contexts, recurrence or planning tables are included.
+Authority: [001_PersistentTaskFoundation.sql](../../migrations/mariadb/001_PersistentTaskFoundation.sql)
+and [002_OrganizationalManagement.sql](../../migrations/mariadb/002_OrganizationalManagement.sql).
+This is the cumulative schema defined by actual migration source, **not evidence
+that migration 002 has been executed or accepted on a live database**. Phase 1.1
+schema deployment/evidence remains preserved in its milestone.
 
 [Open the standalone SVG](DatabaseSchema.svg) in Firefox; zoom for individual fields.
+Solid lines labeled FK represent actual SQL constraints; dashed LOGICAL links are
+unenforced references. PK/UK/FK annotate column membership, not individual uniqueness
+of composite-key members. NULL/NOT NULL and explicit defaults are included.
+Optional FK lines reflect SQL nullability, not permission to violate exclusive
+parent/target CHECK constraints. No cascading delete/update actions are declared.
 
 ## Mermaid ER diagram
-
-Legend: **solid lines labeled FK** are actual SQL foreign keys; **dashed lines
-labeled LOGICAL/no FK** are intended command-history references with no referential
-constraint. The line styles are a documentation convention; the explicit FK labels
-and constraint inventory below are authoritative. Each comment explicitly states
-NULL/NOT NULL. PK = primary key; FK = foreign-key member; UK = unique-key member.
-Task.datasetId and Task.id share **one composite UK**, not two individual uniques.
-Parent participation is optional: a parent need not have children.
 
 ```mermaid
 erDiagram
@@ -28,9 +25,47 @@ erDiagram
       VARCHAR(255) name "NOT NULL"
       BIGINT createdAt "NOT NULL"
    }
+   Pillar {
+      CHAR(36) id PK,UK "NOT NULL"
+      CHAR(36) datasetId FK,UK "NOT NULL"
+      CHAR(36) parentPillarId FK "NULL"
+      VARCHAR(1024) name "NOT NULL"
+      MEDIUMTEXT description "NULL"
+      BIGINT archivedAt "NULL"
+      BIGINT createdAt "NOT NULL"
+      BIGINT updatedAt "NOT NULL"
+      BIGINT deletedAt "NULL"
+      BIGINT localRevision "NOT NULL"
+   }
+   Project {
+      CHAR(36) id PK,UK "NOT NULL"
+      CHAR(36) datasetId FK,UK "NOT NULL"
+      CHAR(36) pillarId FK "NULL"
+      CHAR(36) parentProjectId FK "NULL"
+      VARCHAR(1024) title "NOT NULL"
+      MEDIUMTEXT description "NULL"
+      BIGINT archivedAt "NULL"
+      BIGINT createdAt "NOT NULL"
+      BIGINT updatedAt "NOT NULL"
+      BIGINT deletedAt "NULL"
+      BIGINT localRevision "NOT NULL"
+   }
+   Objective {
+      CHAR(36) id PK,UK "NOT NULL"
+      CHAR(36) datasetId FK,UK "NOT NULL"
+      CHAR(36) pillarId FK "NULL"
+      CHAR(36) projectId FK "NULL"
+      VARCHAR(1024) title "NOT NULL"
+      MEDIUMTEXT description "NULL"
+      BIGINT archivedAt "NULL"
+      BIGINT createdAt "NOT NULL"
+      BIGINT updatedAt "NOT NULL"
+      BIGINT deletedAt "NULL"
+      BIGINT localRevision "NOT NULL"
+   }
    Task {
-      CHAR(36) id PK,UK "NOT NULL; composite UK taskDatasetIdentity"
-      CHAR(36) datasetId FK,UK "NOT NULL; composite UK taskDatasetIdentity"
+      CHAR(36) id PK,UK "NOT NULL"
+      CHAR(36) datasetId FK,UK "NOT NULL"
       VARCHAR(1024) title "NOT NULL"
       MEDIUMTEXT notes "NULL"
       VARCHAR(16) lifecycleStatus "NOT NULL"
@@ -39,12 +74,14 @@ erDiagram
       BIGINT completedAt "NULL"
       BIGINT deletedAt "NULL"
       BIGINT localRevision "NOT NULL"
+      CHAR(36) objectiveId FK "NULL; default NULL"
+      CHAR(36) directProjectId FK "NULL; default NULL"
    }
    CommandRecord {
       CHAR(36) id PK "NOT NULL"
       CHAR(36) operationId UK "NOT NULL"
       CHAR(36) datasetId FK "NOT NULL"
-      CHAR(36) taskId FK "NOT NULL"
+      CHAR(36) taskId FK "NULL"
       VARCHAR(16) commandType "NOT NULL"
       INT payloadVersion "NOT NULL"
       BIGINT recordedAt "NOT NULL"
@@ -53,17 +90,23 @@ erDiagram
       BIGINT resultingRevision "NOT NULL"
       CHAR(36) compensatesCommandId "NULL; logical reference only - no FK"
       CHAR(36) reappliesCommandId "NULL; logical reference only - no FK"
+      CHAR(36) pillarId FK "NULL; default NULL"
+      CHAR(36) projectId FK "NULL; default NULL"
+      CHAR(36) objectiveId FK "NULL; default NULL"
    }
    LocalChange {
       CHAR(36) id PK "NOT NULL"
       CHAR(36) operationId FK,UK "NOT NULL"
       CHAR(36) datasetId FK "NOT NULL"
-      CHAR(36) taskId FK "NOT NULL"
+      CHAR(36) taskId FK "NULL"
       BIGINT localRevision "NOT NULL"
       INT payloadVersion "NOT NULL"
       MEDIUMTEXT immutablePayload "NOT NULL"
       BIGINT createdAt "NOT NULL"
       VARCHAR(16) acknowledgmentState "NOT NULL; default 'pending'"
+      CHAR(36) pillarId FK "NULL; default NULL"
+      CHAR(36) projectId FK "NULL; default NULL"
+      CHAR(36) objectiveId FK "NULL; default NULL"
    }
    SchemaMigration {
       INT version PK "NOT NULL"
@@ -71,149 +114,200 @@ erDiagram
       CHAR(64) schemaFingerprint "NOT NULL"
       BIGINT appliedAt "NOT NULL"
    }
+   MigrationAttempt {
+      INT version PK "NOT NULL"
+      CHAR(64) checksum "NOT NULL"
+      CHAR(64) baselineFingerprint "NOT NULL"
+      BIGINT startedAt "NOT NULL"
+      BIGINT completedAt "NULL"
+      INT lastCompletedStep "NOT NULL"
+      VARCHAR(16) attemptState "NOT NULL"
+   }
+   Dataset ||--o{ Pillar : "FK pillarDataset"
+   Pillar o|--o{ Pillar : "FK pillarParentScope"
+   Dataset ||--o{ Project : "FK projectDataset"
+   Pillar o|--o{ Project : "FK projectPillarScope"
+   Project o|--o{ Project : "FK projectParentScope"
+   Dataset ||--o{ Objective : "FK objectiveDataset"
+   Pillar o|--o{ Objective : "FK objectivePillarScope"
+   Project o|--o{ Objective : "FK objectiveProjectScope"
    Dataset ||--o{ Task : "FK taskDataset"
-   Task ||--o{ CommandRecord : "FK commandTask"
-   Task ||--o{ LocalChange : "FK changeTask"
+   Objective o|--o{ Task : "FK taskObjectiveScope"
+   Project o|--o{ Task : "FK taskDirectProjectScope"
+   Task o|--o{ CommandRecord : "FK commandTaskV2"
+   Pillar o|--o{ CommandRecord : "FK commandPillarV2"
+   Project o|--o{ CommandRecord : "FK commandProjectV2"
+   Objective o|--o{ CommandRecord : "FK commandObjectiveV2"
    CommandRecord ||--o| LocalChange : "FK changeCommand"
+   Task o|--o{ LocalChange : "FK changeTaskV2"
+   Pillar o|--o{ LocalChange : "FK changePillarV2"
+   Project o|--o{ LocalChange : "FK changeProjectV2"
+   Objective o|--o{ LocalChange : "FK changeObjectiveV2"
    CommandRecord o|..o{ CommandRecord : "LOGICAL compensatesCommandId - no FK"
    CommandRecord o|..o{ CommandRecord : "LOGICAL reappliesCommandId - no FK"
 ```
 
-## Primary and unique constraints
+## Primary and unique keys
 
-| Table | Primary key | Additional unique constraints |
+| Table | Primary key | Additional unique keys |
 | --- | --- | --- |
 | Dataset | `id` | None |
+| Pillar | `id` | `pillarDatasetIdentity(datasetId, id)` |
+| Project | `id` | `projectDatasetIdentity(datasetId, id)` |
+| Objective | `id` | `objectiveDatasetIdentity(datasetId, id)` |
 | Task | `id` | `taskDatasetIdentity(datasetId, id)` |
-| CommandRecord | `id` | `UNIQUE(operationId)` (inline) |
-| LocalChange | `id` | `UNIQUE(operationId)` (inline) |
+| CommandRecord | `id` | `operationId(operationId)` |
+| LocalChange | `id` | `operationId(operationId)` |
 | SchemaMigration | `version` | None |
+| MigrationAttempt | `version` | None |
 
-Inline UNIQUE(operationId) is shown without inventing a constraint name; the migration does not
-explicitly name those two UNIQUE constraints. PKs themselves are also unique.
+Inline operationId UNIQUE constraints are shown using their column name; no explicit SQL constraint name is invented.
 
-## Enforced SQL relationships
+## Enforced SQL foreign keys
 
-| Constraint | Child columns | Referenced columns | SQL cardinality |
+| Constraint | Child columns | Referenced columns | Child-to-parent participation |
 | --- | --- | --- | --- |
-| `taskDataset` | `Task(datasetId)` | `Dataset(id)` | Each child has exactly one parent; parent has zero or many children |
-| `commandTask` | `CommandRecord(datasetId, taskId)` | `Task(datasetId, id)` | Each child has exactly one parent; parent has zero or many children |
-| `changeTask` | `LocalChange(datasetId, taskId)` | `Task(datasetId, id)` | Each child has exactly one parent; parent has zero or many children |
-| `changeCommand` | `LocalChange(operationId)` | `CommandRecord(operationId)` | Each child has exactly one parent; parent has zero or one child |
+| `pillarDataset` | `Pillar(datasetId)` | `Dataset(id)` | Exactly one |
+| `pillarParentScope` | `Pillar(datasetId, parentPillarId)` | `Pillar(datasetId, id)` | Zero or one (nullable FK member) |
+| `projectDataset` | `Project(datasetId)` | `Dataset(id)` | Exactly one |
+| `projectPillarScope` | `Project(datasetId, pillarId)` | `Pillar(datasetId, id)` | Zero or one (nullable FK member) |
+| `projectParentScope` | `Project(datasetId, parentProjectId)` | `Project(datasetId, id)` | Zero or one (nullable FK member) |
+| `objectiveDataset` | `Objective(datasetId)` | `Dataset(id)` | Exactly one |
+| `objectivePillarScope` | `Objective(datasetId, pillarId)` | `Pillar(datasetId, id)` | Zero or one (nullable FK member) |
+| `objectiveProjectScope` | `Objective(datasetId, projectId)` | `Project(datasetId, id)` | Zero or one (nullable FK member) |
+| `taskDataset` | `Task(datasetId)` | `Dataset(id)` | Exactly one |
+| `taskObjectiveScope` | `Task(datasetId, objectiveId)` | `Objective(datasetId, id)` | Zero or one (nullable FK member) |
+| `taskDirectProjectScope` | `Task(datasetId, directProjectId)` | `Project(datasetId, id)` | Zero or one (nullable FK member) |
+| `commandTaskV2` | `CommandRecord(datasetId, taskId)` | `Task(datasetId, id)` | Zero or one (nullable FK member) |
+| `commandPillarV2` | `CommandRecord(datasetId, pillarId)` | `Pillar(datasetId, id)` | Zero or one (nullable FK member) |
+| `commandProjectV2` | `CommandRecord(datasetId, projectId)` | `Project(datasetId, id)` | Zero or one (nullable FK member) |
+| `commandObjectiveV2` | `CommandRecord(datasetId, objectiveId)` | `Objective(datasetId, id)` | Zero or one (nullable FK member) |
+| `changeCommand` | `LocalChange(operationId)` | `CommandRecord(operationId)` | Exactly one |
+| `changeTaskV2` | `LocalChange(datasetId, taskId)` | `Task(datasetId, id)` | Zero or one (nullable FK member) |
+| `changePillarV2` | `LocalChange(datasetId, pillarId)` | `Pillar(datasetId, id)` | Zero or one (nullable FK member) |
+| `changeProjectV2` | `LocalChange(datasetId, projectId)` | `Project(datasetId, id)` | Zero or one (nullable FK member) |
+| `changeObjectiveV2` | `LocalChange(datasetId, objectiveId)` | `Objective(datasetId, id)` | Zero or one (nullable FK member) |
 
-All FK columns are NOT NULL. No explicit ON DELETE/ON UPDATE actions are declared;
-there is no declared cascading delete/update. SchemaMigration is disconnected.
-CommandRecord and LocalChange reach Dataset transitively through their composite
-Task foreign keys; neither declares a separate datasetId → Dataset FK.
+A referenced parent may have zero children. Composite (datasetId, id) keys prevent
+cross-dataset references. Project/Objective each have exactly one organizational
+parent; Task has at most one objective or direct project; CommandRecord/LocalChange
+each target exactly one of four entity types. Audit target columns identify the
+mutated entity, not redundant task ownership. MigrationAttempt and SchemaMigration
+are local metadata with no SQL FK between their version columns.
 
-## Logical references and limits of enforcement
+## Logical references and enforcement limits
 
-| Logical reference | Nullability | SQL enforcement |
-| --- | --- | --- |
-| CommandRecord.compensatesCommandId → CommandRecord.id | Nullable | No FK or uniqueness constraint; intended zero/one target per receipt, potentially many receipts per target. |
-| CommandRecord.reappliesCommandId → CommandRecord.id | Nullable | No FK or uniqueness constraint; same intended cardinality. |
-
-Dashed self-links describe intended meaning, **not guarantees** that the referenced
-row exists, belongs to the same dataset, has a compatible command type or precedes
-the referring command. No FK is declared on LocalChange.id. Its operationId, rather
-than id, is the actual enforced reference to CommandRecord.
-
-The separate changeTask and changeCommand constraints do **not** require a change
-and its referenced command to name the same task/dataset; application transactions
-coordinate that invariant. SQL permits a command with no LocalChange, even though
-the application writes both atomically. JSON validity does not validate snapshot
-shape or equality to Task, nor do the constraints enforce revision sequencing.
-The singleton Dataset, schema version/checksum interpretation and chronological
-history are application/migration-tool rules, not additional SQL relationships.
+CommandRecord.compensatesCommandId/reappliesCommandId are nullable logical references
+to CommandRecord.id with no FK/uniqueness guarantee. Each may have many referring
+receipts; SQL does not ensure existence, dataset, type or chronological validity.
+LocalChange.id has no FK: operationId is its enforced command reference.
+The separate target and command FKs do not ensure LocalChange and its command
+name the same entity/dataset/revision. Application transactions enforce that and
+atomic receipt/change insertion. SQL permits a command with no LocalChange.
+Ancestor cycles, live-parent availability, inherited archive, singleton dataset,
+revision ordering and snapshot shape/equality are application/migration rules.
+JSON_VALID alone checks JSON syntax. Version-1 payloads remain task-only; new
+version-2 payloads support four targets. Partial migrations require explicit review.
 
 ## CHECK constraints
 
-These expressions are copied exactly from the migration; omitted application rules
-are not presented as SQL constraints. UUID regex checks exist only on Dataset.id
-and Task.id. Other CHAR(36) fields do not acquire regex checks implicitly.
+Expressions below come from cumulative SQL (whitespace normalized), with removed
+001 constraints omitted and replacements named explicitly.
 
 | Table | Constraint | SQL expression |
 | --- | --- | --- |
 | Dataset | `datasetIdFormat` | `id REGEXP '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'` |
 | Dataset | `datasetCreatedAt` | `createdAt > 0` |
+| Pillar | `pillarIdFormat` | `id REGEXP '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'` |
+| Pillar | `pillarName` | `OCTET_LENGTH(name) BETWEEN 1 AND 1024 AND CHAR_LENGTH(TRIM(name)) > 0` |
+| Pillar | `pillarDescription` | `description IS NULL OR OCTET_LENGTH(description) <= 65535` |
+| Pillar | `pillarNotSelf` | `parentPillarId IS NULL OR parentPillarId <> id` |
+| Pillar | `pillarTimes` | `createdAt > 0 AND updatedAt >= createdAt AND (archivedAt IS NULL OR archivedAt BETWEEN createdAt AND updatedAt) AND (deletedAt IS NULL OR deletedAt BETWEEN createdAt AND updatedAt)` |
+| Pillar | `pillarRevision` | `localRevision > 0` |
+| Project | `projectParentChoice` | `(pillarId IS NOT NULL) + (parentProjectId IS NOT NULL) = 1` |
+| Project | `projectNotSelf` | `parentProjectId IS NULL OR parentProjectId <> id` |
+| Project | `projectIdFormat` | `id REGEXP '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'` |
+| Project | `projectTitle` | `OCTET_LENGTH(title) BETWEEN 1 AND 1024 AND CHAR_LENGTH(TRIM(title)) > 0` |
+| Project | `projectDescription` | `description IS NULL OR OCTET_LENGTH(description) <= 65535` |
+| Project | `projectTimes` | `createdAt > 0 AND updatedAt >= createdAt AND (archivedAt IS NULL OR archivedAt BETWEEN createdAt AND updatedAt) AND (deletedAt IS NULL OR deletedAt BETWEEN createdAt AND updatedAt)` |
+| Project | `projectRevision` | `localRevision > 0` |
+| Objective | `objectiveParentChoice` | `(pillarId IS NOT NULL) + (projectId IS NOT NULL) = 1` |
+| Objective | `objectiveIdFormat` | `id REGEXP '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'` |
+| Objective | `objectiveTitle` | `OCTET_LENGTH(title) BETWEEN 1 AND 1024 AND CHAR_LENGTH(TRIM(title)) > 0` |
+| Objective | `objectiveDescription` | `description IS NULL OR OCTET_LENGTH(description) <= 65535` |
+| Objective | `objectiveTimes` | `createdAt > 0 AND updatedAt >= createdAt AND (archivedAt IS NULL OR archivedAt BETWEEN createdAt AND updatedAt) AND (deletedAt IS NULL OR deletedAt BETWEEN createdAt AND updatedAt)` |
+| Objective | `objectiveRevision` | `localRevision > 0` |
 | Task | `taskIdFormat` | `id REGEXP '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'` |
 | Task | `taskTitle` | `OCTET_LENGTH(title) BETWEEN 1 AND 1024 AND CHAR_LENGTH(TRIM(title)) > 0` |
 | Task | `taskNotes` | `notes IS NULL OR OCTET_LENGTH(notes) <= 65535` |
 | Task | `taskLifecycle` | `(lifecycleStatus = 'active' AND completedAt IS NULL) OR (lifecycleStatus = 'completed' AND completedAt IS NOT NULL)` |
 | Task | `taskTimes` | `createdAt > 0 AND updatedAt >= createdAt AND (completedAt IS NULL OR completedAt BETWEEN createdAt AND updatedAt) AND (deletedAt IS NULL OR deletedAt BETWEEN createdAt AND updatedAt)` |
 | Task | `taskRevision` | `localRevision > 0` |
-| CommandRecord | `commandPayload` | `payloadVersion = 1 AND resultingRevision > 0 AND JSON_VALID(afterSnapshot) AND (beforeSnapshot IS NULL OR JSON_VALID(beforeSnapshot))` |
-| CommandRecord | `commandKind` | `commandType IN ('create', 'edit', 'complete', 'reopen', 'undo', 'redo')` |
-| LocalChange | `changePayload` | `payloadVersion = 1 AND localRevision > 0 AND JSON_VALID(immutablePayload)` |
+| Task | `taskOwnerChoice` | `(objectiveId IS NOT NULL) + (directProjectId IS NOT NULL) <= 1` |
+| CommandRecord | `commandTargetV2` | `(taskId IS NOT NULL) + (pillarId IS NOT NULL) + (projectId IS NOT NULL) + (objectiveId IS NOT NULL) = 1` |
+| CommandRecord | `commandPayloadV2` | `(payloadVersion = 1 AND taskId IS NOT NULL OR payloadVersion = 2) AND resultingRevision > 0 AND JSON_VALID(afterSnapshot) AND (beforeSnapshot IS NULL OR JSON_VALID(beforeSnapshot))` |
+| CommandRecord | `commandKindV2` | `commandType IN ('create', 'edit', 'move', 'archive', 'restore', 'complete', 'reopen', 'undo', 'redo')` |
+| CommandRecord | `commandLifecycleTargetV2` | `commandType NOT IN ('complete', 'reopen') OR taskId IS NOT NULL` |
 | LocalChange | `changeState` | `acknowledgmentState = 'pending'` |
+| LocalChange | `changeTargetV2` | `(taskId IS NOT NULL) + (pillarId IS NOT NULL) + (projectId IS NOT NULL) + (objectiveId IS NOT NULL) = 1` |
+| LocalChange | `changePayloadV2` | `(payloadVersion = 1 AND taskId IS NOT NULL OR payloadVersion = 2) AND localRevision > 0 AND JSON_VALID(immutablePayload)` |
+| MigrationAttempt | `attemptVersion` | `version >= 2` |
+| MigrationAttempt | `attemptStep` | `lastCompletedStep >= 1` |
+| MigrationAttempt | `attemptStateValue` | `attemptState IN ('running', 'failed', 'completed')` |
+| MigrationAttempt | `attemptTimes` | `startedAt > 0 AND ((attemptState = 'completed' AND completedAt IS NOT NULL AND completedAt >= startedAt) OR (attemptState IN ('running', 'failed') AND completedAt IS NULL))` |
 
-`taskLifecycle` enforces completedAt exactly when status is completed. Task timestamps
-are checked against createdAt/updatedAt; positive creation time is explicitly checked
-only for Dataset and Task. Not every metadata timestamp has a CHECK. JSON fields
-remain MEDIUMTEXT with JSON_VALID checks; they are not physical JSON columns.
+## Declared non-unique indexes
 
-## Declared indexes and storage
-
-| Table | Non-unique index | Ordered columns |
+| Table | Index | Ordered columns |
 | --- | --- | --- |
+| Pillar | `pillarParent` | `datasetId, parentPillarId, deletedAt` |
+| Project | `projectPillar` | `datasetId, pillarId, deletedAt` |
+| Project | `projectParent` | `datasetId, parentProjectId, deletedAt` |
+| Objective | `objectivePillar` | `datasetId, pillarId, deletedAt` |
+| Objective | `objectiveProject` | `datasetId, projectId, deletedAt` |
 | Task | `taskActive` | `datasetId, deletedAt, lifecycleStatus` |
+| Task | `taskObjective` | `datasetId, objectiveId, deletedAt` |
+| Task | `taskDirectProject` | `datasetId, directProjectId, deletedAt` |
 | CommandRecord | `commandTaskHistory` | `datasetId, taskId, resultingRevision` |
+| CommandRecord | `commandPillarHistory` | `datasetId, pillarId, resultingRevision` |
+| CommandRecord | `commandProjectHistory` | `datasetId, projectId, resultingRevision` |
+| CommandRecord | `commandObjectiveHistory` | `datasetId, objectiveId, resultingRevision` |
 | LocalChange | `changePending` | `datasetId, acknowledgmentState, createdAt` |
+| LocalChange | `changePillar` | `datasetId, pillarId` |
+| LocalChange | `changeProject` | `datasetId, projectId` |
+| LocalChange | `changeObjective` | `datasetId, objectiveId` |
 
-Primary/unique indexes are enumerated above. The migration declares no other
-non-unique indexes. InnoDB may create supporting indexes for foreign keys (notably
-LocalChange.datasetId/taskId); engine-generated names are not asserted as explicit
-migration declarations or verified live artifacts.
-
-Every table uses InnoDB and default utf8mb4/utf8mb4_unicode_ci. Explicit CHAR identity,
-checksum and fingerprint columns use ascii/ascii_bin; lifecycleStatus, commandType
-and acknowledgmentState are also ascii/ascii_bin. Integer timestamps are BIGINT
-UTC epoch milliseconds by application convention, not SQL DATETIME types.
-LocalChange.acknowledgmentState has the sole explicit column default: 'pending'.
-Every other column requires a value or permits NULL as shown; no AUTO_INCREMENT.
+Primary/unique indexes are listed separately. InnoDB can add supporting FK indexes;
+engine-generated index names are not asserted as explicit migration declarations.
+All tables use InnoDB and default utf8mb4/utf8mb4_unicode_ci. Identity/checksum/
+fingerprint and controlled status strings use explicit ascii/ascii_bin as in source.
+BIGINT timestamps are UTC epoch milliseconds by application convention. No physical
+SQL JSON columns, AUTO_INCREMENT, organization completion lifecycle, ordering,
+contexts, planning or sync tables are introduced. archivedAt is explicit; inherited
+archive is derived and never stored on descendants as redundant flags.
 
 ## Regeneration and validation
 
-Generated directly from migration 001 by [GenerateDatabaseSchema.py](GenerateDatabaseSchema.py).
-The helper reads repository schema/config files and invokes the local renderer;
-it never connects to MariaDB. It is a narrow
-reader for this migration's CREATE TABLE syntax, not a general migration interpreter.
-When subsequent migrations change the cumulative schema, extend/review the helper
-and update both artifacts against the resulting actual DDL. Do not substitute the
-future logical model. Both diagrams share the same parsed table/column/key metadata.
+[GenerateDatabaseSchema.py](GenerateDatabaseSchema.py) interprets only the reviewed
+CREATE/ALTER subset from the two exact migration files, and fails on unknown syntax
+or an additional migration. Extend/review the reader for every later migration;
+never substitute the preliminary logical model or assume all SQL is supported.
+No database is accessed. Dependencies remain Python 3.9+ standard library and
+installed Mermaid CLI/browser for rendering; --check needs no browser.
 
 ```bash
 python3 docs/diagrams/GenerateDatabaseSchema.py
 python3 docs/diagrams/GenerateDatabaseSchema.py --check
 ```
 
-Dependencies: Python 3.9+ standard library, Mermaid CLI (`mmdc`) and its browser.
-Mermaid CLI 12.2.0 is now installed and has successfully rendered this ER source.
-The SVG is a **native Mermaid export**, replacing the earlier Graphviz fallback.
-[MermaidConfig.json](MermaidConfig.json) selects a landscape layout, neutral theme,
-explicit font/spacing and deterministic IDs. Both logical self-references are
-rendered separately. The helper adds provenance metadata and an 80-pixel outer
-viewBox margin to prevent CLI 12.2.0 from clipping upper self-reference labels;
-it does not change Mermaid's table/connector layout. No software was installed by
-the agent.
+The SVG is a native Mermaid export with deterministic IDs/provenance and an outer
+80-pixel viewBox margin to avoid clipping self-reference labels. It uses XHTML
+foreignObject labels supported by Firefox/Chromium; librsvg does not render those
+labels correctly. Do not disable browser sandboxing or install dependencies to
+work around renderer restrictions without approval. A source schema change is not
+live migration approval. Render/visual inspection results are in Phase1.2.md.
 
-`--check` does not launch a browser: it verifies SQL/Markdown agreement, embedded
-SQL/Mermaid/config provenance, all SVG table fields/types/keys/nullability, four
-solid FK links, two dashed logical links, landscape orientation and no external
-resources or scripts. It does not promise byte-identical exports across renderer
-versions. Review regenerated artifacts after tool upgrades.
+Migration SHA-256 values:
 
-The SVG uses XHTML `foreignObject` labels supported by Firefox/Chromium. The local
-librsvg preview cannot display those labels; use a browser or a Mermaid-generated
-PNG for visual review. Disabling HTML labels in CLI 12.2.0 produced clipped/wrapped
-text in this ER diagram, so that configuration is deliberately not used. Browser
-sandbox restrictions may require an approved unsandboxed tool invocation; do not
-add Chromium `--no-sandbox` flags or install software merely to suppress errors.
-Headless Firefox opened the final standalone SVG successfully; its screenshot was
-visually inspected with all labels and separate logical connectors visible.
-Interactive Firefox use has not been tested.
-
-Mermaid source uses standard [ER syntax](https://mermaid.js.org/syntax/entityRelationshipDiagram.html),
-with nullability comments rather than relying on recent nullable-type syntax.
-
-Migration SHA-256: `bb901d7580398893b5c04ee263f813b9d05873eb4bae08e0daf377faf73b0ea0`.
+- `001_PersistentTaskFoundation.sql`: `bb901d7580398893b5c04ee263f813b9d05873eb4bae08e0daf377faf73b0ea0`
+- `002_OrganizationalManagement.sql`: `7de311935843e4fc04cbca74d025d9f38986a4154d70bdd29b35a2820f87b736`
