@@ -13,8 +13,17 @@ else printf '%s:%s\n' "$EUID" "${MOCK_FILE_MODE:-600}"; fi
 STAT
 cat > "$temporaryDirectory/bin/powershell.exe" <<'ACL'
 #!/usr/bin/env bash
+set -euo pipefail
 [[ "${MOCK_ACL_FAIL:-0}" != 1 ]]
-[[ "${TASKCOMPASS_ACL_OPERATION:-}" != create || "${MOCK_NEW_ACL_FAIL:-0}" != 1 ]]
+operation=''; anchor=''
+while [[ $# -gt 0 ]]; do
+ case "$1" in -Operation) operation=$2; shift 2 ;; -Anchor) anchor=$2; shift 2 ;; *) shift ;; esac
+ done
+[[ "$operation" != create || "${MOCK_NEW_ACL_FAIL:-0}" != 1 ]]
+if [[ "$operation" == history ]]; then
+ [[ "$anchor" == "$MOCK_SNAPSHOT" && "${MOCK_BAD_HISTORY_CHAIN:-0}" != 1 ]]
+ printf 'history-acl\n' >> "$MOCK_DIRECTORY/calls"
+fi
 ACL
 chmod +x "$temporaryDirectory/bin/stat" "$temporaryDirectory/bin/powershell.exe"
 run78() { bash "$repositoryDirectory/scripts/phase12/b78/$1.sh" --platform "$platform" --evidence-dir "$snapshot" --qa-dir "$MOCK_QA_RUN" --client "$temporaryDirectory/bin/mariadb" --build-dir "$temporaryDirectory/build with spaces" --dump "$temporaryDirectory/bin/mariadb-dump" --python "$TASKCOMPASS_TEST_PYTHON" "${@:2}"; }
@@ -108,6 +117,10 @@ PY
  if result=$(passwords75 | run78 03-capture --approved --parent "$repositoryDirectory/temp/b78-must-not-create" 2>&1); then exit 1; fi
  [[ ! -e "$repositoryDirectory/temp/b78-must-not-create" ]]
  if [[ "$platform" == windows ]]; then
+  [[ "$(cat "$MOCK_DIRECTORY/calls")" == *history-acl* ]]
+  export MOCK_BAD_HISTORY_CHAIN=1
+  if result=$(passwords75 | run78 02-preflight --approved 2>&1); then exit 1; fi
+  unset MOCK_BAD_HISTORY_CHAIN
   export MOCK_NEW_ACL_FAIL=1
   if result=$(passwords75 | run78 03-capture --approved --parent "$temporaryDirectory/acl failure" 2>&1); then exit 1; fi
   unset MOCK_NEW_ACL_FAIL

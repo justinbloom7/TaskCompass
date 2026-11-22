@@ -89,22 +89,8 @@ private78() {
    if [[ "$platform" == linux ]]; then
       [[ "$(stat -c '%u:%a' -- "$path")" == "$EUID:700" ]] || fail 'Directory owner/permissions differ.'
    else
-      TASKCOMPASS_PRIVATE_DIRECTORY=$(cygpath -w "$path") TASKCOMPASS_ACL_OPERATION="$operation" \
-      powershell.exe -NoProfile -NonInteractive -Command '
-         $ErrorActionPreference="Stop"
-         $sid=[System.Security.Principal.WindowsIdentity]::GetCurrent().User
-         if ($env:TASKCOMPASS_ACL_OPERATION -eq "create") {
-            $acl=New-Object System.Security.AccessControl.DirectorySecurity
-            $acl.SetOwner($sid); $acl.SetAccessRuleProtection($true,$false)
-            $acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule($sid,"FullControl","ContainerInherit,ObjectInherit","None","Allow")))
-            Set-Acl -LiteralPath $env:TASKCOMPASS_PRIVATE_DIRECTORY -AclObject $acl
-         }
-         $actual=Get-Acl -LiteralPath $env:TASKCOMPASS_PRIVATE_DIRECTORY
-         $rules=$actual.GetAccessRules($true,$true,[System.Security.Principal.SecurityIdentifier])
-         if (!$actual.AreAccessRulesProtected -or $actual.GetOwner([System.Security.Principal.SecurityIdentifier]).Value -ne $sid.Value -or $rules.Count -ne 1 -or
-             $rules[0].IdentityReference.Value -ne $sid.Value -or $rules[0].FileSystemRights -ne [System.Security.AccessControl.FileSystemRights]::FullControl -or
-             $rules[0].AccessControlType -ne [System.Security.AccessControl.AccessControlType]::Allow) { throw "Private backup ACL differs" }
-      '
+      powershell.exe -NoProfile -NonInteractive -File "$(cygpath -w "$b78Directory/private-directory.ps1")" \
+         -Path "$(cygpath -w "$path")" -Operation "$operation" -Anchor "$(cygpath -w "$backupDirectory")"
    fi
 }
 filesPrivate78() {
@@ -135,19 +121,19 @@ filesPrivate78() {
 }
 sealCheck78() { (backupDirectory=$1; checkManifest "$2" "$3"); }
 [[ "$qa78" == "$backupDirectory"/b77-* && "$qa78" != *'/../'* ]] || fail 'QA evidence outside approved prior capture.'
-private78 "$qa78"
+private78 "$qa78" history
 sealCheck78 "$qa78" initial.sha256 'prefix.txt receipt.txt data.hex.tsv health.tsv inventory.tsv protected-inventory.tsv qa-names.tsv'
 sameFiles "$qa78/data.hex.tsv" "$backupDirectory/b75-final.hex.tsv"
 [[ "$(cat "$qa78/receipt.txt")" == "$receipt" ]] || fail 'B7.7 receipt differs.'
 [[ "$(cat "$qa78/prefix.txt")" == "B77-QA-${qa78##*/b77-}" ]] || fail 'B7.7 prefix differs.'
 if [[ "$platform" == windows ]]; then
    for label in hierarchy ownership-moves before-restart after-restart final; do
-      private78 "$qa78/$label"
+      private78 "$qa78/$label" history
       sealCheck78 "$qa78/$label" checkpoint.sha256 'data.hex.tsv health.tsv inventory.tsv'
    done
    sameFiles "$qa78/before-restart/data.hex.tsv" "$qa78/after-restart/data.hex.tsv"
 else
-   private78 "$qa78/final"
+   private78 "$qa78/final" history
    [[ -f "$qa78/final/data.hex.tsv" && ! -L "$qa78/final" && ! -L "$qa78/final/data.hex.tsv" ]] || fail 'Known failed Linux capture missing/linked; explicit review required.'
    printf 'NOTICE: Linux B7.7 protected-task modification and missing restart comparison remain unresolved.\n'
 fi

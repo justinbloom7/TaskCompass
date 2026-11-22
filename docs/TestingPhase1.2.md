@@ -398,3 +398,14 @@ separate approvals. Windows follows only after Linux results/private review and
 independent authorization. An offline mock pass does not establish native Windows
 permissions/tooling behavior. No reset-capable integration test is run against
 any development, retained rehearsal or integration database.
+
+
+Windows B7.8 ACL policy regression (2026-11-20):
+`Phase12BackupAclPolicyTests` is registered only on native Windows. It uses
+in-memory ACLs and mocked directory metadata, with no database or ACL writes.
+It verifies historical private inheritance through a protected capture anchor
+while rejecting extra rights, wrong owners, unsafe paths and unprotected new
+snapshots. Linux shell fixtures verify routing and failure propagation but do
+not establish native Windows ACL compatibility. See the
+[Windows B7.8 procedure](Phase1.2B78Windows.md) for the direct offline command
+and the already authorized read-only stage02 retry. Native result is pending.

@@ -61,3 +61,23 @@ Expected: owner-reviewed schema2-evidence.sha256 created and verified; all captu
 files, timestamped environment sidecars and private-review attestation covered.
 Report reviewed snapshot path/hash and result. Preserve all QA/rehearsal/old backup
 artifacts. No account/grant change, restore/reset, cleanup or Phase1.3 follows.
+
+Historical B7.7 QA directories may inherit their sole current-owner FullControl
+rule. B7.8 validates every directory from each QA/checkpoint directory back to
+the approved B7.2 capture: each must be owned by the current user with exactly
+one effective Allow/FullControl rule for that user, with no reparse points.
+The capture anchor must have inheritance disabled. This is read-only validation;
+do not change historical ACLs. Fresh B7.8 snapshots still require protected,
+owner-only ACLs before any export file is created.
+
+After synchronizing this correction to Windows, run the native offline policy
+regression before retrying the already approved read-only stage02:
+
+```bash
+powershell.exe -NoProfile -NonInteractive -File "$(cygpath -w tests/Phase12BackupAclPolicyTests.ps1)"
+scripts/phase12/b78/02-preflight.sh --approved --platform windows
+```
+
+Stop if either fails. Windows stage03 still requires separate authorization.
+The completed Linux snapshot retains its original reviewed package provenance;
+do not rerun its capture or review with this updated package.

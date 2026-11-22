@@ -8044,3 +8044,58 @@ syntax/ACL result is claimed. No application change/build/test repeat; read-only
 PowerShell source reviewed and documentation links/fences/git diff --check passed.
 No agent live database or private evidence access, backup, grant/ACL repair,
 commit/push/merge/tag. Windows02 remains failed/pending review, not passed.
+
+
+### 2026-11-20 — Windows B7.8 historical QA ACL compatibility correction
+
+Owner inspection now confirms the recorded Windows B7.7 QA root is owned by the
+current user, has inheritance enabled, and has one inherited Allow/FullControl
+entry for that same SID. This supersedes the earlier *pending diagnosis* above;
+it does not establish that every checkpoint/ancestor has passed validation.
+The observed stage02 failure preceded database authentication and capture creation.
+
+Implemented a focused historical-evidence policy correction in
+scripts/phase12/b78/run.sh and new scripts/phase12/b78/private-directory.ps1.
+Historical QA/checkpoint reads accept owner-only inheritance only after checking
+every directory back to the approved original B7.2 capture. Every hop must have
+matching current-user ownership, exactly one effective current-user Allow/
+FullControl entry, and be a regular directory without reparse points. The anchor
+must have inheritance disabled. Fresh B7.8 capture creation/review still requires
+protected owner-only ACLs. No existing ACL or sealed evidence is changed.
+
+Added native Windows offline tests/Phase12BackupAclPolicyTests.ps1, registered
+with CTest on Windows: in-memory ACLs and mocked directory metadata exercise the
+private chain, protected anchor, wrong owner, extra/deny/limited rights,
+unrelated paths and reparse points. Shell fixtures now inspect the actual helper
+operation/anchor arguments and reject a bad historical chain. Earlier shell ACL
+mocks did not model inheritance policy; their prior pass was not native ACL
+verification. .gitattributes now requires LF for PowerShell source. Updated
+Windows operator instructions and forward B7.8 review manifest, which includes
+the new helper. Current review-manifest SHA256:
+8c6c674a0895d340cd2546b57ab17745d6bb07c82298c975b7c28c00a5a32029.
+
+The already sealed Linux snapshot retains its original package checksum and
+review provenance. Do not recapture/reseal or rewrite it with this package.
+Linux B7.7 protected-task and missing restart-comparison exceptions remain
+unresolved. No application/schema/migration/grant change or QA cleanup occurred.
+
+Validation: cmake --build build succeeded; bash -n for B7.8 runner and shell
+fixture and git diff --check passed. `ctest --test-dir build -R '^Phase12Schema2Backup(Tests|Scripts)$'
+--output-on-failure` passed 2/2 (55.54 seconds), covering both simulated
+platforms and failure paths. Other application suites were not repeated for this
+ACL-only script correction; application binaries are unchanged.
+PowerShell is unavailable on this Linux host: native Windows policy execution
+remains owner-pending, and no Windows compatibility pass is claimed yet.
+
+After owner synchronizes these files to Windows, run:
+
+```bash
+powershell.exe -NoProfile -NonInteractive -File "$(cygpath -w tests/Phase12BackupAclPolicyTests.ps1)"
+scripts/phase12/b78/02-preflight.sh --approved --platform windows
+```
+
+Run stage02 only if the native offline policy test passes. The existing explicit
+Windows02 authorization covers this inspected read-only retry; do not delete
+markers or alter permissions. If a check fails, preserve output/state and stop.
+Windows03 capture and Windows04 sealing still need their separate stage approval.
+No agent database/private export/ACL operation or commit/push/merge/tag performed.
