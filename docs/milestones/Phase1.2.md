@@ -8270,3 +8270,46 @@ This command reports results only; it does not write a completion receipt or
 manifest, repeat the dump, connect to MariaDB, or confer stage04 approval. Report
 its result before proposing a specific recovery decision. Preserve the failed
 capture and original dump-validation.txt unchanged.
+
+
+### 2026-11-21 — Owner-reported corrected Windows dump validation PASS
+
+Owner ran the corrected offline inspector against the preserved Windows failed
+capture source2-after.hex.tsv/schema2.sql and dataset
+457bb52b-fea4-4347-9c47-675c6b035c90. Result: exactly nine table definitions and
+every exported value, including historical payloads, match. This establishes
+that the rejected COMMIT boundaries are accepted by the narrow correction; no
+other unsupported statement or value mismatch was found. This was an offline
+owner check, not a fresh source-database verification or private SQL review.
+
+The failed directory remains incomplete: environment report, capture-complete
+receipt and capture checksum manifest were never produced. Do not fabricate
+those retrospectively or run stage04 against this incomplete attempt. Original
+failed diagnostics and files remain untouched. Linux B7.7 exceptions remain
+unresolved; the sealed Linux snapshot remains unchanged.
+
+**Approval Requested — explicit Windows B7.8 fresh stage03 recovery capture**
+
+Proposed recovery is a new full stage03 run using the corrected reviewed
+validator, with all writers closed and the same fixed Windows taskcompass_dev
+schema2 identity/dataset. Retain the failed
+Phase1.2-schema2-windows-20261121-192804-176636 directory unchanged. The existing
+script repeats all checks, creates a different timestamp/PID no-overwrite
+private directory, performs one read-only nine-table dump and before/after
+exports, validates equality/content/health/grants and records complete evidence.
+It neither resumes nor overwrites the failed attempt. This is an explicit new
+capture decision, not an automatic retry. No database writes, privilege changes,
+restoration, ACL changes to existing evidence or cleanup. On unexpected failure
+stop and preserve all artifacts again. Stage04 private review/sealing still
+requires separate approval after this new stage03 passes.
+
+After specific recovery approval, owner command:
+
+```bash
+scripts/phase12/b78/03-capture.sh --approved --platform windows
+```
+
+No execution has been performed or authorized by this report. Documentation-only
+update; command/scope consistency and git diff --check passed. Application tests
+not repeated because source is unchanged. No agent database/evidence operations,
+commit, push, merge or tag.
