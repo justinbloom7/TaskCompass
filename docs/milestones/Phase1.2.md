@@ -8637,3 +8637,80 @@ Native Linux build passed after CMake registration. Forward B7/B7.8/B7.9 source
 manifests, Bash syntax, Python AST, changed-document links/fences and git diff
 --check passed. All Linux/Windows live stages remain unexecuted/unapproved.
 The first outstanding approval is Linux B7.9 stage01 only, as scoped above.
+
+
+### 2026-11-21 — Linux B7.9 stage01 explicitly approved
+
+Owner approved Linux B7.9 stage01 only, using the sealed Linux B7.8 snapshot
+/home/justin/temp/TaskCompassBackups/Phase1.2-schema2-linux-20261120-204710-103433.
+Authorization covers read-only snapshot provenance/checksums/schema2 contents/
+Dataset identity verification, server metadata and confirmation that proposed
+taskcompass_phase12_restore database/account (including host variants) are absent.
+A fresh private B7.9 evidence directory and preflight records may be created.
+No database object/account creation, grant changes, import, existing-database
+modification or sealed-evidence alteration. On any failure stop and preserve
+state/artifacts; no automatic retry/repair.
+
+Operator command:
+
+```bash
+scripts/phase12/b79/01-preflight.sh --approved --platform linux
+```
+
+Execution remains owner-operated; approval is not a claimed PASS and no live
+operation was performed by the agent. Report the printed evidence directory,
+actual schema2.sql SHA256 and complete PASS/error output. After successful
+stage01, record the actual result and request separate stage02 provisioning
+approval. Stage02, Windows B7.9, B7.10 and Phase1.3 remain unauthorized. Linux
+B7.7 preservation/restart exceptions remain unresolved.
+Documentation-only authorization entry; command/scope consistency reviewed and
+git diff --check passed. Unaffected build/tests not repeated. No commit/push/
+merge/tag or database/private-snapshot access performed.
+
+
+### 2026-11-21 — Owner-reported Linux B7.9 stage01 PASS
+
+Owner executed `scripts/phase12/b79/01-preflight.sh --approved --platform linux`.
+Output reports sealed snapshot provenance/content/checksum and preflight PASS:
+- Input snapshot: /home/justin/temp/TaskCompassBackups/Phase1.2-schema2-linux-20261120-204710-103433.
+- Exact schema2.sql SHA256: 81d6e16b45d141343ddad7dcb8700019f891af30f66ea01588a4e1d61d7ed0b4.
+- Original B7.8 package SHA256: 46dbffef69d1d85eabbc9982a190dbff81466190a075810ab259200d3a4ed4b5.
+- New private B7.9 evidence: /home/justin/temp/TaskCompassBackups/Phase1.2-restore-linux-20261121-234712-217a2dd622f3.
+
+Under the reviewed runner's fail-closed stage01 checks, PASS establishes matching
+Linux server/native client identity, snapshot manifests/receipt/schema2 journals/
+Dataset/fingerprint/dump contents and absent proposed restore database/account
+including host variants. This is owner-reported execution; private evidence was
+not independently accessed by the agent. Preflight records are in the new sibling
+directory; the sealed source and all prior attempts remain unchanged. No
+provisioning/import/reduction has been performed or authorized by this result.
+
+**Approval Requested — Linux B7.9 stage02 provisioning only**
+
+On feledria/MariaDB10.5.29, reuse this exact preflight evidence binding and dump
+hash. Reverify sealed source and preflight seals, then freshly require absent
+taskcompass_phase12_restore database/account/all host variants and matching server.
+Execute only reviewed restore-account.template.sql to create the new utf8mb4 /
+utf8mb4_unicode_ci database and same-named user@127.0.0.1, granting schema SELECT,
+INSERT and CREATE only. Prompt for the new password, render its SQL literal in
+memory under NO_BACKSLASH_ESCAPES; no credential file/log/history. Verify empty
+target, account login identity and exact privileges, preserve private stage02
+attempt/success metadata/environment/checksum evidence in the same run directory.
+No import, migration, source-database/grant changes, overwritten evidence or
+cleanup. Account/DDL/grant changes are not assumed reversible. On failure stop,
+retain actual state and all markers/artifacts and request specific recovery;
+no automatic retry/reset/repair. Approval remains pending.
+
+After explicit Linux stage02 approval, owner command:
+
+```bash
+restoreDirectory='/home/justin/temp/TaskCompassBackups/Phase1.2-restore-linux-20261121-234712-217a2dd622f3'
+scripts/phase12/b79/02-provision.sh --approved --platform linux \
+   --run-dir "$restoreDirectory"
+```
+
+Stage03 exact-file import, stage04 verification, stage05 reduction, Windows B7.9,
+B7.10 and Phase1.3 remain separately unauthorized. Linux B7.7 protected-task and
+missing restart-comparison exceptions remain unresolved. Documentation-only
+transcript/command/hash consistency review and git diff --check passed; no build/
+test repeat for unchanged code. No agent live operation or commit/push/merge/tag.
