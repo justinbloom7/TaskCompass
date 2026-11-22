@@ -74,10 +74,14 @@ After synchronizing this correction to Windows, run the native offline policy
 regression before retrying the already approved read-only stage02:
 
 ```bash
-powershell.exe -NoProfile -NonInteractive -File "$(cygpath -w tests/Phase12BackupAclPolicyTests.ps1)"
+powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(cygpath -w tests/Phase12BackupAclPolicyTests.ps1)"
 scripts/phase12/b78/02-preflight.sh --approved --platform windows
 ```
 
 Stop if either fails. Windows stage03 still requires separate authorization.
 The completed Linux snapshot retains its original reviewed package provenance;
 do not rerun its capture or review with this updated package.
+
+The launcher and native offline test use `-ExecutionPolicy Bypass` only for their
+PowerShell process. No persistent execution-policy setting is changed. The same
+flag must be retained when running the direct test command again.

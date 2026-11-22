@@ -89,7 +89,7 @@ private78() {
    if [[ "$platform" == linux ]]; then
       [[ "$(stat -c '%u:%a' -- "$path")" == "$EUID:700" ]] || fail 'Directory owner/permissions differ.'
    else
-      powershell.exe -NoProfile -NonInteractive -File "$(cygpath -w "$b78Directory/private-directory.ps1")" \
+      powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(cygpath -w "$b78Directory/private-directory.ps1")" \
          -Path "$(cygpath -w "$path")" -Operation "$operation" -Anchor "$(cygpath -w "$backupDirectory")"
    fi
 }

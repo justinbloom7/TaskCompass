@@ -8099,3 +8099,27 @@ Windows02 authorization covers this inspected read-only retry; do not delete
 markers or alter permissions. If a check fails, preserve output/state and stop.
 Windows03 capture and Windows04 sealing still need their separate stage approval.
 No agent database/private export/ACL operation or commit/push/merge/tag performed.
+
+
+### 2026-11-21 — Native Windows ACL policy PASS; process execution-policy correction
+
+Owner ran the native offline Phase12BackupAclPolicyTests.ps1 with
+`-ExecutionPolicy Bypass` and reported PASS. A second invocation without that
+option was blocked by Windows execution policy. The override is process-local;
+it never enabled scripts permanently, so this second rejection is expected and
+does not invalidate the first native policy test result.
+
+Updated scripts/phase12/b78/run.sh and the Windows CMake test registration to
+supply `-ExecutionPolicy Bypass` for their reviewed PowerShell file invocations.
+Updated docs/Phase1.2B78Windows.md direct command and explanation. The shell
+fixture now rejects a file invocation missing this option. This changes no
+persistent Windows setting, ACL, database or evidence. Updated the forward B7.8
+review manifest; the previously sealed Linux snapshot and its original package
+provenance remain unchanged. Linux B7.7 evidence exceptions remain unresolved.
+
+Validation: `cmake --build build` passed. `ctest --test-dir build -R '^Phase12Schema2Backup(Tests|Scripts)$' --output-on-failure` passed 2/2 in 138.10 seconds. Bash syntax, forward review checksums and git diff --check passed. Unchanged application suites were not repeated for this process-launch option change.
+Native Windows launcher execution with this source change is pending; the owner
+has already verified the same process option with the real offline policy test.
+No live operations, commit, push, merge or tag performed. After syncing the source,
+retry the already authorized Windows stage02 using its normal command. Stage03
+capture remains separately unauthorized.

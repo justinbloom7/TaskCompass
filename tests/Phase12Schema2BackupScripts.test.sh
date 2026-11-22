@@ -15,6 +15,9 @@ cat > "$temporaryDirectory/bin/powershell.exe" <<'ACL'
 #!/usr/bin/env bash
 set -euo pipefail
 [[ "${MOCK_ACL_FAIL:-0}" != 1 ]]
+if [[ " $* " == *' -File '* ]]; then
+ [[ " $* " == *' -ExecutionPolicy Bypass '* ]]
+fi
 operation=''; anchor=''
 while [[ $# -gt 0 ]]; do
  case "$1" in -Operation) operation=$2; shift 2 ;; -Anchor) anchor=$2; shift 2 ;; *) shift ;; esac
