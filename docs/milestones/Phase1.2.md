@@ -9337,3 +9337,37 @@ retry or partial-operation resume. Do not run it until specifically approved.
 No account/database creation, import or grant change. After stage01 PASS request
 stage02 confirmation under the owner's latest instruction. Later stages, B7.10
 and Phase1.3 remain gated; Linux B7.7 exceptions remain open. No commit/push/merge/tag.
+
+
+### 2026-11-22 — Owner-reported Windows focused client-banner retest PASS
+
+Owner ran the requested native Windows focused CTest command after the separator
+comparison correction. Phase12RestoreAclTests passed0.35s and
+Phase12Schema2RestoreTests passed2.90s; total2/2 passed, zero failures,3.25s.
+This supplies native regression evidence for the corrected source and ACL wrapper;
+actual live preflight/client comparison remains pending, not inferred from mocks.
+No full rebuild or repeated successful suites required for this Python-only fix.
+
+**Approval Requested — one fresh Windows B7.9 stage01 attempt.** Revalidate the
+same sealed Windows snapshot ending20261121-222115-177176, actual dump SHA256
+32165acd3b9ae35c955eb8d4a92747b4c396b811ad70aedca946a774ed21ca0d,
+original package, private manifests/content/Dataset/journal; check native client
+with corrected Windows prefix-separator equivalence, feldria-w10 server identity
+and absent proposed restore database/account/all host variants; create only new
+private preflight evidence. No database/account creation, grants, import, existing
+evidence alteration or cleanup. Previous failure preceded administrator login and
+new run-directory creation; retain its diagnostic record. On failure stop and
+preserve all artifacts; no automatic retry/repair. Await explicit retry approval.
+
+After approval only:
+
+```bash
+scripts/phase12/b79/01-preflight.sh --approved --platform windows
+```
+
+After PASS record actual evidence directory/hash/absence result and request
+stage02 confirmation as the owner most recently directed. Stage02 does not start
+automatically. B7.10/Phase1.3 and other stages remain gated; Linux B7.7 exceptions
+remain unresolved. Documentation-only result/command/scope consistency reviewed
+and git diff --check passed. No code change, agent live operation or commit/push/
+merge/tag; unchanged Linux tests not repeated.
