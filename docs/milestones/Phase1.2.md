@@ -2,14 +2,16 @@
 
 # Phase 1.2 — Organizational Management
 
-**Current status (2026-11-20): Linux and Windows GUI functional acceptance are
+**Current status (2026-11-21): Linux and Windows GUI functional acceptance are
 complete by explicit owner direction; Windows GUI satisfaction and all five B7.7
 Windows checkpoints are confirmed. B7.1–B7.5 development/rehearsal upgrades and
 final grants remain verified as historically recorded. Linux's protected-task
 preservation failure and missing restart comparison remain unresolved evidence
 exceptions, not passed checks. Linux B7.8 capture/private review/final sealing
 passed by owner report; preserve the reviewed schema-2 snapshot. Windows B7.8
-offline validation and separately approved live stages remain pending. B7.9 isolated
+fresh capture, owner private review and final sealing also passed by owner report;
+both platform snapshots are sealed. The earlier incomplete Windows capture remains
+retained separately. B7.9 isolated
 restore/compare and B7.10 final evidence review/explicit milestone acceptance remain
 outstanding. Phase 1.2 as a whole is NOT accepted. See the latest dated B7.8
 entries for current results and approval scope.**
@@ -8387,3 +8389,85 @@ Linux B7.7 exceptions remain unresolved and the sealed Linux backup unchanged.
 Documentation-only transcript/scope review; git diff --check passed. Application
 build/tests unaffected and not rerun. No agent live operations or commit/push/
 merge/tag.
+
+
+### 2026-11-21 — Windows B7.8 private review accepted; stage04 approved
+
+Owner personally reviewed schema2.sql for the successful Windows capture
+Phase1.2-schema2-windows-20261121-222115-177176 and found it satisfactory.
+Owner explicitly approved stage04 for this capture only: verify existing
+evidence, record the private-review attestation, and create the final checksum
+manifest. No database connection/write, privilege change, recapture, overwriting
+existing evidence or cleanup. On any verification failure stop and preserve
+all artifacts; no automatic retry or repair. Stage04 execution/result remains
+pending; do not infer success from approval or private review.
+
+Owner command:
+
+```bash
+snapshotDirectory='/c/Users/justin/TaskCompassBackups/Phase1.2-schema2-windows-20261121-222115-177176'
+scripts/phase12/b78/04-review.sh --approved --platform windows \
+   --snapshot-dir "$snapshotDirectory" --dump-reviewed
+```
+
+After PASS, record the owner-reported seal result and final evidence manifest.
+Before B7.9: review both platform B7.8 results and provenance, preserve the failed
+Windows attempt and all existing captures, and prepare/review isolated schema2
+restore procedures with offline tests. New restore account/database provisioning
+and exact-file restore each require separate approval under B7.9. This stage04
+authorization does not begin B7.9. Linux B7.7 protected-task modification and
+missing restart-comparison exceptions remain unresolved, without waiver.
+
+Documentation-only update: command and scope checked against existing operator
+procedure; git diff --check passed. Application build/tests unchanged and not
+rerun. No agent database/evidence operations, commit/push/merge/tag.
+
+
+### 2026-11-21 — Owner-reported Windows B7.8 stage04 PASS; both backups sealed
+
+Owner executed the approved offline command:
+
+```bash
+scripts/phase12/b78/04-review.sh --approved --platform windows \
+   --snapshot-dir "$snapshotDirectory" --dump-reviewed
+```
+
+The resolved directory printed by the successful run is
+/c/Users/justin/TaskCompassBackups/Phase1.2-schema2-windows-20261121-222115-177176.
+Prior B7.2–B7.7 evidence and five Windows checkpoints verified; capture checksums,
+environment JSON/sidecar, data/DDL comparisons, health evidence, preservation
+and complete dump validation passed. All protected B7.5 rows remain unchanged;
+counts match the successful stage03 record. private-review.txt and final
+schema2-evidence.sha256 were created and checked, including capture.sha256.
+Final output: 'PASS: owner-reviewed B7.8 schema2 snapshot sealed; no restore or
+cleanup authorized.' This is owner-reported Windows execution, not agent
+verification of private files or fresh database access. No digest value absent
+from the transcript is invented.
+
+B7.8 is complete on Linux and Windows at its defined backup/review scope. Keep:
+- Linux sealed snapshot: /home/justin/temp/TaskCompassBackups/Phase1.2-schema2-linux-20261120-204710-103433.
+- Windows sealed snapshot: /c/Users/justin/TaskCompassBackups/Phase1.2-schema2-windows-20261121-222115-177176.
+- Earlier incomplete Windows attempt: /c/Users/justin/TaskCompassBackups/Phase1.2-schema2-windows-20261121-192804-176636.
+
+Remaining before live B7.9: prepare and offline-test platform-specific isolated
+restore procedures using these exact sealed snapshots and their original package
+provenance; review fixed target/server identity, absent-target/account checks,
+least-privilege provisioning SQL, exact-file import, full data/raw DDL comparison,
+health checks and fail-closed attempt guards. Then obtain separate platform/stage
+approval for fresh taskcompass_phase12_restore account/database provisioning and
+exact-file restore; do not alter DatabaseConfig/GUI allowlists or preserved
+integration/rehearsal/development databases. No B7.9 preparation or live execution
+is begun by this documentation update. B7.9 remains unstarted/unauthorized.
+
+Unresolved Linux B7.7 evidence exceptions remain explicit: protected Task
+24dd11c3-59df-4e23-ac21-422bcf2a1e3a changed updatedAt/localRevision/objectiveId,
+and the restart comparison is missing. Backup success neither repairs nor waives
+these. They require a separate documented disposition before final milestone
+acceptance. B7.10 final evidence review and explicit Phase1.2 acceptance remain
+outstanding; Phase1.3 and cleanup remain unauthorized.
+
+Documentation-only update: current-status pointer superseded without removing
+historical failures/approvals; transcript/commands/paths and Markdown fences
+checked, git diff --check passed. No application changes, so build/CTest were
+not repeated. No agent database operation, private-file access, commit, push,
+merge or tag.
