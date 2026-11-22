@@ -2,24 +2,15 @@
 
 # Phase 1.2 — Organizational Management
 
-**Current status (2026-11-22): Linux and Windows GUI functional acceptance are
-complete by explicit owner direction; Windows GUI satisfaction and all five B7.7
-Windows checkpoints are confirmed. B7.1–B7.5 development/rehearsal upgrades and
-final grants remain verified as historically recorded. Linux's three-field
-protected-task variance and functional restart persistence have explicit owner-accepted dispositions; the original checkpoint remains FAILED
-and historical restart byte comparison NOT CAPTURED, not passed checks. Linux
-B7.8 capture/private review/final sealing passed by owner report; preserve the reviewed schema-2 snapshot. Windows B7.8
-fresh capture, owner private review and final sealing also passed by owner report;
-both platform snapshots are sealed. The earlier incomplete Windows capture remains
-retained separately. Linux B7.9 stages01–05 passed and were formally accepted
-by the owner on2026-11-22: the isolated restore matches its sealed source and its
-dedicated account is SELECT-only.
-Windows B7.9 native offline validation and all stages01–05 passed by owner
-report; both isolated restores match their sealed sources and dedicated restore
-accounts are SELECT-only. B7.10 reconciliation review is authorized and its
-owner dispositions and final recommendation are documented in
-[the review](../Phase1.2B710.md). Explicit overall acceptance remains outstanding.
-Phase 1.2 as a whole is NOT accepted. No further live action or cleanup is authorized.**
+**Current status — FORMALLY ACCEPTED by the owner on 2026-11-22, on Linux and
+Windows. Acceptance covers the approved Phase1.2 implementation, completed
+B7.1–B7.9 work and B7.10 reconciliation. E1 is an owner-accepted three-field
+protected-task variance; its original checkpoint remains FAILED/unsealed.
+E2 is owner-accepted functional Linux GUI persistence; the historical restart
+byte comparison remains NOT CAPTURED. Known testing limitations/evidence
+boundaries are acknowledged and retained. See the final dated acceptance entry
+and [B7.10 summary](../Phase1.2B710.md). Acceptance authorizes no additional tests,
+live/database/application changes, cleanup, Git publication or Phase1.3 work.**
 
 Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
 Only this document and the roadmap were changed by Step A. Its designs/SQL were
@@ -10228,3 +10219,67 @@ new testing, database/private-evidence access or cleanup. Documentation referenc
 fences, decision-status consistency and git diff --check validated; no build/CTest
 rerun because unchanged code and owner prohibits additional test execution.
 No commit/push/merge/tag or Phase1.3 work.
+
+
+### 2026-11-22 — FORMAL OWNER ACCEPTANCE: Phase 1.2, Linux and Windows
+
+Owner explicitly states formal acceptance of TaskCompass Phase1.2 on BOTH Linux
+and Windows, including all completed B7.1–B7.9 work and B7.10 reconciliation.
+This is the final overall decision requested by the preceding summary, not an
+inference from tests or exception decisions. Acceptance date: **2026-11-22**.
+Status: **FORMALLY ACCEPTED**. No further Phase1.2 acceptance approval is pending.
+
+Accepted scope includes persistent pillar/subpillar/project/subproject/objective
+organization, validated task ownership, moves/archive/restore and derived views,
+shared session undo/redo with durable command/local-change history and transactional
+revision/conflict guards, owner-approved GUI refinements, schema2/migration002,
+native platform/offline/isolated validation, both preserved development upgrades
+and final least-privilege grants, GUI functional acceptance, complete populated
+private schema2 backups and exact isolated restores with SELECT-only final
+restore accounts. Evidence and original platform/Dataset/hash/run identities
+remain in the B7.10 report and chronological entries; this is not a new inspection
+of live databases or private files by the agent.
+
+Owner explicitly confirms the two dispositions as part of formal acceptance:
+
+| Item | Accepted disposition | Historical result preserved |
+| --- | --- | --- |
+| E1: protected Task24dd11c3-59df-4e23-ac21-422bcf2a1e3a updatedAt/localRevision/objectiveId changes | Acceptable owner GUI testing/current organization variance | Original unchanged-record checkpoint FAILED; final capture unsealed, no technical PASS or repair. |
+| E2: Linux GUI restart | Functional persistence accepted from owner-observed successful restart and supporting evidence | Historical byte-for-byte before/after restart comparison NOT CAPTURED, never PASS. |
+
+Known limitations/evidence boundaries are expressly acknowledged: per-case manual
+GUI results are not exhaustive; valuable-dev live GUI outage/permission-denial
+fault injection was not performed; offline unknown-commit/native isolated
+lease/atomicity coverage is distinct from every real transport failure; seamless
+F5 dead-connection recovery remains unproven with close/relaunch fallback; results
+are time-specific/owner-reported for live/private execution rather than independent
+agent inspection or continuous monitoring. Session undo history intentionally
+resets on restart; durable audit/change records remain preserved. No historical
+result, failed attempt, original seal or checksum is relabeled or rewritten.
+
+All existing development/integration/rehearsal/restore databases and accounts,
+Phase1.1/B7.2/B7.8 backups, GUI QA records, incomplete captures, failed preflight
+directories and evidence artifacts remain retained. Formal acceptance authorizes
+NO new testing, database/account/grant/application operation, cleanup, import,
+repair or Phase1.3 implementation. Git commit/push/merge/tag still requires
+separate authorization; none performed by the agent.
+
+Documentation changes: authoritative acceptance/current pointer here, B7.10
+current status plus final owner-decision section, Roadmap and Testing current
+pointers/acceptance notes. Earlier proposal/pending/failed entries are preserved
+as dated history and superseded only by this explicit decision. No application,
+operator, SQL, migration, schema diagram or pinned package changed. No additional
+test/build executed per owner restriction. Documentation consistency (local
+references/fences/status) and git diff --check verified.
+
+Recommended NEXT steps only, not executed/authorized by acceptance:
+1. Owner reviews the four documentation diffs and commits/pushes the acceptance
+   record on jb_20261114_ms1p2 when ready; normal review/merge or release tag is a
+   separate decision. Keep private evidence outside Git and no cleanup included.
+2. Separately authorize Phase1.3 PLANNING ONLY: review the accepted baseline and
+   roadmap's everyday-task scope (contexts/order, numeric priorities/rank,
+   grouped task dragging, work/day markers) and prepare a milestone plan with
+   staged deliveries, migration/privilege proposals, isolated tests, preservation
+   requirements and approval gates. Start with the roadmap's context CRUD/
+   assignment/persistent-order increment. Do not implement, run live changes or
+   create a new Phase1.3 workstream merely from this recommendation.

@@ -2,14 +2,16 @@
 
 # B7.10 — Phase 1.2 final reconciliation review
 
-Current status: **2026-11-22 — owner dispositions recorded; final Phase 1.2
-acceptance pending.** E1 is an owner-accepted three-field variance; its original
-unchanged-record checkpoint remains FAILED/unsealed. E2 is owner-accepted
-functional persistence; its historical byte comparison remains NOT CAPTURED.
-See sections6–7 for the decisions and final acceptance recommendation.
-The initial review proposals in sections2–5 are preserved as historical analysis,
-superseded by the subsequent explicit owner decisions. No overall acceptance or
-new testing is authorized by this document.
+Current status: **FORMALLY ACCEPTED by the owner on 2026-11-22, Linux and
+Windows**, including completed B7.1–B7.9 and B7.10 reconciliation. E1 is an
+owner-accepted three-field variance; its original checkpoint remains
+FAILED/unsealed. E2 is owner-accepted functional persistence; the historical
+restart byte comparison remains NOT CAPTURED. Known limitations and evidence
+boundaries are acknowledged. Section8 records the final overall acceptance.
+Sections2–5 initial proposals and section7's then-pending recommendation remain
+historical analysis, superseded by the explicit owner decisions in sections6/8.
+Acceptance confers no cleanup, new tests/live work, Git publication or Phase1.3
+authorization.
 
 The [milestone](milestones/Phase1.2.md) retains the chronological approvals,
 transcripts, failures, corrections and source/test results. This review reads that
@@ -35,7 +37,7 @@ checks, not a claim that the agent observed private files or the live applicatio
 | B7.7 functional GUI | Owner accepted; broader own-record tests, with two evidence exceptions below | Owner explicitly accepted, 2026-11-20; hierarchy, ownership-moves, before/after restart and final checkpoints passed | Functional acceptance on both platforms stands. No inference that every Linux checkpoint or every individual manual/fault case passed. |
 | B7.8 populated schema2 backup | Complete nine-table capture, before/after data/DDL equality, health, private review and final seal passed | Same; successful fresh capture/private review/seal after inspected ACL/validator failures | Sealed source provenance and all values including history/journals were subsequently checked during B7.9. Earlier incomplete Windows capture remains retained. |
 | B7.9 exact schema2 restore | Stages01–05 passed; formally accepted, 2026-11-22 | Stages01–05 passed; owner confirms both complete | Exact canonical source/restored data and RAW DDL equality, nine tables/85 columns, UUID, completed journal/attempt, health, no extra stored code/cross-schema refs, final SELECT-only restore accounts. |
-| B7.10 review/final acceptance | Review findings prepared here | Same review includes both platforms | Owner exception dispositions recorded in section6; explicit overall Phase1.2 acceptance remains pending. |
+| B7.10 review/final acceptance | Review findings prepared here | Same review includes both platforms | Final owner acceptance and preserved dispositions recorded in section8, 2026-11-22. |
 
 No outstanding migration/import attempt is reported uncertain at the completed
 B7.5/B7.9 success endpoints. Earlier failures are preserved, not rewritten as
@@ -258,6 +260,8 @@ capture, seal, manifest, task record or revision was modified.
 
 ## 7. Final Phase 1.2 acceptance summary and recommendation
 
+*Historical recommendation, superseded by the explicit owner acceptance in section8.*
+
 **Recommendation ready for explicit owner approval; Phase 1.2 is NOT yet formally
 accepted.** Both owner dispositions above have been recorded. The remaining
 acceptance gate is the owner's explicit decision on the milestone as a whole,
@@ -323,3 +327,35 @@ Any future enhancement/fault test needs its own scope. Final acceptance would
 not authorize cleanup, account/database removal, evidence rewriting, Git commit/
 push/merge/tag or Phase1.3. No code/schema/privilege/data changes, live operations
 or additional test execution were performed to prepare this summary.
+
+
+## 8. Final owner acceptance — 2026-11-22
+
+The owner reviewed the final recommendation and **FORMALLY ACCEPTED TaskCompass
+Phase1.2 on Linux and Windows**, including all completed B7.1–B7.9 work and this
+B7.10 reconciliation. The owner reconfirmed E1's accepted protected-task variance,
+E2's accepted functional persistence with historical comparison gap, and the
+known limitations/evidence boundaries listed in section7. Overall acceptance is
+now granted; the earlier requests/pending language remain historical, not current.
+
+| Acceptance item | Final disposition |
+| --- | --- |
+| Approved Phase1.2 implementation and B7.1–B7.9, both platforms | FORMALLY ACCEPTED by owner |
+| B7.10 reconciliation | COMPLETE AND ACCEPTED by owner |
+| E1 variance | OWNER ACCEPTED; original unchanged-record checkpoint remains FAILED/unsealed |
+| E2 restart evidence | Functional persistence OWNER ACCEPTED; historical byte comparison NOT CAPTURED |
+| Known limitations/coverage gaps | ACKNOWLEDGED by owner, retained without stronger test claims |
+| Final acceptance date | 2026-11-22 |
+
+Accepted evidence does not become a new technical PASS, resolve a hypothetical
+transport/reconnect defect, prove intent beyond the owner's decision, or replace
+an absent historical byte comparison. No additional testing was requested or
+performed. All failed artifacts, sealed snapshots, populated databases/accounts,
+QA records and prior Phase1.1 evidence remain retained unchanged.
+
+This final decision authorizes no application/schema/database/grant changes,
+cleanup, repair, Git commit/push/merge/tag or Phase1.3 implementation. Next steps
+are owner Git review/publication decisions and separately authorized Phase1.3
+planning, with implementation/live approvals still separate. See the
+[milestone acceptance entry](milestones/Phase1.2.md) for the complete scope and
+preservation instructions.

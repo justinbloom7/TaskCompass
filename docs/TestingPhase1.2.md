@@ -2,13 +2,13 @@
 
 # Phase 1.2 source review and isolated validation
 
-**Current pointer (2026-11-22): both platform B7.1–B7.9 results and GUI acceptance
-are recorded. E1's protected-task variance and E2's functional persistence have
-explicit owner-accepted dispositions, preserving original checkpoint FAILED and
-historical restart byte comparison NOT CAPTURED. See the
-[final acceptance summary](Phase1.2B710.md) for evidence, known limits and coverage
-gaps. Overall Phase1.2 acceptance remains pending explicit owner approval. No new
-tests/live work are authorized; older pending statements below are historical.**
+**Current pointer (2026-11-22): Phase1.2 FORMALLY ACCEPTED by the owner on Linux
+and Windows, including completed B7.1–B7.9 and B7.10 reconciliation. E1's accepted
+variance preserves the original checkpoint as FAILED; E2's accepted functional
+persistence preserves the historical byte comparison as NOT CAPTURED. All known
+coverage limits/evidence boundaries remain in the [final record](Phase1.2B710.md).
+No additional tests/live work, cleanup or Phase1.3 implementation is authorized.
+Earlier pending statements below remain historical.**
 
 The [milestone record](milestones/Phase1.2.md) is authoritative for approvals and
 actual results. **Linux Stage 1A and corrected Stage 1B passed (owner-reported);
@@ -499,3 +499,16 @@ summary retains per-case manual/fault-injection/F5 recovery/provenance limitatio
 no additional testing is required or performed by this documentation step.
 Explicit overall Phase1.2 acceptance is still pending. No evidence cleanup or
 code/database modifications; see the milestone for the full owner decision.
+
+
+### Formal owner acceptance — 2026-11-22
+
+Owner formally accepted Phase1.2 on Linux and Windows, completed B7.1–B7.9 and
+B7.10 reconciliation, E1/E2 dispositions and known testing/evidence limitations.
+No failed or missing historical result is converted to PASS. Keep unexhaustive
+manual reporting, unexecuted live GUI fault injection, unproven F5 reconnect,
+owner-reported/time-specific private evidence and restart-comparison limits
+explicit. No further tests are required/performed by this acceptance update;
+no code/database changes, cleanup or Phase1.3 implementation. Local documentation
+consistency checks only; application build/CTest not repeated. See the milestone
+for authoritative acceptance scope and retained-artifact requirements.
