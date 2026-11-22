@@ -13,8 +13,8 @@ fresh capture, owner private review and final sealing also passed by owner repor
 both platform snapshots are sealed. The earlier incomplete Windows capture remains
 retained separately. B7.9 isolated
 restore/compare and B7.10 final evidence review/explicit milestone acceptance remain
-outstanding. Phase 1.2 as a whole is NOT accepted. See the latest dated B7.8
-entries for current results and approval scope.**
+outstanding. Phase 1.2 as a whole is NOT accepted. B7.9 source/operator preparation is complete; see the latest dated B7.9
+entry for offline validation and the Linux stage01-only approval checkpoint.**
 
 Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
 Only this document and the roadmap were changed by Step A. Its designs/SQL were
@@ -8471,3 +8471,169 @@ historical failures/approvals; transcript/commands/paths and Markdown fences
 checked, git diff --check passed. No application changes, so build/CTest were
 not repeated. No agent database operation, private-file access, commit, push,
 merge or tag.
+
+
+### 2026-11-21 — B7.9 isolated schema2 restore package preparation
+
+Scope is source/documentation/offline fixtures only. Reviewed AGENTS.md, relevant
+authoritative requirements/architecture/data/interaction/roadmap baseline,
+Building/Installation, B7.2–B7.5/GUI/B7.8 implementation and operator records,
+B7.8–B7.10 design, schema2 exports/health/DDL/manifest, migration verification
+logic and existing narrow provisioning/revocation templates. Both B7.8 seals
+are established by owner report; private snapshot bytes/digests remain unavailable
+to the agent and are not claimed independently verified. No live connection,
+backup/export/provision/import/revoke, private snapshot access or test reset ran.
+
+Implemented five independently opted-in stages, preserving the existing B7.9
+least-privilege design. The only adjustment is moving all new comparison evidence
+into a fresh private sibling directory instead of writing into sealed B7.8 evidence.
+No stages are combined. CLI-only fixed target taskcompass_phase12_restore and
+same-named account@127.0.0.1; no application/GUI/TaskCompassMigrate allowlist change.
+Protected development, integration, rehearsal, prior restore and snapshot data
+are never modified or selected as import targets. Provisioning requires absence
+of both database and all same-name account host variants; no reuse/drop/rename.
+
+Created:
+- docs/Phase1.2B79.md: complete Linux/Windows guide, per-stage commands, approval
+  scopes, SQL references, expected artifacts, diagnosis/recovery and native limits.
+- scripts/phase12/b79/01-preflight.sh,02-provision.sh,03-restore.sh,04-verify.sh,
+  05-readonly.sh,run.sh: numbered explicit --approved/--platform entrypoints,
+  matching host-shell guard, no typed phrases or automatic progression.
+- scripts/phase12/b79/restore.py: Python-standard-library orchestration, immutable
+  fixed snapshots/identities, exclusive markers and manifests, persistent checked
+  native client sessions with no reconnect, in-memory-only password handling,
+  bounded protocol waits and ERROR-number/SQLSTATE-only diagnostics. Server and
+  selected account/database identity checked before operations; root remains
+  unselected and is not used for importing. LOAD LOCAL INFILE disabled.
+- scripts/phase12/b79/preflight.sql: fixed-target metadata for database/account
+  presence/encoding, exact schema grants, host/role/global/table/column/routine/
+  proxy authority, objects/85 columns, stored code, cross-schema FKs and sessions.
+- scripts/phase12/b79/private-evidence.ps1: existing protected owner-only policy
+  reused for new output and read-only snapshot checks, including every file;
+  no reparse points. Only a new empty output directory receives ACL changes.
+- scripts/phase12/b79/ReviewChecksums.sha256: reviewed source/guide, original SQL
+  templates, schema manifests/migrations and actual reused helper pins.
+- tests/Phase12Schema2RestoreTests.py: complete synthetic snapshots and fake
+  sessions/isolated subprocesses; 13 tests across Linux/Windows representations.
+- tests/Phase12RestoreAclTests.ps1: native Windows-only real ACL wrapper regression
+  on a new uniquely named disposable temp fixture; rejects extra file access.
+  This fixture's cleanup never touches a snapshot/database/operator evidence.
+
+Modified CMakeLists.txt to register Python and Windows ACL tests; docs/Phase1.2B7.md
+with a superseding B7.9 package addendum, docs/TestingPhase1.2.md, docs/Roadmap.md
+and this milestone. Refreshed forward b7/ReviewChecksums and b78/ReviewChecksums
+because B7.9 documentation changes the pinned B7 document. The original B7.8
+receipts/seals are NOT rewritten or rechecked against these newer package hashes.
+All SQL templates/migrations/schema bytes remain unchanged; no schema diagrams
+need regeneration. The new metadata SQL is read-only.
+
+Snapshot provenance strategy: Linux's original package digest
+46dbffef69d1d85eabbc9982a190dbff81466190a075810ab259200d3a4ed4b5
+comes from the original recorded B7.8 package; Windows's original digest
+f0203488fd1b019f8a9475d0c4ac41d940700550c658d3723831cf7e225291ad
+was independently reproduced from Git commit eb7bac1b426e64f6f1bcae044a15e770773ae431
+(owner-reported successful capture source). Exact receipt matching remains an
+operator check, not an assumption about unobserved private files. If mismatched,
+stop for provenance review; do not change receipts or silently rebaseline.
+
+Every stage requires original capture and final seal manifests with exact
+coverage, timestamped environment sidecar checksum/copy, review attestation,
+platform/server/native client version, complete before/after data+DDL equality,
+health, completed journals and supported dump contents. Stage01 prints the actual
+schema2.sql hash and binds it, final-seal hash, paths/platform and original/current
+package hashes in binding.json. Later stages revalidate those bindings. Restored
+full exports/raw DDL compare byte-for-byte to the sealed source, without the older
+LocalChange alias exception. Fingerprint is independently derived in the same
+order/case normalization as MigrationRunner; both migration checksums and the
+complete completed-attempt metadata are verified. No migration or new Dataset
+initialization is run. Stage04/05 require every health row present and zero and
+no stored code, extra objects/columns, cross-schema references or other sessions.
+
+Stage02 uses only the existing restore-account.template.sql, password token
+rendered in process memory under NO_BACKSLASH_ESCAPES: new database, new user,
+SELECT/INSERT/CREATE on escaped exact schema. Passwords are getpass prompts (Linux
+sudo prompts stay visible); secrets never enter argv/log/evidence/source. Windows
+root authentication is held in memory only for that session's child environment,
+not a native-client reprompt or disk file. No extra role/global/grant option.
+Stage03 imports one exact sealed dump in the checked restore-account session.
+Stage05 repeats full comparison first, then uses only existing reviewed REVOKE
+INSERT,CREATE SQL, checks SELECT-only rights and reconnects for final read-only
+comparison. No deliberate denied-write probe is necessary.
+
+Every stage has exclusive attempt/success/seal paths, prior-seal checks and source
+binding. Failures/interruptions/partial import are retained and block replay;
+no retry, reset, resume, repair, DROP, privilege broadening or cleanup. Connection
+loss may leave committed DDL/data/privileges; no transactional rollback assumption.
+Any recovery needs a specific inspected decision. New evidence is outside Git and
+outside sealed input, Linux0700/0600 or native Windows owner-only ACLs. UTF-8 is
+explicit, canonical protocol/manifest writes are bytes/LF; native CRLF is accepted
+for metadata/version parsing but raw export equality remains exact. Python-to-Bash
+reporter paths use forward slashes for native Windows dirname/path handling.
+Per-process PowerShell execution policy override only; no saved policy changes.
+
+Validation in progress/result pointer: standalone Python suite passed 13 tests
+in 0.290s; initial fixture iteration failed because files were generated before
+setting private umask and the new source manifest did not exist yet. Corrected
+fixture initialization/pin generation, without weakening production ACL checks.
+`cmake --build build` passed. `ctest --test-dir build -LE integration
+--output-on-failure` passed all 30 offline entries in 250.62s; the two live
+integration entries were explicitly excluded, not run. After final source
+hardening, the focused B7.9 test was repeated successfully (see final check below).
+Actual native client exit0, not just the completion sentinel, is required before
+success; import exit0 is recorded, all sessions finish before environment/seal.
+A fake client emitting a sentinel then exiting7 is rejected. Session-close-on-error
+is not database cleanup/rollback. Bash syntax, source checksums, documentation
+links/fences and git diff --check are checked below.
+The shared environment reporter ran automatically with no database query:
+CentOS Stream9, Qt6.10.3; report environment-2026-11-22T061749.741527_0000-445f71cf.json
+under build/validation-notes, source7025c477d095d5a72e5a5fc85db34e14e30fadf5 dirty.
+Native Windows CTest/PowerShell/real client execution is unavailable on this host
+and remains pending; simulated platform passes are not native compatibility proof.
+No destructive integration tests were run.
+
+**Approval Requested — Linux B7.9 stage01 only (after offline checks pass)**
+
+Read-only preflight on feledria/MariaDB10.5.29, proposed restore target/account
+name taskcompass_phase12_restore, Unix socket root metadata and existing native
+client. Validate the exact fixed Linux sealed B7.8 directory
+/home/justin/temp/TaskCompassBackups/Phase1.2-schema2-linux-20261120-204710-103433,
+its privacy/manifests/receipt/original package, native client and Dataset
+21be9da7-b767-4578-b972-cc9a35122ddb/schema2 journal/fingerprint/dump. Verify proposed
+database and every account host variant are absent and no target sessions or
+unexpected authority/objects exist. Create only a new private sibling restore
+evidence directory containing binding, metadata, environment and preflight seal;
+no server writes, new account/database, restore/import or source-domain query.
+Stop on failure, retain all actual state/artifacts and request specific recovery.
+
+Exact proposed owner command, not executed:
+
+```bash
+scripts/phase12/b79/01-preflight.sh --approved --platform linux
+```
+
+Report printed directory, actual dump SHA256 and PASS/error before any later
+stage. Stage02 provisioning, stage03 exact-file import, stage04 verification and
+stage05 privilege reduction each require separate approval; Windows repeats all
+approvals only after Linux results review. No live B7.9 approval is inferred from
+this preparation request. B7.10 and Phase1.3 remain unstarted. No commit/push/merge/
+tag. No unresolved implementation design choice requires broader privileges or
+architecture changes; private input identity checks and native Windows validation
+are pending runtime gates.
+
+Linux B7.7 protected Task24dd11c3-59df-4e23-ac21-422bcf2a1e3a changed
+updatedAt/localRevision/objectiveId; restart comparison is missing. These remain
+unresolved historical evidence exceptions for B7.10, even if both restores pass.
+No waiver, repair, rebaseline or final Phase1.2 acceptance is implied.
+
+
+B7.9 preparation final checks (2026-11-21): final focused
+`ctest --test-dir build -R '^Phase12Schema2RestoreTests$' --output-on-failure`
+passed 1/1 in0.40s (13 Python cases). A newly added wrapper refusal assertion
+initially looked for the expected message in stdout, whereas the production
+refusal correctly uses stderr; fixed the assertion and reran successfully.
+No safety guard was changed for that fixture failure. Full offline suite remains
+30/30 passed in250.62s; final narrow hardening was covered by the focused rerun.
+Native Linux build passed after CMake registration. Forward B7/B7.8/B7.9 source
+manifests, Bash syntax, Python AST, changed-document links/fences and git diff
+--check passed. All Linux/Windows live stages remain unexecuted/unapproved.
+The first outstanding approval is Linux B7.9 stage01 only, as scoped above.

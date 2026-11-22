@@ -409,3 +409,27 @@ snapshots. Linux shell fixtures verify routing and failure propagation but do
 not establish native Windows ACL compatibility. See the
 [Windows B7.8 procedure](Phase1.2B78Windows.md) for the direct offline command
 and the already authorized read-only stage02 retry. Native result is pending.
+
+
+## B7.9 isolated schema-2 restore preparation
+
+See [B7.9 operator guide](Phase1.2B79.md) for fixed Linux/Windows snapshot paths,
+five independent approvals, exact commands, new private evidence and recovery
+boundaries. `Phase12Schema2RestoreTests` uses synthetic nine-table snapshots,
+in-memory fake SQL sessions and isolated fake child processes only. Missing mocks
+fail rather than falling back to a real service. It exercises both simulated
+platforms, UTF-8/CRLF/paths with spaces, all five successful stages, source/seal
+corruption, target/host conflicts, incorrect grants/PUBLIC scopes, partial import,
+interruptions, data/DDL/health/object/cross-schema failures, persisted attempt
+markers, redacted diagnostics and no repeat mutations/cleanup. Native Windows
+CLI/PowerShell integration remains pending; these mocks are not that evidence.
+
+```bash
+python3 tests/Phase12Schema2RestoreTests.py
+ctest --test-dir build -R '^Phase12Schema2RestoreTests$' --output-on-failure
+```
+
+Use build-ucrt64 on Windows. Do not enable reset-capable live integration tests
+against development/rehearsal/restore targets. Existing B7.8 sealed evidence and
+failed attempts remain untouched. Linux protected-task and missing restart
+comparison exceptions remain unresolved for B7.10 regardless of restore results.

@@ -1001,3 +1001,22 @@ Primary-source cross-checks: [MariaDB ALTER TABLE privileges](https://mariadb.co
 These support the proposed least-privilege and same-platform capture policy; actual
 narrow-role, populated restore, GUI and schema2 recovery results are still pending.
 The diagrams continue deriving from unchanged migration SQL, not these procedures.
+
+
+## B7.9 operator package — 2026-11-21 preparation addendum
+
+The [five-stage B7.9 guide](Phase1.2B79.md) implements the design above with
+separate preflight, provisioning, exact-file import, complete verification and
+SELECT-only reduction approvals. Its numbered scripts are in
+`scripts/phase12/b79/`. It supersedes the historical recipe's placement of
+restored exports inside the sealed source directory: new restore evidence belongs
+in a separate fresh private sibling directory. The sealed B7.8 directories remain
+read-only. No stage is authorized by preparation, and no application identity
+allowlist, schema, migration or development account changes are introduced.
+
+Both platform snapshots were sealed by owner report. B7.9 validates their original
+package provenance independently of current tooling revisions, not by rerunning
+B7.8 stages. See the milestone for original hashes, the retained failed Windows
+capture, native platform evidence and unresolved Linux B7.7 exceptions. Linux
+stage01 is the first approval checkpoint; Windows and all later stages require
+separate approval. B7.10 has not begun.
