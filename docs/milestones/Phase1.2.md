@@ -9508,3 +9508,42 @@ fresh Windows stage01 attempt. Stage02 is not authorized to proceed without
 stage01 PASS and the owner's new stage02 authorization. Later stages, B7.10 and
 Phase1.3 remain gated; both Linux B7.7 exceptions remain unresolved. No commit/
 push/merge/tag. No cleanup of existing data/evidence.
+
+
+### 2026-11-22 — Owner-reported Windows focused privacy-creation retest PASS
+
+Owner reported native focused CTest results after the privacy-adapter correction:
+Phase12RestoreAclTests passed0.35s, Phase12Schema2RestoreTests passed3.21s;
+2/2 passed, zero failures,3.57s. Record these supplied outcomes without inventing
+individual unittest output. Current corrected production package hash should be
+9bb611c67037302cde6b501e45df0686ec0470629006eb21da7f94d4912c0f23;
+the new native manifest/hash output has not yet been supplied. Verify it before
+live retry rather than infer package identity from test names/timings alone.
+
+**Approval Requested — one fresh Windows B7.9 stage01 attempt using the corrected
+private-directory creation adapter.** Fixed source is sealed B7.8 snapshot
+ending20261121-222115-177176, dump SHA256
+32165acd3b9ae35c955eb8d4a92747b4c396b811ad70aedca946a774ed21ca0d.
+Scope remains source provenance/private manifests/data/journals, native client and
+feldria-w10 identity, absent restore target/account/all host variants and only a
+NEW private preflight output directory created atomically with owner-only ACL.
+No account/database provisioning, import, grant changes, source/evidence edits
+or cleanup. Preserve BOTH failed output folders ending015425-3b04fc2646b3 and
+015453-9a89546ab38e without changing their ACLs or reusing them. This is a new
+explicit recovery decision, not an automatic replay/resume/repair. On failure
+retain all actual state/artifacts and stop without retry. Approval is pending.
+
+After specific approval and corrected package hash/source checks:
+
+```bash
+sha256sum scripts/phase12/b79/ReviewChecksums.sha256
+sha256sum --check scripts/phase12/b79/ReviewChecksums.sha256
+scripts/phase12/b79/01-preflight.sh --approved --platform windows
+```
+
+Stop if the package hash differs from the corrected value above or any file
+checksum fails. Stage02 requires stage01 PASS and separate owner authorization;
+no automatic progression. B7.10 and Phase1.3 remain unauthorized and Linux B7.7
+evidence exceptions remain unresolved. Documentation-only test/scope/commands
+review and git diff --check passed. No code change, agent live operation, private
+artifact access, commit/push/merge/tag; unchanged Linux tests not repeated.
