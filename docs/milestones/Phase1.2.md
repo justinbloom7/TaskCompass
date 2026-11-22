@@ -15,8 +15,8 @@ retained separately. Linux B7.9 stages01–05 passed and were formally accepted
 by the owner on2026-11-22: the isolated restore matches its sealed source and its
 dedicated account is SELECT-only.
 Windows B7.9 native offline build/restore/ACL validation passed by owner report;
-Windows stages01–02 preflight/provisioning passed by owner report; stage03
-exact-file restore approval is requested. Later stages remain pending. B7.10 final evidence review/explicit acceptance remain outstanding.
+Windows stages01–03 preflight/provisioning/exact-file import passed by owner
+report; stage04 full-verification approval is requested. Later stages remain pending. B7.10 final evidence review/explicit acceptance remain outstanding.
 Phase 1.2 as a whole is NOT accepted. See the latest dated B7.9 entry for Windows
 prerequisites; no Windows B7.9 live operation is authorized.**
 
@@ -9824,3 +9824,79 @@ Stages04–05, B7.10 and Phase1.3 remain unauthorized. Preserve failed attempts;
 Linux B7.7 exceptions remain open for explicit final reconciliation. Documentation-
 only result/path/hash/command/scope review and git diff --check passed. No source
 change or build/test repeat, agent live operation, commit/push/merge/tag.
+
+
+### 2026-11-22 — Windows B7.9 stage03 exact-file import explicitly approved
+
+Owner confirmed Windows stage02 PASS and approved stage03 only, using run evidence
+C:/Users/justin/TaskCompassBackups/Phase1.2-restore-windows-20261122-023501-9a92eb740966
+and exact sealed Windows B7.8 schema2.sql SHA256
+32165acd3b9ae35c955eb8d4a92747b4c396b811ad70aedca946a774ed21ca0d.
+Before import revalidate sealed source, stages01–02 evidence, server/account
+identities, empty restore database, exact SELECT/INSERT/CREATE rights and no
+conflicting sessions. Import ONCE into taskcompass_phase12_restore using only
+ taskcompass_phase12_restore@127.0.0.1. No migrations, Dataset initialization,
+other databases/accounts, grant changes, overwritten evidence or cleanup.
+On failure stop and preserve all objects/rows/evidence; no automatic retry,
+repair, reset, resume or DROP. Owner-operated command:
+
+```bash
+scripts/phase12/b79/03-restore.sh --approved --platform windows \
+   --run-dir "$restoreDirectory"
+```
+
+Approval is not claimed execution/PASS. No agent live operation performed.
+After owner-reported stage03 PASS, record results and request separate stage04
+full-verification approval. Stages04–05, B7.10 and Phase1.3 remain unauthorized.
+Preserve prior failed attempts and unresolved Linux B7.7 exceptions. Documentation-
+only scope/hash/path/command review and git diff --check passed; unchanged builds/
+tests not repeated. No commit/push/merge/tag.
+
+
+### 2026-11-22 — Owner-reported Windows B7.9 stage03 PASS
+
+Owner executed approved 03-restore.sh --approved --platform windows --run-dir
+"$restoreDirectory" and reported 'PASS: B7.9 restore' for
+C:/Users/justin/TaskCompassBackups/Phase1.2-restore-windows-20261122-023501-9a92eb740966.
+Input remained sealed Windows B7.8 snapshot ending20261121-222115-177176,
+exact schema2.sql SHA256
+32165acd3b9ae35c955eb8d4a92747b4c396b811ad70aedca946a774ed21ca0d,
+original package SHA256
+f0203488fd1b019f8a9475d0c4ac41d940700550c658d3723831cf7e225291ad.
+Windows root and dedicated restore password prompts were followed by PASS.
+
+Under the reviewed runner, stage03 success requires revalidated source/stages01–02,
+checked server/restore login, empty target/exact rights/no conflicting sessions,
+one dedicated-account import, successful completion/native exit0, expected
+nine-table/85-column post-import inventory and private stage evidence seal.
+This is owner-reported native execution, not agent database/private-file access.
+It does not establish the complete data/raw DDL/health comparison: that remains
+stage04. No reduction or cleanup was performed or authorized by this result.
+
+**Approval Requested — Windows B7.9 stage04 full verification only**
+
+Use the same bound run directory and populated taskcompass_phase12_restore on
+feldria-w10/MariaDB13.0.2. Revalidate sealed source/stages01–03, server/Dataset/
+account/database identities, exact SELECT/INSERT/CREATE rights, expected nine
+InnoDB tables/85 columns and no conflicting sessions, extra stored code/objects
+or cross-schema foreign keys. Export full restored data/raw DDL with the dedicated
+restore account; require byte equality against sealed B7.8 source including all
+organizational/task records, command/local-change history, both migration rows
+and complete MigrationAttempt. Independently verify checksum/journal/fingerprint
+and every health rule present with zero violations. Add new private comparison,
+metadata/environment/checksum evidence only; no existing-file overwrite.
+No database writes, migrations, Dataset initialization, accounts/grants, other
+database changes, source evidence edits or cleanup. On failure stop and retain
+all actual state/artifacts, no automatic retry/reset/repair/resume. Approval pending.
+
+After separate approval:
+
+```bash
+scripts/phase12/b79/04-verify.sh --approved --platform windows \
+   --run-dir "$restoreDirectory"
+```
+
+Stage05 reduction, B7.10 and Phase1.3 remain unauthorized. Linux B7.7 exceptions
+remain unresolved for explicit final reconciliation. Documentation-only output/
+hash/path/command/scope review and git diff --check passed. Unchanged builds/tests
+not rerun. No agent live operation, commit/push/merge/tag.
