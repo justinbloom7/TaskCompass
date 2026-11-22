@@ -11,8 +11,9 @@ exceptions, not passed checks. Linux B7.8 capture/private review/final sealing
 passed by owner report; preserve the reviewed schema-2 snapshot. Windows B7.8
 fresh capture, owner private review and final sealing also passed by owner report;
 both platform snapshots are sealed. The earlier incomplete Windows capture remains
-retained separately. Linux B7.9 stages01–05 passed by owner report: the isolated
-restore matches its sealed source and its dedicated account is SELECT-only.
+retained separately. Linux B7.9 stages01–05 passed and were formally accepted
+by the owner on2026-11-22: the isolated restore matches its sealed source and its
+dedicated account is SELECT-only.
 Windows B7.9 native offline validation and separately approved live stages remain
 pending. B7.10 final evidence review/explicit acceptance remain outstanding.
 Phase 1.2 as a whole is NOT accepted. See the latest dated B7.9 entry for Windows
@@ -9044,3 +9045,70 @@ unresolved for B7.10, without repair/rebaseline/waiver. B7.10, Phase1.3 and fina
 Phase1.2 acceptance remain outstanding. Documentation-only current pointer and
 result/commands/scope reviewed; git diff --check passed. No application/source
 change, build/test repeat, agent live operation, commit/push/merge/tag.
+
+
+### 2026-11-22 — Explicit Linux B7.9 acceptance; Windows native checks pending
+
+Owner formally accepts Linux B7.9 complete: all five stages passed, exact restored
+snapshot verification and final SELECT-only privilege reduction included. This
+acceptance is specific to Linux B7.9, not final Phase1.2 acceptance or any Windows
+live approval. Preserve the populated restore/account and all captured evidence.
+
+Owner additionally confirms that the Linux database remained intact after
+restarting the application. Recorded as owner-observed persistence evidence;
+no missing historical before/after comparison file or machine PASS is invented.
+Reviewed the existing Linux GUI acceptance/preservation records, documented failed
+protected-row checkpoint and absent restart comparison, Windows restart evidence
+and Linux B7.8/B7.9 complete snapshot equality results. Existing Linux functional
+acceptance plus this explicit restart observation is relevant evidence to weigh
+at B7.10. The exact isolated restore proof establishes captured snapshot fidelity,
+not a retroactive before/after GUI-restart comparison. Retain BOTH Linux B7.7
+exceptions for explicit final reconciliation: protected Task
+24dd11c3-59df-4e23-ac21-422bcf2a1e3a changed updatedAt/localRevision/objectiveId;
+and the historical restart byte-comparison was not captured. Neither is marked
+resolved/waived. No redundant restart test is automatically required or scheduled.
+At separately authorized B7.10, first review this accumulated evidence and document
+whether it suffices or identify a specific remaining gap before proposing testing.
+No B7.10 work or additional live inspection is begun here.
+
+Owner authorizes Windows checkout verification and native offline build/focused
+restore/ACL tests only. Agent host inspection reports Linux; no powershell.exe,
+pwsh, native Windows terminal or remote Windows execution connector is available.
+Therefore Windows checkout/build/CTest cannot be executed from this session;
+no native Windows PASS or compatibility conclusion is claimed. Local reviewed
+checkout is jb_20261114_ms1p2, HEAD98e624210c2984ffe1f85695c304d25bd5d34bb1
+before this documentation-only update; existing B7.9 manifest verification passed.
+Current reviewed B7.9 package manifest SHA256:
+a276177955fe2e512e9d8222de70fd93f1463c364b19eb3b4ef308541f0d39ee.
+Windows must report this same package hash and passing file checks, or stop for
+source-version review. A later documentation-only commit can change HEAD without
+changing that operator package hash.
+
+Owner-operated native Windows UCRT64 offline commands, from repository root:
+
+```bash
+git branch --show-current
+git rev-parse HEAD
+sha256sum scripts/phase12/b79/ReviewChecksums.sha256
+sha256sum --check scripts/phase12/b79/ReviewChecksums.sha256
+scripts/phase12/b77/01-build.sh
+ctest --test-dir build-ucrt64 \
+   -R '^Phase12(Schema2RestoreTests|RestoreAclTests)$' --output-on-failure
+```
+
+The reviewed build helper explicitly configures both live integration-test flags
+OFF, records environment metadata and runs offline tests with live entries skipped.
+The focused command must show BOTH restore and native ACL tests present/passing,
+not zero matched tests. Native ACL regression touches only its disposable temp
+fixture, no backups/databases. Supply source hash/build/test output; on mismatch
+or failure stop and report compatibility diagnostics rather than infer a database
+service issue or run a live preflight. No new native test result exists yet.
+
+Only after native checks pass, request Windows B7.9 stage01 approval for the sealed
+Windows backup ending20261121-222115-177176. No request for live execution is
+made prematurely here. No database/account creation, import, privilege change,
+cleanup, Windows live stage, B7.10 or Phase1.3 is authorized by offline checking.
+Documentation-only update; milestone paths/commands/fences and git diff --check
+reviewed. Application source/build unaffected, so Linux tests not rerun as a
+substitute for unavailable native Windows checks. No agent live operation,
+private-file access, commit/push/merge/tag.
