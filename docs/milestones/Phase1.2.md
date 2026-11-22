@@ -14,8 +14,8 @@ both platform snapshots are sealed. The earlier incomplete Windows capture remai
 retained separately. Linux B7.9 stages01–05 passed and were formally accepted
 by the owner on2026-11-22: the isolated restore matches its sealed source and its
 dedicated account is SELECT-only.
-Windows B7.9 native offline validation and separately approved live stages remain
-pending. B7.10 final evidence review/explicit acceptance remain outstanding.
+Windows B7.9 native offline build/restore/ACL validation passed by owner report;
+Windows stage01-only live approval is requested. Later live stages remain pending. B7.10 final evidence review/explicit acceptance remain outstanding.
 Phase 1.2 as a whole is NOT accepted. See the latest dated B7.9 entry for Windows
 prerequisites; no Windows B7.9 live operation is authorized.**
 
@@ -9112,3 +9112,65 @@ Documentation-only update; milestone paths/commands/fences and git diff --check
 reviewed. Application source/build unaffected, so Linux tests not rerun as a
 substitute for unavailable native Windows checks. No agent live operation,
 private-file access, commit/push/merge/tag.
+
+
+### 2026-11-22 — Owner-reported native Windows B7.9 offline checks PASS
+
+Owner verified Windows B7.9 ReviewChecksums.sha256 matches the reviewed package
+SHA256 a276177955fe2e512e9d8222de70fd93f1463c364b19eb3b4ef308541f0d39ee.
+Every listed source/guide/helper/SQL/migration checksum passed. Owner ran
+scripts/phase12/b77/01-build.sh natively in Windows10/UCRT64 with Qt6.12.0;
+configuration/build succeeded. Source commit9413c56c6dfae86e14f7e72c4288e2d39dc9d551,
+clean, source SHA256
+f6d1e6308bce1f61f4e7802ec391c9a684bb5ec86124171bf177bd81bd9fd48f.
+Server was not queried (offline). Environment snapshots at
+2026-11-22T071741.446489_0000-2b9da074 and
+2026-11-22T071744.886884_0000-8563f2ad were recorded under
+build-ucrt64/validation-notes.
+
+Full native CTest: 34 entries, 32 passed, two live integration entries skipped,
+zero failures,1595.00s. Includes native Phase12BackupAclPolicyTests,
+Phase12RestoreAclTests and Phase12Schema2RestoreTests. Owner's focused rerun:
+
+```bash
+ctest --test-dir build-ucrt64 \
+   -R '^Phase12(Schema2RestoreTests|RestoreAclTests)$' --output-on-failure
+```
+
+Both tests passed (0.31s ACL /3.32s restore), total3.63s. No compatibility failure
+was reported in this native build/offline run. This supersedes pending native
+Windows offline verification only; live server/client/snapshot checks remain
+stage01, not inferred from mocked workflows/native temp ACL tests. These are
+owner-reported VM results, not agent Windows execution. No private source data
+or database integration/reset operation was reported by these checks.
+
+**Approval Requested — Windows B7.9 stage01 only**
+
+Read-only preflight for feldria-w10/MariaDB13.0.2 and the sealed Windows B7.8 source
+/c/Users/justin/TaskCompassBackups/Phase1.2-schema2-windows-20261121-222115-177176
+(native path C:/Users/justin/TaskCompassBackups/Phase1.2-schema2-windows-20261121-222115-177176).
+Validate owner-only private ACLs, original B7.8 package/platform/server receipt,
+both evidence manifests and exact dump hash/content, native client version,
+Dataset457bb52b-fea4-4347-9c47-675c6b035c90/schema2 journals/fingerprint and health.
+Inspect proposed taskcompass_phase12_restore database/account@127.0.0.1 and
+conflicting host variants; require absence and no unexpected target sessions or
+authority. Create only a new private sibling preflight evidence directory,
+binding/metadata/environment/checksum records. Print the actual dump SHA256 and
+run directory for subsequent review. No database/account creation, grants,
+import, source/evidence modification or cleanup. On failure preserve state and
+all artifacts, stop without automatic retry/repair and request specific recovery.
+Approval remains pending; no Windows live operation is authorized by test PASS.
+
+After explicit Windows stage01 approval, owner command:
+
+```bash
+scripts/phase12/b79/01-preflight.sh --approved --platform windows
+```
+
+Stages02–05 require separate approval after each preceding result. Linux B7.9
+formal acceptance remains recorded; both Linux B7.7 exceptions and the owner's
+restart observation remain available for explicit B7.10 reconciliation. No
+redundant restart test is required by this entry. B7.10 and Phase1.3 remain
+unauthorized. Documentation-only transcript/counts/commands/hash/scope review;
+git diff --check passed. No unchanged Linux build/test repeat, agent database
+operation, commit/push/merge/tag.
