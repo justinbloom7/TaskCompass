@@ -8123,3 +8123,150 @@ has already verified the same process option with the real offline policy test.
 No live operations, commit, push, merge or tag performed. After syncing the source,
 retry the already authorized Windows stage02 using its normal command. Stage03
 capture remains separately unauthorized.
+
+
+### 2026-11-21 — Owner-reported Windows B7.8 stage02 PASS
+
+Owner executed `scripts/phase12/b78/02-preflight.sh --approved --platform windows`
+and supplied a complete PASS transcript (environment report UTC2026-11-22T02:15).
+This supersedes the pending native launcher verification above. Historical QA
+ACL checks and all five checkpoint seals passed without changing existing ACLs.
+All protected B7.5 rows were unchanged. Counts: SchemaMigration2, Dataset1,
+Task6, CommandRecord91, LocalChange91, MigrationAttempt1, Pillar6, Project3,
+Objective5. Both migrator and runtime verification reported schema2/dataset
+457bb52b-fea4-4347-9c47-675c6b035c90. Fresh administrator checks confirmed
+feldria-w10/MariaDB13.0.2, exact final privileges, no unexpected authority or
+active sessions; complete health rules were zero. Qt6.12.0; source commit
+f305b1827ab53c2166e655b168ed39f605924ee7, clean; source SHA256
+ a30284e99a2e4318586e18c332ab6d814f7e653c55b7d645499bb16de9dd7d0a.
+This is owner-reported native evidence, not agent database execution. No fresh
+Windows schema2 backup or seal is claimed yet. Linux exceptions remain unresolved.
+
+**Approval Requested — Windows B7.8 stage03 capture only**
+
+Target only existing taskcompass_dev at feldria-w10/127.0.0.1:3306, MariaDB13.0.2,
+with the verified dataset above. With every GUI/database writer closed, recheck
+identity, retained evidence, final privileges, health and sessions; capture a
+single complete nine-table SQL dump, canonical data and raw DDL before/after,
+verify equality/content and checksums, and preserve private evidence in a new
+no-overwrite directory outside Git:
+$HOME/TaskCompassBackups/Phase1.2-schema2-windows-YYYYmmdd-HHMMSS-PID.
+No database writes, grants, restoration or cleanup. Snapshot directory creation
+sets protected owner-only ACLs on the new empty directory only. On failure stop,
+preserve partial artifacts/state, and request specific recovery; no automatic
+retry/repair. Stage04 private-review sealing, B7.9 and B7.10 remain separate.
+
+After explicit Windows03 approval, the owner command is:
+
+```bash
+scripts/phase12/b78/03-capture.sh --approved --platform windows
+```
+
+Documentation-only update: transcript/guide consistency and Markdown fences
+reviewed, git diff --check passed. No application build/test repeat needed;
+no source change or agent live operation, commit/push/merge/tag.
+
+
+### 2026-11-21 — Windows B7.8 stage03 explicitly approved
+
+Owner explicitly authorized Windows B7.8 stage03 only: capture the existing
+Windows taskcompass_dev schema2 database into a fresh private directory, export
+all nine tables, compare before/after data and raw DDL, and record checksummed
+evidence. Owner will close all writers before execution. Authorization excludes
+source database writes, privilege changes, overwriting existing evidence,
+restoration and cleanup. On unexpected failure stop and preserve every artifact;
+no automatic retry or repair. Execution is owner-operated; no agent live
+operation was performed. Stage03 results are pending.
+
+```bash
+scripts/phase12/b78/03-capture.sh --approved --platform windows
+```
+
+After stage03 PASS, stop and request separate approval for private dump review
+and stage04 sealing. That approval is not granted here. B7.9/B7.10/Phase1.3
+remain outside this authorization; Linux B7.7 exceptions remain unresolved.
+Documentation-only authorization entry; command/scope consistency reviewed and
+git diff --check passed. Application build/tests unaffected and not repeated.
+
+
+### 2026-11-21 — Owner-reported Windows B7.8 stage03 failure; inspection pending
+
+Owner ran approved Windows stage03. Initial retained evidence, protected B7.5
+rows, dataset/schema2, final grants, writer checks and health passed. A fresh
+private attempt directory was created:
+/c/Users/justin/TaskCompassBackups/Phase1.2-schema2-windows-20261121-192804-176636.
+After raw DDL comparison and repeated schema2/final grants/health PASS, execution
+stopped with generic exit1. No capture-complete/checksum seal PASS was reported;
+this is not a successful backup receipt. Preserve all files, including partial
+or empty ones. Do not rerun stage03, alter ACLs, delete markers or proceed04.
+
+Source review locates later checks at final data/DDL hashes, grants equality,
+administrator closure, offline dump validation and environment reporting. The
+transcript alone cannot establish which failed. Offline dump-validation stdout
+is redirected into dump-validation.txt and may contain the missing static error;
+inspect only saved file presence/size and this diagnostic before proposing any
+recovery. No private SQL dump or data values need to be shared. No source fix,
+retry/resume authorization or database operation is inferred from this failure.
+
+Documentation-only failure record; source execution order reviewed and git diff
+--check passed. No build/test repeat because implementation is unchanged. No
+agent live operation, evidence modification, commit/push/merge/tag.
+
+
+### 2026-11-21 — Windows stage03 isolated to offline dump statement rejection
+
+Owner supplied saved artifact metadata and diagnostics. dump-exit.txt is 0;
+schema2.sql is nonempty (214398 bytes). Before/after data, DDL, health and grants
+files exist. dump-validation.txt reports protected B7.5 rows unchanged and the
+expected nine table counts, then rejects an unexpected dump statement. Source
+order confirms the capture reached offline dump validation after final equality
+checks and administrator closure; environment reports/completion/seals were not
+created. This is not a completed or accepted snapshot, and dumper exit0 alone
+does not establish complete safe dump contents.
+
+Do not loosen the statement allowlist based on this generic error. Next inspect
+only the rejected statement ordinal/type using the existing offline tokenizer
+and a fixed keyword classification, without printing SQL, identifiers or values.
+Preserve the failed capture untouched. No retry, resume, repair or stage04 is
+authorized; a specific recovery decision follows diagnosis. MSYS ls mode strings
+are not a substitute for native Windows ACL validation.
+Documentation-only observation; no source changes, application tests or agent
+live/private-evidence operations. git diff --check passed.
+
+
+### 2026-11-21 — Windows dump COMMIT classification; narrow validator correction
+
+Owner's offline tokenizer diagnostic reported COMMIT at statement ordinals
+17,25,33,41,49,57,65,73,81 (nine occurrences). This identifies the first keyword,
+not each statement's full token sequence. The original validator accepted only
+SET/CREATE/INSERT and thus rejected these dump transaction boundaries before
+completing value comparison. Do not infer exact dump acceptance yet.
+
+Updated scripts/phase12/b78/inspect-snapshot.py to accept exactly one word token
+COMMIT, case-insensitively, terminated by the normal statement separator. It
+executes no SQL and still rejects WORK/CHAIN/RELEASE/suffix/quoted variants,
+START TRANSACTION and unsafe following statements. Existing nine-table coverage,
+all exported values, historical payload comparisons and other statement guards
+remain. Added a focused seven-test Python suite regression, updated Windows
+operator notes and forward package checksum manifest. This does not change any
+failed or sealed artifact or authorize capture replay/recovery/sealing. The
+Linux sealed snapshot keeps its original package provenance; Linux B7.7 evidence
+exceptions remain unresolved.
+
+Agent validation: `python3 tests/Phase12Schema2BackupTests.py` passed 7 tests.
+`ctest --test-dir build -R '^Phase12Schema2Backup(Tests|Scripts)$' --output-on-failure` passed 2/2 in 56.53 seconds. Forward manifest verification and git diff --check passed. No C++ change, database access,
+backup execution, ACL/grant change, cleanup or commit/push/merge/tag performed.
+Native Windows exact-dump validation remains pending. After syncing the source,
+the owner may inspect existing files offline without output redirection:
+
+```bash
+python3 scripts/phase12/b78/inspect-snapshot.py \
+   --data "$snapshotDirectory/source2-after.hex.tsv" \
+   --dataset 457bb52b-fea4-4347-9c47-675c6b035c90 \
+   --dump "$snapshotDirectory/schema2.sql"
+```
+
+This command reports results only; it does not write a completion receipt or
+manifest, repeat the dump, connect to MariaDB, or confer stage04 approval. Report
+its result before proposing a specific recovery decision. Preserve the failed
+capture and original dump-validation.txt unchanged.

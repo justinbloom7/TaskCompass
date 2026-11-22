@@ -75,6 +75,9 @@ def checkDump(path, data):
    for statement in statements:
       words = [value.upper() for kind, value in statement if kind == 'word']
       evidence.require(bool(words), 'Missing dump statement keyword')
+      # Dump transaction boundary only; never executes SQL or accepts variants.
+      if len(statement) == 1 and statement[0][0] == 'word' and words == ['COMMIT']:
+         continue
       if words[0] == 'SET':
          evidence.require(not {word.lstrip('@') for word in words} & {'GLOBAL', 'PERSIST', 'PERSIST_ONLY', 'OUTFILE', 'DUMPFILE', 'SELECT'}, 'Unsafe SET statement')
          evidence.require(not any(kind == 'string' and 'NO_BACKSLASH_ESCAPES' in value.upper() for kind, value in statement), 'Unsupported SQL escape mode')

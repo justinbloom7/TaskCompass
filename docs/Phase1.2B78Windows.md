@@ -85,3 +85,10 @@ do not rerun its capture or review with this updated package.
 The launcher and native offline test use `-ExecutionPolicy Bypass` only for their
 PowerShell process. No persistent execution-policy setting is changed. The same
 flag must be retained when running the direct test command again.
+
+
+The offline dump validator accepts standalone `COMMIT;` transaction boundaries
+as well as its reviewed SET/CREATE TABLE/INSERT forms. It still rejects COMMIT
+variants and other unsupported statements. No SQL is executed by validation.
+A failed capture remains incomplete: a corrected validator does not authorize
+rerunning capture, writing completion markers or sealing partial evidence.

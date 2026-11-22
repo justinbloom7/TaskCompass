@@ -79,6 +79,16 @@ class Schema2BackupTests(unittest.TestCase):
                         "SET SQL_MODE='NO_BACKSLASH_ESCAPES';", 'SELECT 1 INTO OUTFILE \'x\';']:
          with self.assertRaises(ValueError): self.inspect(dump(self.data) + statement)
 
+   def testStandaloneDumpCommitBoundaries(self):
+      text = dump(self.data)
+      # Native dump may terminate each table's data section with COMMIT.
+      for keyword in ('COMMIT', 'commit', 'CoMmIt'):
+         self.inspect(text + (keyword + ';\n') * len(CHECK.evidence.TABLES))
+      for statement in ('COMMIT WORK;', 'COMMIT AND CHAIN;', 'COMMIT RELEASE;',
+                        'COMMIT SELECT 1;', 'COMMIT; DROP TABLE Task;',
+                        "'COMMIT';", 'START TRANSACTION;'):
+         with self.assertRaises(ValueError): self.inspect(text + statement)
+
    def testHealthStreamingRequiresEveryZeroRule(self):
       source = (ROOT / 'scripts/phase12/b7/schema2-health.sql').read_text(encoding='utf-8')
       rules = CHECK.re.findall(r"^SELECT '([^']+)' AS ruleName,COUNT", source, flags=CHECK.re.M)
