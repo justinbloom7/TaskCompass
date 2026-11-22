@@ -455,3 +455,17 @@ Windows creation does not call Python mkdir and that diagnostic forwarding drops
 arbitrary/password-bearing stderr. PowerShell native ACL test exercises new-path
 creation, existing-path no-change refusal and extra-file-rights refusal. Linux
 must explicitly skip the native case; native VM focused results remain pending.
+
+
+B7.9 Windows-hosted Linux fixture correction (2026-11-22): native Windows
+restore/ACL CTest reported seven failures in simulated Linux workflows. The mock
+privacy adapter wrongly required every create=True path to be absent, although
+the production Linux branch creates its directory BEFORE privacy validation.
+Only the simulated Windows branch owns directory creation. Corrected that test
+contract without changing production code/ACL policy. HOST_WINDOWS is an explicit
+fixture selector; a regression forces that branch on Linux without patching
+os.name (which would change pathlib behaviour). Added successful complete Linux
+workflow through the Windows-hosted fixture branch and negative contract tests
+for missing Linux paths and reused Windows paths. Suite now19 cases; Linux
+passes18 with one native-only case skipped. Native Windows rerun is pending.
+Operator package hash remains9bb611c67037302cde6b501e45df0686ec0470629006eb21da7f94d4912c0f23.

@@ -26,6 +26,7 @@ R = load('restore79', 'scripts/phase12/b79/restore.py')
 F = load('restoreFixture79', 'tests/GuiAcceptanceEvidenceTests.py')
 D = load('dumpFixture79', 'tests/Phase12Schema2BackupTests.py')
 PASSWORD = "Offline-secret-☃'\\123"
+HOST_WINDOWS = os.name == 'nt'
 
 
 class FakeSession:
@@ -101,11 +102,13 @@ class MockRestore(R.Restore):
       if operation == 'client version': return self.state.get('versionOverride', (self.snapshot / 'client-version.txt').read_bytes())
       raise AssertionError('Unmocked external operation: ' + operation)
    def privacy(self, path, create=False):
-      if self.platform == 'linux' and os.name != 'nt': return super().privacy(path, create)
+      if self.platform == 'linux' and not HOST_WINDOWS: return super().privacy(path, create)
       self.state['aclCalls'].append((str(path), create))
-      if create:
+      if create and self.platform == 'windows':
          assert not path.exists()
-         path.mkdir(mode=0o700)  # Isolated mock effect only, never the production Windows path.
+         path.mkdir(mode=0o700)  # Only simulated Windows creation owns this mkdir.
+      # Simulated Linux validates the directory already created by execute(),
+      # including when this fixture is hosted on native Windows.
       assert path.is_dir() and not path.is_symlink()
       if self.state.get('aclFail'): raise ValueError('Private ACL differs')
    def report(self, context, metadataBytes):
@@ -185,6 +188,29 @@ class RestoreTests(unittest.TestCase):
       directory = self.runStage(platform, 'preflight')
       self.runStage(platform, 'provision', directory)
       return directory
+
+   def testLinuxWorkflowThroughWindowsHostedFixtureBranch(self):
+      # Exercise this branch on Linux too; never patch os.name/Path's real flavour.
+      with patch.object(sys.modules[__name__], 'HOST_WINDOWS', True):
+         directory = self.runStage('linux', 'preflight')
+         for stage in R.STAGES[1:]: self.runStage('linux', stage, directory)
+      self.assertEqual(self.states['linux']['mutations'], ['provision', 'restore', 'readonly'])
+      self.assertTrue((directory / 'readonly.sha256').exists())
+
+   def testMockPrivacyCreationContractsDependOnSimulatedPlatform(self):
+      args = argparse.Namespace(stage='preflight', platform='linux', run_dir=None, client='fixture-only-client', build_dir=None)
+      runner = MockRestore(args, self.states['linux'])
+      path = self.root / 'caller-created Linux fixture'
+      with patch.object(sys.modules[__name__], 'HOST_WINDOWS', True):
+         with self.assertRaises(AssertionError): runner.privacy(path, create=True)
+         path.mkdir(mode=0o700)
+         runner.privacy(path, create=True)
+      args.platform = 'windows'
+      runner = MockRestore(args, self.states['windows'])
+      with self.assertRaises(AssertionError): runner.privacy(path, create=True)
+      fresh = self.root / 'helper-created Windows fixture'
+      runner.privacy(fresh, create=True)
+      self.assertTrue(fresh.is_dir())
 
    def testBothPlatformCompleteWorkflowAndPreservation(self):
       for platform in ('linux', 'windows'):

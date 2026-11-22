@@ -9547,3 +9547,118 @@ no automatic progression. B7.10 and Phase1.3 remain unauthorized and Linux B7.7
 evidence exceptions remain unresolved. Documentation-only test/scope/commands
 review and git diff --check passed. No code change, agent live operation, private
 artifact access, commit/push/merge/tag; unchanged Linux tests not repeated.
+
+
+### 2026-11-22 — One fresh Windows stage01 attempt approved with package-hash gate
+
+Owner explicitly approved ONE fresh Windows B7.9 stage01 attempt using corrected
+private-directory creation, conditional on exact package manifest SHA256
+9bb611c67037302cde6b501e45df0686ec0470629006eb21da7f94d4912c0f23
+and successful verification of every manifest entry BEFORE execution. Any hash or
+file check failure must stop without running stage01. Scope is read-only
+preflight plus one NEW private evidence directory only. Preserve both earlier
+failed directories, their ACLs/files, and every existing backup/evidence artifact.
+No provisioning, imports, grant changes, cleanup or automatic retry. Owner VM
+execution remains pending; approval is not a claimed hash check or stage01 PASS.
+
+Guarded UCRT64 operator command (subshell isolates fail-fast settings):
+
+```bash
+(
+   set -euo pipefail
+   expectedPackage='9bb611c67037302cde6b501e45df0686ec0470629006eb21da7f94d4912c0f23'
+   actualPackage=$(sha256sum < scripts/phase12/b79/ReviewChecksums.sha256)
+   if [[ "${actualPackage%% *}" != "$expectedPackage" ]]; then
+      printf 'STOP: B7.9 package hash differs; stage01 not executed.\n' >&2
+      exit 1
+   fi
+   sha256sum --check scripts/phase12/b79/ReviewChecksums.sha256
+   scripts/phase12/b79/01-preflight.sh --approved --platform windows
+)
+```
+
+After PASS record actual new evidence directory, exact dump hash and verification
+outcomes, then STOP and request separate stage02 approval. Any failure stops and
+preserves all artifacts; no repair/reset/retry. Later stages, B7.10 and Phase1.3
+remain gated; Linux B7.7 exceptions remain unresolved. Documentation-only guard/
+command/scope consistency reviewed and git diff --check passed. No application
+change, build/test repeat, agent live operation or commit/push/merge/tag.
+
+
+### 2026-11-22 — Windows package gate refused stale clean checkout; no stage01 attempt consumed
+
+Owner's guard stopped before stage01. Diagnostic shows clean Windows HEAD3065ac4
+with manifest SHA256446eaa7845c1cc2d3806723e62a72de343775034037a7264523182de3969dd00.
+That is the earlier client-banner separator package, not approved directory-
+creation correction9bb611c67037302cde6b501e45df0686ec0470629006eb21da7f94d4912c0f23.
+Local Linux reviewed source currently HEADf8919d4 contains the approved9bb package;
+only milestone documentation is locally modified. No local changes explain the
+Windows hash: it is a clean older checkout. Do not change the expected hash or
+edit manifest entries to accept old code. No database connection/evidence
+creation occurred from the guarded invocation; the one fresh stage01 approval
+has not been consumed or broadened.
+
+The previously reported focused2/2 test results therefore cannot establish that
+the corrected creation code was tested on Windows. They remain true reported
+results for the installed older source; new native adapter test remains pending.
+Owner should sync the latest reviewed/pushed branch to Windows (clean checkout:
+git pull --ff-only; if unavailable/failed stop without reset/repair), confirm the
+9bb manifest hash and all entries, then run the focused native restore/ACL tests
+on that corrected source. Once checks pass, the existing guarded stage01 block
+may be run under its retained exact-package approval; no redundant stage01
+approval request is needed because it has not executed. If focused tests fail,
+stop and preserve diagnostics; do not proceed. No agent pull/fetch/merge/push,
+live database operation or private artifact modification. Documentation-only
+source/hash/status comparison and git diff --check passed; unchanged Linux tests
+not repeated. Later stages remain gated and Linux B7.7 exceptions unresolved.
+
+
+### 2026-11-22 — Correct package on Windows; seven Linux-simulation fixture failures corrected
+
+Owner confirmed the exact approved9bb611c67037302cde6b501e45df0686ec0470629006eb21da7f94d4912c0f23
+manifest and every file checksum PASS on Windows. Focused native ACL test passed
+0.56s. Restore suite ran17 cases and reported seven failures, each at
+MockRestore.privacy assert not path.exists() during simulated Linux preflight;
+CTest total1/2 passed,3.73s. Those failures are offline fixture contract errors,
+not a MariaDB/service/password failure or a live preflight result. No source
+snapshot/provisioning/import operation is implicated. The native actual Windows
+creation case was not in the reported failure list; full native suite success
+still awaits the corrected rerun.
+
+Cause: MockRestore chose its emulated privacy branch on Windows hosts even for
+platform=linux, then wrongly performed the Windows-only 'path must not exist'
+creation contract. Production execute() correctly creates Linux directories
+before checking privacy; Windows creation is delegated to the helper. Initial
+Linux-host checks bypassed the flawed emulation branch via real Linux mode
+validation and did not catch this Windows-hosted Linux combination.
+
+Changed ONLY tests/Phase12Schema2RestoreTests.py, TestingPhase1.2 notes and this
+milestone. Simulated Windows retains exclusive fresh creation; simulated Linux
+requires its caller-created regular directory and never recreates it. Added
+explicit HOST_WINDOWS fixture selector and two regressions: complete Linux
+five-stage workflow through the Windows-hosted fixture branch even on Linux,
+and refusal contracts for missing Linux path/reused Windows path. os.name itself
+is not patched, preserving the host pathlib implementation. All fake SQL clients
+and effects remain isolated synthetic fixtures, with no fallback to real DB tools.
+Production runner, PS adapter, SQL, guide and approved package manifest unchanged;
+no safety rules were relaxed.
+
+Agent results: python3 tests/Phase12Schema2RestoreTests.py ran19 cases in0.364s,
+18 passed/one native-only case skipped. Focused CTest passed1/1 in0.44s. Native
+Windows rerun remains pending; do not claim its failures resolved there until
+reported. Verify source pin remains exactly9bb611c67037302cde6b501e45df0686ec0470629006eb21da7f94d4912c0f23.
+After owner syncs test/documentation-only changes, rerun only:
+
+```bash
+ctest --test-dir build-ucrt64 \
+   -R '^Phase12(Schema2RestoreTests|RestoreAclTests)$' --output-on-failure
+```
+
+No full rebuild/repeat of successful unrelated suites is necessary. Hold live
+stage01 until native checks pass. The existing one-fresh-attempt stage01 approval
+remains available because only the package guard/offline tests have run since
+it was granted; no new live attempt is claimed. Preserve both earlier failed
+attempt directories unchanged. Stage02 and later stages remain gated, including
+new stage02 approval after preflight PASS. Linux B7.7 exceptions remain unresolved.
+Markdown links/fences, package pin and git diff --check verified; no application
+build repeat, live DB/ACL/evidence operation, commit/push/merge/tag.
