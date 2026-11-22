@@ -240,3 +240,26 @@ Known Linux B7.7 exceptions remain explicit for B7.10: protected Task
 `24dd11c3-59df-4e23-ac21-422bcf2a1e3a` changed updatedAt/localRevision/objectiveId,
 and the restart comparison is missing. A perfect restore proves this captured
 snapshot is recoverable; it does not repair or waive those historical exceptions.
+
+
+### Windows client banner path spelling — 2026-11-22 correction
+
+Native Python invokes `C:/.../mariadb.exe`; the sealed MSYS2 capture may record
+`C:\...\mariadb.exe` in the executable prefix of `--version`. The client-version
+comparison accepts slash-style differences only in identical absolute Windows
+mariadb.exe paths before ` from `. The complete release/client/architecture/source
+revision suffix must match. Different paths/drives/executables, suffix changes
+or unsupported format differences still stop. Linux comparison is unchanged. Original
+metadata/manifests are checked as raw sealed bytes and never rewritten.
+
+After syncing this correction, rerun only the native focused offline tests:
+
+```bash
+ctest --test-dir build-ucrt64 \
+   -R '^Phase12(Schema2RestoreTests|RestoreAclTests)$' --output-on-failure
+```
+
+A failed stage01 is not automatically retried. Report test results and obtain a
+specific fresh Windows stage01 retry decision before running the live preflight.
+The observed failure occurred before root login/target checks/evidence creation;
+no target-absence PASS or restore run directory may be inferred from it.

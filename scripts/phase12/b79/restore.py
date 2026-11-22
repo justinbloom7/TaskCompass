@@ -46,6 +46,21 @@ def digest(path):
    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def sameClientVersion(current, captured, platform):
+   current = current.replace('\r\n', '\n').strip()
+   captured = captured.replace('\r\n', '\n').strip()
+   if current == captured: return True
+   if platform != 'windows': return False
+   currentPath, separator, currentVersion = current.partition(' from ')
+   capturedPath, capturedSeparator, capturedVersion = captured.partition(' from ')
+   if not separator or not capturedSeparator or currentVersion != capturedVersion: return False
+   # Only the absolute executable prefix may vary in slash style, not version data.
+   pattern = r'[A-Za-z]:[\\/][^\r\n]*[\\/]mariadb\.exe'
+   return (re.fullmatch(pattern, currentPath) is not None
+           and re.fullmatch(pattern, capturedPath) is not None
+           and currentPath.replace('\\', '/') == capturedPath.replace('\\', '/'))
+
+
 def writeNew(path, data):
    if isinstance(data, str): data = data.encode('utf-8')
    with Path(path).open('xb') as output: output.write(data)
@@ -331,7 +346,7 @@ class Restore:
       print('Original B7.8 package SHA256: ' + self.originPackage, flush=True)
       self.currentOperation = 'native client version'
       version = self.external([self.client, '--no-defaults', '--version'], 'client version')
-      require(version.decode('utf-8').replace('\r\n', '\n').strip() == (self.snapshot / 'client-version.txt').read_text(encoding='utf-8').strip(), 'Native client version differs from sealed capture')
+      require(sameClientVersion(version.decode('utf-8'), (self.snapshot / 'client-version.txt').read_text(encoding='utf-8'), self.platform), 'Native client version differs from sealed capture')
       stage = self.args.stage
       if stage == 'preflight':
          require(self.directory is None, 'Stage01 always creates a fresh evidence directory')

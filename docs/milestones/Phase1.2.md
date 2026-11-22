@@ -9174,3 +9174,166 @@ redundant restart test is required by this entry. B7.10 and Phase1.3 remain
 unauthorized. Documentation-only transcript/counts/commands/hash/scope review;
 git diff --check passed. No unchanged Linux build/test repeat, agent database
 operation, commit/push/merge/tag.
+
+
+### 2026-11-22 — Windows stage01 completion reported; details pending; conditional stage02 approval
+
+Owner reports Windows B7.9 stage01 has completed and requests recording its
+actual PASS, private evidence directory, snapshot identity, SQL dump SHA256 and
+absent-target/account result. No stage01 transcript, actual evidence directory or
+actual dump hash accompanied this message. Record the completion report without
+inventing those missing values or claiming all required checks passed. Intended
+sealed source remains the successful Windows B7.8 capture ending
+20261121-222115-177176; confirmation from actual stage01 output is pending.
+Agent cannot access the VM/private evidence directly. Request the complete
+stage01 output before reporting verified prerequisites or giving a path-bound
+stage02 command. Do not repeat stage01 solely to obtain output.
+
+Owner conditionally approved Windows stage02 ONLY provided stage01 passed ALL
+required checks. Scope: on feldria-w10 create new taskcompass_phase12_restore
+and same-named account@127.0.0.1 with SELECT/INSERT/CREATE only, using reviewed
+provisioning SQL and interactive password handling. Revalidate sealed source,
+stage01 evidence, server identity and fresh absence of target/account/all host
+variants before creation. Existing databases/accounts/grants/backups/evidence
+must not be altered; new stage02 records may be added exclusively to the bound
+private run directory. No import, migration or cleanup. On unexpected failure
+stop and preserve actual state/evidence; no automatic retry, repair or reset.
+
+This conditional approval is retained and need not be requested again when the
+required stage01 PASS evidence is supplied and confirmed. Condition satisfaction
+is pending, not inferred from 'completed'. No stage02 execution or PASS is
+claimed. After stage02 PASS, record actual results and request separate stage03
+exact-file import approval. Stages03–05, B7.10 and Phase1.3 remain unauthorized.
+Linux B7.7 evidence exceptions remain unresolved for final reconciliation.
+Documentation-only scope/missing-evidence review and git diff --check passed;
+unchanged build/tests not repeated. No agent live operation, private-evidence
+access, commit/push/merge/tag.
+
+
+### 2026-11-22 — Clarification: Windows live stage01 remains unconfirmed
+
+Owner clarifies that they did not see an instruction to run preflight and again
+supplies the already verified B7.9 source-manifest checks. Those establish reviewed
+source identity only, not private snapshot validation, absent restore target or
+live stage01 completion. Earlier stage01 'completed' report remains historical
+and unconfirmed; no actual stage01 PASS/directory/dump hash is claimed.
+
+The prior interaction requested Windows stage01 approval after native offline
+checks, with its command explicitly conditional on approval. Do not fault the
+owner for omitting a command that was still gated. No source/build/offline tests
+need repeating. The next checkpoint is explicit Windows B7.9 stage01 read-only
+approval for the sealed snapshot ending20261121-222115-177176, checking source
+provenance/content/hash, server/client identity and absent proposed restore
+database/account/host variants, and creating fresh private preflight evidence.
+No provisioning/import/grant change is included. Conditional stage02 approval
+already recorded is retained, but its prerequisites are not yet established;
+there is no reason to request that same approval again once satisfied.
+
+No live command is instructed to execute before stage01 approval. No agent live
+operation, private-evidence access or code changes; documentation-only correction
+reviewed with git diff --check. Unaffected builds/tests not repeated; no commit/
+push/merge/tag. Later stages and B7.10/Phase1.3 remain gated as recorded.
+
+
+### 2026-11-22 — Windows B7.9 stage01 explicitly approved
+
+Owner explicitly approved Windows stage01 only, against sealed Windows B7.8
+capture ending20261121-222115-177176. Scope: read-only provenance/checksum/content/
+Dataset/server identity verification and fresh checks that proposed
+ taskcompass_phase12_restore database/account and conflicting host variants are
+absent; create a new private preflight evidence directory. No database objects/
+accounts, grant changes, imports, existing database modifications or sealed
+artifact alteration. On failure stop and retain every artifact without automatic
+retry/repair. Execution remains owner-operated in the Windows VM: this agent's
+Linux session has no VM terminal or private filesystem access. Command:
+
+```bash
+scripts/phase12/b79/01-preflight.sh --approved --platform windows
+```
+
+Approval is not claimed execution or PASS. Await complete output including the
+actual dump SHA256 and new evidence directory. After PASS record actual results
+and REQUEST CONFIRMATION before stage02; do not proceed automatically. This
+latest explicit instruction supersedes the earlier statement that conditional
+stage02 approval would need no repeat confirmation. Prior conditional approval
+remains historical, while the new confirmation checkpoint controls progression.
+No stage02 or later live operation is performed/authorized by this stage01 entry.
+Linux exceptions, B7.10 and Phase1.3 remain gated as recorded. Documentation-only
+scope/command consistency and git diff --check passed; unaffected builds/tests
+not rerun. No agent live operation, commit/push/merge/tag.
+
+
+### 2026-11-22 — Windows B7.9 stage01 stopped at native client-version comparison
+
+Owner executed approved Windows stage01. Output identifies the correct sealed
+snapshot C:/Users/justin/TaskCompassBackups/Phase1.2-schema2-windows-20261121-222115-177176,
+actual schema2.sql SHA256
+32165acd3b9ae35c955eb8d4a92747b4c396b811ad70aedca946a774ed21ca0d,
+and original package SHA256
+f0203488fd1b019f8a9475d0c4ac41d940700550c658d3723831cf7e225291ad.
+Then STOP: native client version: Native client version differs from sealed capture.
+This is a failed stage01, not a PASS. Source order confirms validateSnapshot
+completed before printing those identities, but native version comparison failed
+BEFORE administrator connection, target/account absence checks or new restore
+evidence directory creation. Those live checks remain unverified; no stage02
+condition is satisfied and no provisioning is authorized to proceed.
+
+Next diagnosis is read-only: display the installed client's --no-defaults --version
+output alongside the sealed client-version.txt using explicit UTF8 and repr to
+expose path/newline formatting. Do not assume an actual version upgrade or loosen
+comparison without the observed strings. Do not edit/normalize sealed metadata,
+rebaseline, change accounts/privileges or rerun stage01. No new private run
+directory is reported by this failed invocation. A specific recovery decision
+will follow diagnosis; no automatic retry/repair. No source change or agent VM/
+database access occurred. Documentation-only failure/path/hash/source-order review
+and git diff --check passed; unaffected build/tests not repeated. No commit/push/
+merge/tag; later stages and B7.10/Phase1.3 remain gated.
+
+
+### 2026-11-22 — Confirmed Windows version-banner separator defect corrected
+
+Owner offline diagnostic returned client exit0. Current banner executable prefix
+is C:/Program Files/MariaDB 13.0/bin/mariadb.exe; sealed client-version.txt prefix
+uses backslashes for the identical path. Suffixes match exactly:13.0.2-MariaDB,
+client15.2, Win64(AMD64), source revision620a4b5624222048fece7fe1789978ae0675cae2.
+No actual release/client/architecture/revision mismatch is established.
+
+Updated scripts/phase12/b79/restore.py with sameClientVersion: retain old exact
+comparison; only for Windows differences allow separator conversion in the
+absolute mariadb.exe prefix before ' from ', requiring identical suffix and path
+otherwise. No case folding, version-field normalization or path stripping.
+Linux behavior unchanged. Sealed bytes/checksums and original provenance remain
+untouched. Updated guide and testing notes, Python fixture and forward B7.9 pin.
+Current forward package SHA256: 446eaa7845c1cc2d3806723e62a72de343775034037a7264523182de3969dd00.
+Prior reviewed package a276177955fe2e512e9d8222de70fd93f1463c364b19eb3b4ef308541f0d39ee
+remains historical for completed Linux run; do not rewrite its binding or replay
+Linux stages. Windows failed before any new run binding was created.
+
+Added regression with the observed banner/path forms (including CRLF), rejection
+of Linux slash equivalence, changed version/client/architecture/source revision,
+drive/path/executable/relative-prefix/suffix, and a workflow assertion that a real
+mismatch stops before any connection. Standalone14 tests passed in0.344s; focused
+`ctest --test-dir build -R '^Phase12Schema2RestoreTests$' --output-on-failure`
+passed1/1 in0.39s. Forward checksums and git diff --check passed. No C++/CMake or
+SQL change; unchanged build/full suite not repeated for this narrow Python fix.
+Native Windows focused retest remains pending, so no native fix PASS claimed.
+No private-file edit, database access or credentials involved in agent checks.
+
+**Recovery Approval Requested — one fresh Windows B7.9 stage01 preflight after
+native focused tests pass.** Sync corrected source, check new package pin, run:
+
+```bash
+ctest --test-dir build-ucrt64 \
+   -R '^Phase12(Schema2RestoreTests|RestoreAclTests)$' --output-on-failure
+```
+
+Report native results before execution. Proposed recovery remains the same fixed
+sealed Windows snapshot ending20261121-222115-177176 (dump SHA256
+32165acd3b9ae35c955eb8d4a92747b4c396b811ad70aedca946a774ed21ca0d),
+feldria-w10 read-only server/absence checks and a new private preflight evidence
+directory. Previous failure preceded administrator login, target checks and output
+directory creation. This is an explicit inspected retry decision, not an automatic
+retry or partial-operation resume. Do not run it until specifically approved.
+No account/database creation, import or grant change. After stage01 PASS request
+stage02 confirmation under the owner's latest instruction. Later stages, B7.10
+and Phase1.3 remain gated; Linux B7.7 exceptions remain open. No commit/push/merge/tag.

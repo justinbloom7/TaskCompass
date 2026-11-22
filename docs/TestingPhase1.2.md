@@ -433,3 +433,13 @@ Use build-ucrt64 on Windows. Do not enable reset-capable live integration tests
 against development/rehearsal/restore targets. Existing B7.8 sealed evidence and
 failed attempts remain untouched. Linux protected-task and missing restart
 comparison exceptions remain unresolved for B7.10 regardless of restore results.
+
+
+B7.9 Windows client-banner regression (2026-11-22): native owner diagnostics
+showed identical MariaDB13.0.2/client15.2/AMD64/source-revision suffixes but
+C:/ versus C:\ executable-prefix separators. The restore suite now covers this
+specific semantic comparison and refuses changed drive/path/executable, release,
+client version, architecture or source revision, and verifies real mismatch stops
+before connection. Sealed metadata is never normalized or rewritten. Suite now
+has14 cases; native focused retest is pending, with no redundant full build needed
+for this Python-only correction.

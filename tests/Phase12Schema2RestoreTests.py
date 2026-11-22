@@ -98,7 +98,7 @@ class MockRestore(R.Restore):
       else: self.reader = result; self.readerId = 77
       return result
    def external(self, command, operation):
-      if operation == 'client version': return (self.snapshot / 'client-version.txt').read_bytes()
+      if operation == 'client version': return self.state.get('versionOverride', (self.snapshot / 'client-version.txt').read_bytes())
       raise AssertionError('Unmocked external operation: ' + operation)
    def privacy(self, path, create=False):
       if self.platform == 'linux' and os.name != 'nt': return super().privacy(path, create)
@@ -330,6 +330,25 @@ class RestoreTests(unittest.TestCase):
       result = subprocess.run([sys.executable, str(ROOT / 'scripts/phase12/b79/restore.py'), 'restore', '--platform', 'linux'], capture_output=True, check=False)
       self.assertNotEqual(result.returncode, 0)
       self.assertIn(b'--approved', result.stderr)
+
+   def testWindowsClientBannerSlashStyleOnly(self):
+      path = 'C:/Program Files/MariaDB 13.0/bin/mariadb.exe'
+      banner = ' from 13.0.2-MariaDB, client 15.2 for Win64 (AMD64), source revision 620a4b5624222048fece7fe1789978ae0675cae2'
+      current = path + banner + '\r\n'
+      captured = path.replace('/', '\\') + banner + '\n'
+      self.assertTrue(R.sameClientVersion(current, captured, 'windows'))
+      self.assertFalse(R.sameClientVersion(current, captured, 'linux'))
+      for changed in (current.replace('13.0.2-MariaDB', '13.0.3-MariaDB'),
+                      current.replace('client 15.2', 'client 15.3'),
+                      current.replace('AMD64', 'ARM64'), current.replace('620a4b', '720a4b'),
+                      current.replace('C:/', 'D:/'), current.replace('/bin/', '/other/'),
+                      current.replace('mariadb.exe', 'mysql.exe'), current + 'extra',
+                      './mariadb.exe' + banner):
+         self.assertFalse(R.sameClientVersion(changed, captured, 'windows'))
+      self.states['windows']['versionOverride'] = b'unexpected version\n'
+      with self.assertRaisesRegex(ValueError, 'Native client version differs'):
+         self.runStage('windows', 'preflight')
+      self.assertEqual(self.states['windows']['calls'], [])
 
    def testClientSessionProtocolAndErrors(self):
       fake = self.root / 'fake client.py'
