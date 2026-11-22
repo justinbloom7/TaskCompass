@@ -443,3 +443,15 @@ client version, architecture or source revision, and verifies real mismatch stop
 before connection. Sealed metadata is never normalized or rewritten. Suite now
 has14 cases; native focused retest is pending, with no redundant full build needed
 for this Python-only correction.
+
+
+B7.9 native directory creation follow-up (2026-11-22): the earlier native temp ACL
+test used .NET directory creation, whereas the production runner used Python
+mkdir0700 and failed on the real Windows ACLs. The new creation path supplies a
+protected single-owner DACL to CreateDirectoryW, atomically refusing existing
+paths without repair. Python suite now has17 cases: one native Windows-only case
+calls the real privacy adapter on disposable temp output. Additional cases verify
+Windows creation does not call Python mkdir and that diagnostic forwarding drops
+arbitrary/password-bearing stderr. PowerShell native ACL test exercises new-path
+creation, existing-path no-change refusal and extra-file-rights refusal. Linux
+must explicitly skip the native case; native VM focused results remain pending.

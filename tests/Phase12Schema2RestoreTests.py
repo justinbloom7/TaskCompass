@@ -103,6 +103,9 @@ class MockRestore(R.Restore):
    def privacy(self, path, create=False):
       if self.platform == 'linux' and os.name != 'nt': return super().privacy(path, create)
       self.state['aclCalls'].append((str(path), create))
+      if create:
+         assert not path.exists()
+         path.mkdir(mode=0o700)  # Isolated mock effect only, never the production Windows path.
       assert path.is_dir() and not path.is_symlink()
       if self.state.get('aclFail'): raise ValueError('Private ACL differs')
    def report(self, context, metadataBytes):
@@ -330,6 +333,36 @@ class RestoreTests(unittest.TestCase):
       result = subprocess.run([sys.executable, str(ROOT / 'scripts/phase12/b79/restore.py'), 'restore', '--platform', 'linux'], capture_output=True, check=False)
       self.assertNotEqual(result.returncode, 0)
       self.assertIn(b'--approved', result.stderr)
+
+   def testWindowsPrivateCreationNeverUsesPythonMkdir(self):
+      args = argparse.Namespace(stage='preflight', platform='windows', run_dir=None, client='fixture-only-client', build_dir=None)
+      runner = R.Restore(args)
+      path = self.root / 'new native output'
+      with patch.object(runner, 'external', return_value=b'') as external, patch.object(Path, 'mkdir', side_effect=AssertionError('Python mkdir must not run')):
+         runner.privacy(path, create=True)
+      self.assertEqual(external.call_args[0][0][-2:], ['-Operation', 'new'])
+      path.mkdir()
+      with self.assertRaisesRegex(ValueError, 'already exists'): runner.privacy(path, create=True)
+
+   def testAclHelperDiagnosticsAreStructuredAndRedacted(self):
+      args = argparse.Namespace(stage='preflight', platform='windows', run_dir=None, client='fixture-only-client', build_dir=None)
+      runner = R.Restore(args)
+      stderr = ('untrusted ' + PASSWORD + '\nB79_ACL_ERROR type=System.Exception hresult=-1 detail=WIN32_183\n').encode('utf-8')
+      with patch.object(R.subprocess, 'run', return_value=subprocess.CompletedProcess([], 1, b'', stderr)):
+         with self.assertRaises(ValueError) as error: runner.external(['fake'], 'private ACL validation')
+      self.assertIn('WIN32_183', str(error.exception))
+      self.assertNotIn(PASSWORD, str(error.exception))
+      self.assertNotIn('untrusted', str(error.exception))
+
+   @unittest.skipUnless(os.name == 'nt', 'Native Windows privacy creation only')
+   def testNativeWindowsPythonPrivacyCreation(self):
+      args = argparse.Namespace(stage='preflight', platform='windows', run_dir=None, client='fixture-only-client', build_dir=None)
+      runner = R.Restore(args)
+      path = self.root / 'native output ☃ with spaces'
+      runner.privacy(path, create=True)
+      R.writeNew(path / 'fixture.txt', 'UTF8 ☃\n')
+      runner.privacy(path)
+      with self.assertRaisesRegex(ValueError, 'already exists'): runner.privacy(path, create=True)
 
    def testWindowsClientBannerSlashStyleOnly(self):
       path = 'C:/Program Files/MariaDB 13.0/bin/mariadb.exe'

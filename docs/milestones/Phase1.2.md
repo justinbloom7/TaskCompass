@@ -9371,3 +9371,140 @@ automatically. B7.10/Phase1.3 and other stages remain gated; Linux B7.7 exceptio
 remain unresolved. Documentation-only result/command/scope consistency reviewed
 and git diff --check passed. No code change, agent live operation or commit/push/
 merge/tag; unchanged Linux tests not repeated.
+
+
+### 2026-11-22 — Fresh Windows B7.9 stage01 retry explicitly approved
+
+After the native focused retest passed, owner approved Windows stage01 read-only
+preflight only using sealed B7.8 snapshot ending20261121-222115-177176.
+Scope: verify backup provenance/checksums/schema2 Dataset identity, server identity
+and absence of proposed restore database/account (including host variants);
+create only a new private preflight evidence directory. No provisioning, imports,
+privilege changes or existing evidence modifications. This is explicit approval
+for the inspected fresh preflight attempt, not an automatic retry or any recovery
+of partial database writes. No agent live operation has been executed.
+
+Owner-operated command:
+
+```bash
+scripts/phase12/b79/01-preflight.sh --approved --platform windows
+```
+
+After owner reports PASS, document the actual run directory, dump hash and
+absence/identity results, then stop for separate stage02 authorization. The latest
+instruction requires new stage02 authorization; do not rely on older conditional
+approval or proceed automatically. On failure preserve all artifacts/state and
+stop without automatic retry/repair. Later stages, B7.10 and Phase1.3 remain gated;
+Linux evidence exceptions remain unresolved. Documentation-only command/scope
+review and git diff --check passed; unchanged build/tests not rerun. No private
+file/database access, commit/push/merge/tag.
+
+
+### 2026-11-22 — Windows preflight fails creating/checking new evidence privacy
+
+Owner ran explicitly approved fresh Windows stage01. Correct source dump hash
+32165acd3b9ae35c955eb8d4a92747b4c396b811ad70aedca946a774ed21ca0d
+and original package were printed; Windows root password prompt occurred, then
+'private ACL validation: helper failed (exit 1)' under stale 'native client version'
+operation label. This does NOT indicate a confirmed password rejection.
+Reviewed source order: initial snapshot ACL validation and corrected version
+comparison passed; administrator login/session and absent-target metadata checks
+returned; a new restore evidence directory was made; privacy(create=True) failed
+before its path was printed or binding/receipts were written. Thus root
+credentials were accepted under this implementation; no database provisioning,
+import or privilege change was executed. No stage01 PASS/seal exists.
+
+Two diagnostic shortcomings identified, without guessing the ACL cause: the
+currentOperation label was not refreshed after the client version check, and
+external() suppresses PowerShell stderr and the path is printed only after ACL
+success. Preserve every new directory; do not rerun or apply create-mode ACL
+helper to an existing failed directory. Next inspect only names/ACL metadata for
+Phase1.2-restore-windows-* directories under the approved backup parent, current
+owner SID match, inheritance protection and effective rule metadata. This reads
+no dump/data values and changes no ACL or database. Actual PowerShell failure
+cause remains unknown until metadata/diagnostics are available; native temp ACL
+regression PASS is not proof that this real parent/new-directory case passed.
+Specific source correction/recovery remains pending diagnosis. No agent live
+operation or evidence access occurred. Documentation-only source-order/failure
+review and git diff --check passed; unaffected build/tests not repeated. Stage02
+remains unauthorized pending stage01 PASS and fresh authorization; no commit/
+push/merge/tag, B7.10 or Phase1.3 work.
+
+
+### 2026-11-22 — Windows evidence DACL observation; creation-path correction prepared
+
+Owner's read-only ACL inspection identified TWO failed Windows preflight attempt
+directories under C:/Users/justin/TaskCompassBackups:
+Phase1.2-restore-windows-20261122-015425-3b04fc2646b3 and
+Phase1.2-restore-windows-20261122-015453-9a89546ab38e.
+Both owner-match=True and inheritance-disabled=True; each contains three explicit
+FullControl Allow entries (ContainerInherit,ObjectInherit): Owner Rights S-1-3-4,
+LocalSystem S-1-5-18 and Administrators S-1-5-32-544. This differs from the required
+single direct current-user ACE. Microsoft SID definitions:
+https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/understand-security-identifiers.
+No reason is assumed for the two observed directories beyond those actual results;
+preserve both unchanged. The runner had not written binding/records at the failure
+point; no completed preflight receipt or target creation is inferred.
+
+Python documents special Windows mkdir(mode=0o700) handling, granting current
+user/administrators rather than interpreting POSIX mode bits:
+https://docs.python.org/3/library/os.html#os.mkdir.
+This matches the production creation-path/DACL discrepancy; the suppressed
+original PowerShell exception is still unavailable, so no exact original HRESULT
+is claimed. Earlier passing native PS fixture used Directory.CreateDirectory,
+not Python mkdir0700, and therefore did not exercise that production path.
+
+Updated B7.9 Windows privacy creation to use PowerShell operation NEW on a
+nonexistent candidate path, with a small built-in Add-Type Win32 bridge passing
+an explicit protected current-owner-only DirectorySecurity descriptor directly
+to CreateDirectoryW. This atomically refuses existing paths and applies security
+at creation; no Set-Acl call or repair of existing folders. API contract:
+https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createdirectory.
+Linux mkdir0700/checks remain unchanged. Existing B7.8 helper/SQL/migrations and
+all sealed artifacts remain unchanged. No new runtime/database privileges or
+installed dependency. The directory must still pass exactly the original strict
+owner/protected/single-ACE check; no policy relaxation was introduced.
+
+Fixed misleading currentOperation labels for administrator authentication,
+metadata checks, new directory and prior evidence validation. Print candidate
+path BEFORE creation/private checks. New PS trap emits fixed UTF8 protocol with
+exception type/HRESULT/classified Win32 or policy code; Python external() only
+forwards that bounded ASCII subset, dropping arbitrary/possibly secret-bearing
+stderr. No unknown localized output is silently decoded with a replacement codec.
+
+Changed files: restore.py, private-evidence.ps1, Phase12Schema2RestoreTests.py,
+Phase12RestoreAclTests.ps1, guide/Testing/milestone and forward B7.9 review manifest.
+New package SHA2569bb611c67037302cde6b501e45df0686ec0470629006eb21da7f94d4912c0f23;
+old Linux completed run/original snapshot provenance remains historical and must
+not be rewritten or replayed with the new package.
+
+Regressions: Python Windows creation never calls Python mkdir; existing paths
+refuse, diagnostics preserve safe codes and redact arbitrary fixture secrets;
+new native-only Python test calls the REAL Python-to-PS creation/check adapter
+with Unicode/space paths and a newly inherited file. Native PS regression now
+creates with the exact NEW operation, rejects an existing path without changing
+its SDDL and still refuses extra file rights. Native fixtures may clean only
+paths successfully created by that test, never failed/operator/existing paths.
+
+Agent checks: standalone suite17 cases,16 passed and one native-only case skipped
+in0.349s. Focused CTest Phase12Schema2RestoreTests passed1/1 in0.42s (the internal
+native case remains explicitly skipped on Linux). Native Windows tests remain
+pending; no native creation PASS is claimed. Source/guide checksums, Python AST,
+Markdown links/fences and git diff --check passed. No C++/CMake/SQL changes;
+unaffected build/full suite not repeated for this narrowly scoped adapter fix.
+No private evidence/database/ACL access or modifications by the agent.
+
+After owner syncs reviewed source to Windows, run ONLY native offline focused
+checks and report output:
+
+```bash
+ctest --test-dir build-ucrt64 \
+   -R '^Phase12(Schema2RestoreTests|RestoreAclTests)$' --output-on-failure
+```
+
+Do not reuse or repair either failed directory or rerun preflight automatically.
+After native checks pass, request an explicit specific recovery decision for one
+fresh Windows stage01 attempt. Stage02 is not authorized to proceed without
+stage01 PASS and the owner's new stage02 authorization. Later stages, B7.10 and
+Phase1.3 remain gated; both Linux B7.7 exceptions remain unresolved. No commit/
+push/merge/tag. No cleanup of existing data/evidence.

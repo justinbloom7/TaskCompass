@@ -196,10 +196,21 @@ class Restore:
 
    def external(self, command, operation):
       result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
-      require(result.returncode == 0, operation + ': helper failed (exit ' + str(result.returncode) + ')')
+      if result.returncode != 0:
+         diagnostic = ''
+         if operation == 'private ACL validation':
+            messages = re.findall(rb'B79_ACL_ERROR type=[A-Za-z0-9_.]+ hresult=-?[0-9]+ detail=[A-Z0-9_]+', result.stderr)
+            diagnostic = '; ' + (messages[-1].decode('ascii') if messages else 'no structured ACL diagnostic')
+         raise ValueError(operation + ': helper failed (exit ' + str(result.returncode) + ')' + diagnostic)
       return result.stdout
 
    def privacy(self, path, create=False):
+      if self.platform == 'windows' and create:
+         require(not path.exists() and not path.is_symlink(), 'New evidence path already exists; no reuse')
+         self.external(['powershell.exe', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File',
+                        str(ROOT / 'scripts/phase12/b79/private-evidence.ps1'), '-Path', str(path),
+                        '-Operation', 'new'], 'private ACL validation')
+         return
       require(path.is_dir() and not path.is_symlink(), 'Missing/linked private directory')
       if self.platform == 'linux':
          info = path.stat()
@@ -210,7 +221,7 @@ class Restore:
       else:
          self.external(['powershell.exe', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File',
                         str(ROOT / 'scripts/phase12/b79/private-evidence.ps1'), '-Path', str(path),
-                        '-Operation', 'create' if create else 'check'], 'private ACL validation')
+                        '-Operation', 'check'], 'private ACL validation')
 
    def validateSnapshot(self):
       self.currentOperation = 'sealed snapshot verification'
@@ -254,6 +265,7 @@ class Restore:
       require(sorted(actual) == sorted([[name, '0'] for name in expected]), 'Missing/extra/nonzero health rules')
 
    def connect(self, admin=True):
+      self.currentOperation = 'administrator authentication' if admin else 'restore account authentication'
       command = [self.client, '--no-defaults', '--skip-reconnect', '--connect-timeout=5',
                  '--default-character-set=utf8mb4', '--local-infile=0', '--batch', '--raw', '--skip-column-names', '--unbuffered', '--binary-mode']
       password = None
@@ -282,6 +294,7 @@ class Restore:
       return connection
 
    def preflight(self, policy, populated=False):
+      self.currentOperation = 'metadata/privilege/session validation (' + policy + ')'
       raw = self.admin.query('SET @b79_reader_id=' + str(self.readerId) + ';\n' + (HERE / 'preflight.sql').read_text(encoding='utf-8'), 'administrator metadata ' + policy)
       grouped = {}
       for line in raw.decode('utf-8').splitlines():
@@ -350,15 +363,19 @@ class Restore:
       stage = self.args.stage
       if stage == 'preflight':
          require(self.directory is None, 'Stage01 always creates a fresh evidence directory')
+         self.currentOperation = 'administrator authentication and absent-target preflight'
          self.connect()
          metadata = self.preflight('absent')
+         self.currentOperation = 'new private preflight evidence directory'
          self.directory = self.snapshot.parent / ('Phase1.2-restore-' + self.platform + '-' + datetime.datetime.now().strftime('%Y%m%d-%H%M%S') + '-' + uuid.uuid4().hex[:12])
-         self.directory.mkdir(mode=0o700)
+         print('New B7.9 attempt directory (privacy pending): ' + str(self.directory), flush=True)
+         if self.platform == 'linux': self.directory.mkdir(mode=0o700)
          self.privacy(self.directory, create=True)
          print('Private B7.9 evidence directory: ' + str(self.directory), flush=True)
          self.save('binding.json', self.binding())
          self.save('client-version.txt', version)
       else:
+         self.currentOperation = 'existing private run evidence validation'
          require(self.directory is not None and self.directory.parent.resolve() == self.snapshot.parent.resolve()
                  and self.directory.name.startswith('Phase1.2-restore-' + self.platform + '-'), 'Wrong restore evidence directory')
          self.privacy(self.directory)

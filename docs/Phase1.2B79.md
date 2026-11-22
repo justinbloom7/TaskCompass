@@ -263,3 +263,46 @@ A failed stage01 is not automatically retried. Report test results and obtain a
 specific fresh Windows stage01 retry decision before running the live preflight.
 The observed failure occurred before root login/target checks/evidence creation;
 no target-absence PASS or restore run directory may be inferred from it.
+
+
+### Windows fresh-directory creation and diagnostics — 2026-11-22 correction
+
+Native Python handles `mkdir(mode=0o700)` specially on Windows, rather than as
+POSIX permission bits; see [Python mkdir](https://docs.python.org/3/library/os.html#os.mkdir).
+Two failed stage01 directories exhibited protected Owner Rights/SYSTEM/
+Administrators DACLs rather than the single direct current-user ACE required by
+this package. The original helper error was suppressed, so that observation is
+not a recovered exception message. The old native temp test used .NET directory
+creation and did not reproduce the production Python creation path.
+
+Windows now delegates NEW directory creation entirely to the PowerShell adapter.
+Its small in-process Win32 bridge calls
+[CreateDirectoryW](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createdirectory)
+with a protected owner-only security descriptor at creation time. This API
+refuses existing names atomically. No initial inherited/public directory or
+subsequent Set-Acl repair is needed. The check mode remains read-only and the
+strict single-owner rule is unchanged. No failed directory is repaired or reused.
+Linux still uses mkdir0700. The bridge uses standard Windows/PowerShell APIs;
+no installed dependency or database privilege change is required.
+
+The Python adapter prints the candidate path before creation/privacy checks and
+updates its operation label for authentication, metadata and directory creation.
+The helper emits a fixed ASCII/UTF-8 diagnostic containing exception type,
+HRESULT and a classified policy/Win32 code. Python forwards only that bounded
+protocol; localized stderr or echoed arbitrary values are not written to logs.
+
+Native focused tests now exercise BOTH the actual Python-to-PowerShell fresh-
+creation adapter (including Unicode/space paths and inherited file privacy) and
+the PowerShell new-directory function. Existing-directory attempts must refuse
+without changing the directory SDDL. Extra file rights must still reject. Linux
+skips the native Python case explicitly; mocks are not Windows validation.
+Run the focused native test command above after syncing source, and report its
+result before any specifically approved fresh live stage01 attempt.
+
+Preserve these failed attempts untouched:
+
+- Phase1.2-restore-windows-20261122-015425-3b04fc2646b3
+- Phase1.2-restore-windows-20261122-015453-9a89546ab38e
+
+No previous stage01 PASS or evidence binding is inferred from their existence.
+No cleanup, ACL repair, import, provisioning or automatic retry is authorized.

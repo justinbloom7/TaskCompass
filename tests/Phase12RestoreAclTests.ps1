@@ -3,9 +3,14 @@
 $ErrorActionPreference = 'Stop'
 $fixture = Join-Path ([System.IO.Path]::GetTempPath()) ('TaskCompass-B79-ACL-' + [guid]::NewGuid().ToString('N'))
 $helper = Join-Path $PSScriptRoot '..\scripts\phase12\b79\private-evidence.ps1'
-[System.IO.Directory]::CreateDirectory($fixture) | Out-Null
+$created = $false
 try {
-   & $helper -Path $fixture -Operation create
+   & $helper -Path $fixture -Operation new
+   $created = $true
+   $before = (Get-Acl -LiteralPath $fixture).Sddl
+   $rejected = $false
+   try { & $helper -Path $fixture -Operation new } catch { $rejected = $true }
+   if (!$rejected -or (Get-Acl -LiteralPath $fixture).Sddl -ne $before) { throw 'Existing directory reused/modified' }
    $file = Join-Path $fixture 'UTF8 fixture.txt'
    [System.IO.File]::WriteAllText($file, 'offline', (New-Object System.Text.UTF8Encoding($false)))
    & $helper -Path $fixture -Operation check
@@ -19,5 +24,5 @@ try {
    Write-Output 'PASS: new private restore evidence created/checked; extra file access rejected.'
 } finally {
    # Only this uniquely created test fixture; never a snapshot or database.
-   [System.IO.Directory]::Delete($fixture, $true)
+   if ($created -and [System.IO.Directory]::Exists($fixture)) { [System.IO.Directory]::Delete($fixture, $true) }
 }
