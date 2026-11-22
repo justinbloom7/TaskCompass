@@ -8714,3 +8714,76 @@ B7.10 and Phase1.3 remain separately unauthorized. Linux B7.7 protected-task and
 missing restart-comparison exceptions remain unresolved. Documentation-only
 transcript/command/hash consistency review and git diff --check passed; no build/
 test repeat for unchanged code. No agent live operation or commit/push/merge/tag.
+
+
+### 2026-11-21 — Linux B7.9 stage02 provisioning explicitly approved
+
+Owner confirmed stage01 success and approved Linux stage02 only, conditional on
+stage01 evidence confirming absent restore database/account. The reviewed runner
+checks that evidence and freshly checks absence before provisioning; it must stop
+if either target or any conflicting account host exists.
+
+Scope: create only new taskcompass_phase12_restore database and same-named
+account@127.0.0.1 on feledria, with SELECT/INSERT/CREATE on that exact schema,
+using reviewed provisioning SQL and interactive password handling. No existing
+database/account/privileges or sealed backup evidence may be modified. On failure
+or unexpected result stop, preserve actual state/markers/artifacts; no automatic
+retry, repair, reset or drop. Owner-operated command:
+
+```bash
+restoreDirectory='/home/justin/temp/TaskCompassBackups/Phase1.2-restore-linux-20261121-234712-217a2dd622f3'
+scripts/phase12/b79/02-provision.sh --approved --platform linux \
+   --run-dir "$restoreDirectory"
+```
+
+Stage02 execution/results remain pending; no agent live operation performed.
+After owner reports PASS, record actual results and request separate stage03
+restore approval bound to the reviewed exact dump SHA256. Stage03, Windows B7.9,
+B7.10 and Phase1.3 remain unauthorized. Linux B7.7 exceptions remain unresolved.
+Documentation-only authorization update; scope/command consistency and git diff
+--check passed. Unchanged build/tests not rerun. No commit/push/merge/tag.
+
+
+### 2026-11-21 — Owner-reported Linux B7.9 stage02 PASS
+
+Owner ran approved 02-provision.sh --approved --platform linux with the existing
+restoreDirectory. Output revalidated the sealed Linux snapshot and reported
+'PASS: B7.9 provision' with evidence directory
+/home/justin/temp/TaskCompassBackups/Phase1.2-restore-linux-20261121-234712-217a2dd622f3.
+The reviewed stage's success requires fresh absence checks, one-shot reviewed
+provisioning, new restore-account login identity, exact SELECT/INSERT/CREATE
+schema privileges, empty target, normal client completion and private evidence
+seal. These are owner-reported script outcomes, not independent agent access.
+No import or comparison PASS is inferred. Input remains the sealed Linux B7.8
+snapshot ending20261120-204710-103433, original package SHA256
+46dbffef69d1d85eabbc9982a190dbff81466190a075810ab259200d3a4ed4b5,
+and schema2.sql SHA256
+81d6e16b45d141343ddad7dcb8700019f891af30f66ea01588a4e1d61d7ed0b4.
+
+**Approval Requested — Linux B7.9 stage03 exact-file restore only**
+
+Import this exact sealed schema2.sql once into the newly provisioned empty
+taskcompass_phase12_restore on feledria/MariaDB10.5.29, using only
+ taskcompass_phase12_restore@127.0.0.1. Before import revalidate original snapshot
+and run bindings/seals, source hash, target/login/server identity, exact three
+privileges, empty target and absence of other target sessions. Record exclusive
+attempt marker, import completion/native exit0, post-import inventory and private
+metadata/environment/seal. No migrations or Dataset initialization; no source or
+other existing database/account/grant changes, overwritten evidence or cleanup.
+MariaDB DDL/data commits may leave partial state on error. On unexpected failure
+stop and preserve all actual objects/rows/markers/artifacts; no automatic retry,
+reset, repair, resume or DROP. Full data/DDL/health comparison remains stage04,
+not a claim made by stage03 inventory checks. Stage03 approval is pending.
+
+After explicit approval, operator command:
+
+```bash
+scripts/phase12/b79/03-restore.sh --approved --platform linux \
+   --run-dir "$restoreDirectory"
+```
+
+Stage04 complete verification, stage05 reduction, Windows B7.9, B7.10 and Phase1.3
+remain separately unauthorized. Linux B7.7 exceptions remain unresolved.
+Documentation-only result/approval-scope entry; command/hash consistency and git
+ diff --check passed. No code change or build/test repeat, agent live operation,
+commit, push, merge or tag.
