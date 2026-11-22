@@ -16,9 +16,10 @@ by the owner on2026-11-22: the isolated restore matches its sealed source and it
 dedicated account is SELECT-only.
 Windows B7.9 native offline validation and all stages01–05 passed by owner
 report; both isolated restores match their sealed sources and dedicated restore
-accounts are SELECT-only. B7.10 final reconciliation authorization is requested;
-final evidence review/explicit acceptance remain outstanding. Phase 1.2 as a
-whole is NOT accepted. No further live action or cleanup is authorized.**
+accounts are SELECT-only. B7.10 reconciliation review is authorized and its
+proposed dispositions are documented in [the review](../Phase1.2B710.md). Both
+Linux exception decisions and explicit final acceptance remain outstanding.
+Phase 1.2 as a whole is NOT accepted. No further live action or cleanup is authorized.**
 
 Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
 Only this document and the roadmap were changed by Step A. Its designs/SQL were
@@ -10059,3 +10060,116 @@ Documentation-only result/hash/path/scope/current-pointer consistency reviewed;
 Markdown fences and git diff --check passed. Application source unchanged, so
 build/CTest not rerun. No agent live/private-evidence operation, commit, push,
 merge or tag.
+
+
+### 2026-11-22 — B7.10 final reconciliation review authorized; proposals only
+
+Owner confirms B7.9 complete on BOTH platforms and explicitly authorizes final
+reconciliation review of recorded Phase1.2/B7.1–B7.9 evidence only. Evaluate both
+Linux B7.7 exceptions separately using existing GUI/persistence, explicit Linux
+restart-intact observation and complete backup/restore equality. No redundant
+tests by default, exception closure or overall acceptance without owner decision,
+live DB operations, application edits, evidence cleanup, Phase1.3 or Git publication.
+This entry records that authorization and the resulting documentation review;
+B7.10 final acceptance itself remains pending.
+
+Created [Phase1.2B710.md](../Phase1.2B710.md), the consolidated review: per-platform
+acceptance matrix, artifact/host/version/Dataset/hash/run provenance, captured
+row counts, failures and coverage limits, two separate exception analyses and
+specific pending owner decisions. Reviewed original acceptance matrix, B7.10
+rules, dated B7.1–B7.9 outcomes and approvals, isolated native integration results,
+GUI/refinement/checkpoint records and existing persistence/unknown-commit test
+implementations. No private artifacts were accessed or independently verified.
+All live results remain owner-reported; past agent tests are separately identified.
+
+#### Recorded gate reconciliation
+
+| Gate | Linux | Windows | Remaining qualification |
+| --- | --- | --- | --- |
+| B7.1 baseline | Passed | Passed | Original checksums/schema1 UUID/fingerprint/least-privilege matrix verified; old catalog failures followed by corrected verification. |
+| B7.2 populated private schema1 snapshot/review | Passed | Passed | Original seals, paths and exact dump hashes retained. |
+| B7.3 exact schema1 clone restore/compare | Passed | Passed | Populated rehearsal remains retained; no destructive reset. |
+| B7.4a narrow-role migration002 | Passed | Passed | Original rows/history/metadata preserved, new ownership empty, health zero. |
+| B7.4b runtime grants/rollback probe | Passed | Passed | Exact19 rights, nine tables unchanged after probe. |
+| B7.5/B7.6 actual dev upgrade/final privileges | Passed | Passed | Former B7.6 covered by B7.5 stages04/05; legacy preservation established BEFORE GUI testing. Supporting-index alias difference reviewed without migration replay. |
+| B7.7 GUI functional acceptance | Explicit owner acceptance | Explicit owner acceptance plus all five machine checkpoints | Linux protected-row and historical restart comparison remain exceptions, not PASS. |
+| B7.8 populated schema2 capture/private review/seal | Passed | Passed | Correct exact platform dumps and original package provenance retained; failed Windows attempt remains unchanged. |
+| B7.9 isolated exact restore/compare/SELECT-only | All five passed; formally accepted | All five passed; owner confirms both complete | Exact full data/RAW DDL equality with own sealed source, journals/fingerprint,85 columns, health and final grants. |
+| B7.10 | Review proposals prepared | Same review covers both | Two Linux dispositions and final explicit Phase1.2 acceptance pending. |
+
+Supporting coverage: native isolated Stage1B passed on both MariaDB versions,
+including real repository reconnection and transactional/lease scenarios; it was
+not GUI process restart. Existing desktop/model restart and unknown-commit cases
+were offline fake-store tests. Linux full offline suite30/30 passed during B7.9
+preparation; Windows full offline run32 passed/two live integration skips, with
+later targeted native restore/ACL retests after operator-only corrections. No
+manual live network/permission fault injection is invented from these results.
+
+#### E1 — protected original Task change: OPEN, owner decision required
+
+UUID24dd11c3-59df-4e23-ac21-422bcf2a1e3a changed updatedAt/localRevision/objectiveId
+between pristine B7.5 and later B7.7 final export. Saved-export inspection found
+these fields; the owner explains using own records/organization during broader
+GUI tests. The failed checkpoint remains failed/unsealed, never repaired or
+re-labeled unchanged. Machine evidence confirms later preserved state and no
+broader original-row discrepancy under the reviewed checks, but cannot prove
+this particular association's intent or identify its exact command/session.
+
+Proposed disposition: accept a specifically documented owner-test/data-isolation
+variance IF the owner confirms the association is acceptable as intended/current
+tested state and accepts these three field changes. That is an accepted variance,
+not a retroactive untouched-record PASS. Existing machine evidence is insufficient
+for unconditional closure. Backup/restore equality preserves a changed value;
+it does not prove intent or pre-GUI equality. If the owner cannot accept it, first
+identify the precise question and propose only targeted private saved-history
+review under separate scope; no automatic repair, GUI retest, rollback or DB query.
+No new test is required merely because the historical checkpoint failed.
+
+#### E2 — missing historical Linux restart byte comparison: OPEN, decision required
+
+Owner explicitly confirms Linux database remained intact after application
+restart. Existing Linux GUI functional acceptance, offline recreated-window
+persistence/selection/history tests, earlier isolated native repository reconnect
+and later Linux schema2 integrity/complete backup/restore proof support functional
+persistence confidence. Windows's passed restart equality is independent platform
+evidence, not a Linux substitute. None recreates the absent Linux interval's
+before/after all-row bytes.
+
+Proposed disposition: existing evidence is sufficient to recommend accepting
+functional persistence WITH an explicit historical coverage exception, subject
+to owner approval. Do not demand a new restart test by default: it cannot restore
+the missing historical comparison and no new persistence defect is established
+by this record. Residual uncertainty is precisely the unobserved byte-for-byte
+invariance of that original interval. Retain the missing result as NOT CAPTURED,
+not PASS. No closure/waiver or new testing is applied by this recommendation.
+
+#### Other limits and decisions before acceptance
+
+The record supports proposing scope acceptance with those specifically adjudicated
+exceptions and transparent limits. Manual per-case observations are not exhaustively
+reported; live valuable-dev GUI outage/denied-write fault experiments were not
+performed; F5 seamless dead-connection recovery is unproven and close/relaunch
+remains documented fallback. Offline injected commit-uncertainty/native isolated
+lease/rollback evidence does not claim every transport-failure case. No newly
+established unaddressed core Phase1.2 functionality defect was found in this
+record-only review. Do not reopen successful stages or automatically expand tests;
+if stronger coverage is required, specify the exact gap first.
+
+**Owner Decisions Requested — proposed dispositions only, no new execution:**
+
+(1) E1 acceptability/intended association and explicit
+three-field variance; (2) E2 functional-persistence acceptance with retained
+historical comparison gap; (3) after dispositions, explicit overall Phase1.2
+acceptance, including recorded limitations. No final acceptance is requested as
+if these decisions had already been made. If either disposition is declined,
+document only the exact follow-up needed and obtain its separate scope.
+
+Files changed are documentation only: new Phase1.2B710.md, this milestone,
+Roadmap/Testing current pointers. No pinned B7/B7.8/B7.9 guide/source/manifest,
+SQL/migration/schema, application, QA record or sealed evidence changed. Preserve
+original snapshots, restored databases/accounts, failed captures and all receipts.
+Future owner dispositions must be appended without changing historical seals.
+Validation: Markdown references/fences/decision-status consistency and git diff
+--check; application build/CTest not rerun because unchanged source and new tests
+cannot manufacture missing historical evidence. No agent live operation,
+commit/push/merge/tag or Phase1.3 work.

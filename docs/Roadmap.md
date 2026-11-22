@@ -1,12 +1,13 @@
 # Implementation roadmap
 
-Current status (2026-11-21): Phase1.2 Linux and Windows GUI functional acceptance
-and both B7.8 populated schema2 snapshot seals are recorded by owner report.
-Linux preservation/restart evidence exceptions remain unresolved. The
-[B7.9 isolated restore package](Phase1.2B79.md) is being prepared and offline-tested;
-no live restore/provisioning authorization is implied. B7.9 platform validation,
-exception disposition and B7.10 explicit final acceptance remain outstanding.
-No Phase1.3 work. Earlier dated pending statements below remain historical.
+Current status (2026-11-22): Phase1.2 GUI acceptance, both sealed schema2 backups
+and all Linux/Windows B7.9 restore/verification/SELECT-only stages are recorded
+complete by owner report. [B7.10 reconciliation proposals](Phase1.2B710.md) are
+prepared under review-only authorization. Both Linux B7.7 exceptions remain OPEN:
+protected-task changes and missing historical restart comparison. Owner disposition
+and explicit final Phase1.2 acceptance remain pending; no automatic retesting,
+live action, cleanup or Phase1.3 work is authorized. Earlier dated pending
+statements below remain historical.
 
 **Phase 1.1 was accepted by the owner on 2026-11-14.** Linux and Windows validation
 evidence is preserved in the milestone, including confirmed Windows GUI restart

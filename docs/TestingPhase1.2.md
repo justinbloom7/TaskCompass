@@ -2,11 +2,13 @@
 
 # Phase 1.2 source review and isolated validation
 
-**Current pointer (2026-11-20): both platform GUI functional acceptances are
-recorded. Linux preservation/restart exceptions remain unresolved. B7.8 backup
-preparation and its Linux-first approval scope are in [the operator guide](Phase1.2B78.md);
-no live B7.8 operation has been performed by the agent. Earlier pending statements
-below are historical and superseded by the milestone's current status.**
+**Current pointer (2026-11-22): native platform/offline and separately approved
+B7.1–B7.9 results are recorded in the milestone; both B7.8 seals and both B7.9
+exact restores/final SELECT-only grants passed by owner report. GUI functional
+acceptance is recorded for both platforms. See [B7.10 review](Phase1.2B710.md)
+for the separate OPEN Linux preservation/restart exceptions, evidence limits and
+proposed owner dispositions. No new test/live operation or final acceptance is
+authorized by this pointer. Older pending statements below remain historical.**
 
 The [milestone record](milestones/Phase1.2.md) is authoritative for approvals and
 actual results. **Linux Stage 1A and corrected Stage 1B passed (owner-reported);
@@ -469,3 +471,19 @@ workflow through the Windows-hosted fixture branch and negative contract tests
 for missing Linux paths and reused Windows paths. Suite now19 cases; Linux
 passes18 with one native-only case skipped. Native Windows rerun is pending.
 Operator package hash remains9bb611c67037302cde6b501e45df0686ec0470629006eb21da7f94d4912c0f23.
+
+
+## B7.10 reconciliation — recorded evidence only, 2026-11-22
+
+The [final review proposals](Phase1.2B710.md) distinguish owner-observed GUI results,
+operator script PASS criteria, agent offline checks and unobserved private-file
+details. Two Linux B7.7 decisions remain OPEN: specific protected-task changes
+require owner intent/acceptability confirmation; functional restart persistence
+can be recommended with an explicit historical byte-comparison coverage exception.
+A new restart cannot recreate the missed historical interval; no redundant test
+is automatically required. Complete backup/restore equality proves captured-state
+recoverability, not intent or unchanged pre-GUI task ownership. F5 reconnection
+and live GUI fault-injection limits remain recorded, without invented PASS.
+No application/tests changed and no live or offline suites were rerun for this
+documentation-only review. Validate links/fences and preserve all private evidence;
+final dispositions and overall acceptance require explicit owner decisions.
