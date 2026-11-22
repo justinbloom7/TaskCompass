@@ -14,11 +14,11 @@ both platform snapshots are sealed. The earlier incomplete Windows capture remai
 retained separately. Linux B7.9 stages01–05 passed and were formally accepted
 by the owner on2026-11-22: the isolated restore matches its sealed source and its
 dedicated account is SELECT-only.
-Windows B7.9 native offline build/restore/ACL validation passed by owner report;
-Windows stages01–04, including exact restore verification, passed by owner
-report; stage05 SELECT-only privilege reduction approval is requested. B7.10 final evidence review/explicit acceptance remain outstanding.
-Phase 1.2 as a whole is NOT accepted. See the latest dated B7.9 entry for Windows
-prerequisites; no Windows B7.9 live operation is authorized.**
+Windows B7.9 native offline validation and all stages01–05 passed by owner
+report; both isolated restores match their sealed sources and dedicated restore
+accounts are SELECT-only. B7.10 final reconciliation authorization is requested;
+final evidence review/explicit acceptance remain outstanding. Phase 1.2 as a
+whole is NOT accepted. No further live action or cleanup is authorized.**
 
 Step A completed on 2026-11-15. Branch inspected: `jb_20261114_ms1p2`; working tree was clean.
 Only this document and the roadmap were changed by Step A. Its designs/SQL were
@@ -9982,3 +9982,80 @@ restart-comparison exceptions remain open for documented final reconciliation.
 Documentation-only transcript/path/hash/scope/command consistency reviewed and
 git diff --check passed. Unchanged build/tests not rerun. No agent live operation
 or commit/push/merge/tag.
+
+
+### 2026-11-22 — Windows B7.9 stage05 explicitly approved
+
+Owner confirms stage04 PASS and approves Windows stage05 only, using existing
+taskcompass_phase12_restore and evidence directory
+C:/Users/justin/TaskCompassBackups/Phase1.2-restore-windows-20261122-023501-9a92eb740966.
+Revalidate sealed B7.8 source/stages01–04, database/account/server identities,
+existing exact privileges and complete data/DDL/health equality. Execute ONLY
+reviewed restore-account-readonly.sql to revoke INSERT/CREATE on the exact restore
+schema from taskcompass_phase12_restore@127.0.0.1, retaining SELECT. Verify final
+privilege matrix, reconnect with the dedicated restore account and repeat full
+read-only data/DDL/health comparisons. Record new private stage evidence only.
+
+Preserve all database contents, sealed backups and evidence. No other database/
+account changes, repeated imports, cleanup or denied-write probes. On failure
+stop and preserve actual state/artifacts; no automatic retry, repair, reset or
+resume. Owner-operated command:
+
+```bash
+scripts/phase12/b79/05-readonly.sh --approved --platform windows \
+   --run-dir "$restoreDirectory"
+```
+
+Approval is not execution/PASS; no agent live operation occurred. After owner
+reports PASS, record actual Windows stage05 results and request separate B7.10
+final-reconciliation authorization. Do not begin B7.10 or Phase1.3. Both Linux
+B7.7 exceptions remain open, including the separate owner restart observation
+already recorded, without automatic resolution or redundant testing. Documentation-
+only scope/path/command consistency and git diff --check passed; unchanged builds/
+tests not repeated. No commit/push/merge/tag.
+
+
+### 2026-11-22 — Owner-reported Windows stage05 PASS; B7.9 execution complete on both platforms
+
+Owner ran approved 05-readonly.sh --approved --platform windows --run-dir
+"$restoreDirectory" and supplied 'PASS: B7.9 readonly' for
+C:/Users/justin/TaskCompassBackups/Phase1.2-restore-windows-20261122-023501-9a92eb740966.
+Source remained sealed B7.8 Windows snapshot ending20261121-222115-177176,
+actual schema2.sql SHA256
+32165acd3b9ae35c955eb8d4a92747b4c396b811ad70aedca946a774ed21ca0d,
+original package SHA256
+f0203488fd1b019f8a9475d0c4ac41d940700550c658d3723831cf7e225291ad.
+
+Under the reviewed stage05 PASS criteria: source/prior seals, identities, existing
+privileges and full pre-reduction equality/health verified; only reviewed INSERT/
+CREATE revoke executed; exact SELECT-only final rights verified; dedicated reader
+reconnected and complete read-only data/raw DDL/health comparisons repeated;
+new private reports, metadata/environment, attempt/success and readonly.sha256
+sealed. These are owner-reported native results, not independent agent access.
+No denied-write probe, import replay, other-database/account changes or cleanup
+was performed or authorized. Preserve populated restore/account, source backups,
+failed attempts and all prior evidence. All Windows B7.9 stages01–05 are complete;
+Linux B7.9 formal acceptance remains separately recorded. Final Phase1.2 acceptance
+is not inferred from successful restore validation.
+
+**Authorization Requested — B7.10 final reconciliation only**
+
+Proposed next work is source/documentation/evidence review, no live execution:
+review the recorded Linux/Windows B7.1–B7.9 results and original provenance,
+distinguish owner reports from agent tests and unobserved private evidence,
+check remaining acceptance criteria and document explicit dispositions requiring
+owner decisions. Retain failure history and preserved artifacts. Review Linux
+protected Task24dd11c3-59df-4e23-ac21-422bcf2a1e3a modification
+(updatedAt/localRevision/objectiveId) separately from the missing historical
+restart comparison. Weigh existing functional/persistence evidence, owner restart-
+intact confirmation and complete backup/restore equality before proposing any
+additional testing; do not automatically demand a redundant restart test or
+mark either exception resolved without documented rationale/owner disposition.
+Any specific new live inspection/test/repair would require separate authorization.
+Final reconciliation does not itself confer final Phase1.2 acceptance, authorize
+cleanup or begin Phase1.3. B7.10 remains unstarted pending explicit approval.
+
+Documentation-only result/hash/path/scope/current-pointer consistency reviewed;
+Markdown fences and git diff --check passed. Application source unchanged, so
+build/CTest not rerun. No agent live/private-evidence operation, commit, push,
+merge or tag.
