@@ -2,9 +2,10 @@
 
 # Phase 1.3 — Everyday task management
 
-**2026-11-22 status — Plan submitted for owner review. Stage A has not started.**
-All physical schema, rank algorithms and UI choices below are proposals. Explicit
-owner decisions and later validation belong in dated entries in this document.
+**Current status — A–G structure approved. Stage A specification submitted for review.**
+The owner authorized specification and approved the No context and daily UI
+boundaries. The [Stage A record](#stage-a-specification) supersedes earlier
+proposal details where identified. Stage B awaits explicit approval.
 
 ## Baseline and authorization
 
@@ -133,12 +134,10 @@ VARBINARY and binds bytes through QMYSQL. No floating point or locale collation.
   Use a validated text editor for that range and present input errors.
   Default archive/unarchive/delete recomputes effective group membership without
   rewriting task ranks. Merged equal keys retain deterministic UUID order.
-  Proposal for an archived-linked row dragged within No context: retain its link
-  for an order-only move, with a separately previewed clear-assignment action.
-  An explicit drop on the No context destination clears the link. Review this
-  distinction against the approved general “drop there removes assignment” rule.
-  If every drop whose destination is No context must clear the link, use that
-  single rule, including moves within the group, and preview the removal.
+  **Owner decision:** every drop into No context clears the live primary link,
+  including an archived assignment and a move within the effective No context
+  group. Preview the link being removed, naming the archived context when
+  applicable. A same-position drop with such a link is a real command.
 
 ## Grouped movement and accessibility
 
@@ -191,7 +190,7 @@ fresh UTC audit timestamp. Day identity is task plus date, regardless of zone.
 | --- | --- |
 | Worked Today on | Insert one live quick marker per task/date when absent. Duplicate quick activation is a no-op. Reject new work on a closed day and offer Resume. Derived indicator is true if any live progress, session or closure marker exists. |
 | Worked Today off | Void only the live quick marker and add a correction record. Show remaining work in history if it keeps the indicator on. When there is no quick marker, offer explicit history correction. |
-| Record a session | Add a distinct session with optional note and timing/duration. Validate interval and positive supplied duration. Multiple sessions share one date without sharing identity. Propose one date per session, based on the captured date, with manual split deferred. |
+| Record a session | Use a simple Add work entry action in task history, with an optional note. Multiple entries share one date without sharing identity. Timers, editable session intervals, duration and reporting are outside Stage A scope. |
 | Correct a session | Void original and add append-only correction plus optional replacement in one transaction. Preserve original payload and its captured date/zone. Inverse operations revise the void projection and append audit, with stale-state guards. Completion entries are owned by lifecycle commands. |
 | Done for Today | Require active task. Set day closed with closure command ID. Insert a closure progress marker only if no valid work exists. Duplicate closure is a no-op. Keep task active. |
 | Resume Today | Require active task and a closed disposition for captured date. Set open, clear current closure ID, preserve work and closure history. An absent day is implicitly open. |
@@ -203,7 +202,7 @@ closed-today view. During A settle this choice or adopt closed subsections
 within each context with reorder disabled in that projection. Also
 settle whether history corrections may leave a closed day with no live work
 (recommend yes, since closure and progress are distinct), marker/session controls,
-allowed timing inputs and the display of legacy completion history.
+and the display of legacy completion history.
 
 ## Multi-record receipts, undo and concurrency
 
@@ -271,7 +270,7 @@ positive revision conventions. No extra stored code or cross-schema FK.
 | Context | PK id, unique (datasetId,id), FK datasetId → Dataset. Name VARCHAR(1024) with existing nonblank/UTF-8 byte-limit policy. VARBINARY(128) sortKey with rank CHECK. createdAt, updatedAt, optional archivedAt/deletedAt, localRevision as BIGINT with lifecycle time/revision checks. Index (datasetId, deletedAt, sortKey, id). |
 | TaskContext | PK id, datasetId, taskId, contextId, createdAt, updatedAt, optional deletedAt, localRevision. Same-dataset FKs to Task and Context. All live links are primary in schema 3. Persistent generated liveTaskId equals taskId when deletedAt IS NULL and otherwise NULL. UNIQUE (datasetId,liveTaskId) enforces one live link across contexts, including archived assignments; multiple tombstones remain possible. Index (datasetId,contextId,deletedAt,taskId) for impact check. App validates live/reference state and restores old link IDs. |
 | CommandRecord and LocalChange | Add optional contextId with same-dataset Context FK and history/index coverage analogous to 002. Replace target/version CHECKs to allow exactly one root among Task/Pillar/Project/Objective/Context, retaining version-1/2 legality unchanged and allowing Context only in v3. Extend CommandRecord kinds with delete/assign/reorder/work/correct/day-close/day-resume (fixed strings within existing 16 chars) with version/target checks and preserve complete/reopen task-only. Keep operation IDs, outbox FK and history immutable, and add unique (datasetId,id) to CommandRecord for same-dataset work/day audit FKs. |
-| WorkEntry | PK id, datasetId, taskId FK, commandId FK, workDate DATE, timeZone VARCHAR(255) ASCII binary, recordedAt BIGINT, kind (quick/session/closure/completion/correction), optional startedAt/endedAt BIGINT, durationMinutes BIGINT, note MEDIUMTEXT, correctsEntryId, voidedAt BIGINT and voidedByCommandId FK. Unique (datasetId,taskId,id) for a same-task correction FK. CHECK valid kind, positive timestamps and duration, coherent supplied endpoints, correction link only and always for correction, paired void fields and supported note/date bounds. localRevision BIGINT > 0 supports CAS for void projection. Generate liveQuickTaskId conditional on kind=quick and voidedAt IS NULL. UNIQUE (datasetId,workDate,liveQuickTaskId). Index (datasetId,taskId,workDate,recordedAt,id) and (datasetId,workDate,taskId) for current-day queries. App validates kind-specific payload, calendar mapping and same-task audit semantics. |
+| WorkEntry | PK id, datasetId, taskId FK, commandId FK, workDate DATE, timeZone VARCHAR(255) ASCII binary, recordedAt BIGINT, kind (quick/session/closure/completion/correction), optional note MEDIUMTEXT, correctsEntryId, voidedAt BIGINT and voidedByCommandId FK. Unique (datasetId,taskId,id) for a same-task correction FK. CHECK valid kind, positive timestamps, correction link only and always for correction, paired void fields and supported note/date bounds. localRevision BIGINT > 0 supports CAS for void projection. Generate liveQuickTaskId conditional on kind=quick and voidedAt IS NULL. UNIQUE (datasetId,workDate,liveQuickTaskId). Index (datasetId,taskId,workDate,recordedAt,id) for per-task and per-date history access. App validates kind-specific payload, calendar mapping and same-task audit semantics. |
 | TaskDayDisposition | PK (datasetId,taskId,workDate), same-dataset Task FK, workDate DATE, timeZone VARCHAR(255) ASCII binary, dayStatus (open/closed), optional closureCommandId and required lastCommandId with same-dataset CommandRecord FKs, updatedAt and localRevision BIGINT > 0. CHECK closure ID exists iff closed. Index (datasetId,workDate,dayStatus,taskId). App validates audit target/date and lifecycle transition. No occurrence, allocation or schedule column or FK. |
 
 Composite FK supporting indexes that are implicit in MariaDB should be included
@@ -405,8 +404,7 @@ inventories and reports belong to their respective stage.
 1. Confirm signed-64-bit priority, binary dyadic tokens, 128-byte ceiling,
    64-existing-row normalization bound, deterministic legacy seeding and
    rejection when bounded normalization cannot produce the exact position.
-2. Decide whether every No context drop clears archived assignments.
-   Recommend one rule for all drops to No context with removal disclosed.
+2. Apply the owner-approved link removal for every drop into No context.
    Confirm archive/restore merging policy, context-name duplication and
    direct assignment defaults. Confirm which hidden rows qualify as gap
    boundaries and what the collapsed and visually empty targets mean.
@@ -480,7 +478,7 @@ explicitly test native zone resolution. A deployment or restore requires
 verified backup, identity, privileges and documented recovery. A failure
 blocks the affected approval gate until disposition is recorded.
 
-## Approval Requested
+## Original planning approval request (approved)
 
 Approve this plan and authorize **Stage A specification work only**, on
 `jb_20261122_ms1p3`. Review the owner decisions above and either confirm the
@@ -528,3 +526,515 @@ Documentation checks passed using `git diff --check` and a direct
 code fences, and resolvable relative Markdown links. Final
 `git status --short --branch` shows only this untracked file. The two migration
 blob IDs match `git rev-parse HEAD:migrations/mariadb/001_PersistentTaskFoundation.sql HEAD:migrations/mariadb/002_OrganizationalManagement.sql`.
+
+## Stage A specification
+
+The owner approved the A–G structure and authorized Stage A specification
+only. The starting tree was clean on `jb_20261122_ms1p3` at
+`dedd435d8d2ea45dedc61712ece7cdd4436bddf0`. The owner confirmed that every
+drop into No context clears any live assignment and requested a focused daily
+workflow. This entry specifies implementation candidates for Stage B review.
+The original planning record above remains historical.
+
+### Exact rank contract and proof
+
+For precision p, canonical token b denotes integer b divided by 2^p, where
+p is the string length. Canonical strings are exactly `[01]{0,127}1`.
+Distinct dyadics have unique canonical encodings because reducing a power-of-two
+denominator leaves an odd numerator. The first differing byte orders both
+strings numerically, since the sum of any finite suffix is strictly less than
+the weight of that differing bit. If one string is a proper prefix, its
+implied zero suffix is strictly smaller than the other's nonzero suffix.
+UUID byte order completes the order for equal tokens and is never used in the
+arithmetic. Treat 0 and 1 as distinct arithmetic sentinels for missing bounds.
+
+For unequal ordered bounds, pad to a common precision q. If the numerators
+are a and b, use numerator a+b at q+1 bits and strip trailing zero bits
+before checking length. This lies strictly between the bounds. Check
+canonical validity and occupancy of the resulting token in the destination
+band. Equal bounds, occupied output, or a canonical result longer than 128
+bytes require normalization. For arbitrary precision up to 128 and 65 total
+participants, use bounded integer arithmetic supporting up to 136 bits
+(grid products can approach 66 × 2^128). A fixed array of bits or limbs
+suffices, including on UCRT64. Check range before narrowing or indexing.
+
+For normalization remove the moving row, locate the exact gap g, and enumerate
+contiguous windows whose gap falls inside or at an end. Start at size 1,
+require both immediate neighbors when present, and try up to 64 existing
+rows. Among equal lengths try nearest to balanced left/right counts, then
+lowest start index. Ignore windows that do not contain required neighbors.
+Keep the exterior rows fixed; let a,b be their dyadic tokens or sentinels.
+Reject a >= b for that window. For precision p from 1 to 128 let
+`L = floor(a × 2^p) + 1`, `H = ceil(b × 2^p) - 1`, and `M = H - L + 1`.
+These bounds exclude both exterior ranks even when exactly on-grid. Let n
+include the incoming row. Choose the first p with M >= n. For k from 1 to n
+assign grid integer `L + floor(k × (M+1)/(n+1)) - 1` at precision p, then
+canonicalize. Proof of bounds: floor at k=1 is at least 1, floor at k=n
+is at most M, and each successive floor increases by at least one because
+(M+1)/(n+1) >= 1. With M=n the formula returns every available integer,
+from L through H. The outer order is unchanged because every rewritten rank
+is strictly inside the exterior bounds. Preserve the interior neighbors'
+original tuple order with the moving task placed at g. A tied run that
+straddles the window edge may require expanding the window or using a distinct
+exterior interval. Preserve all exterior rows and unrelated priorities.
+Order/adjacency is relative to the specified full band. Exhaustion of all
+eligible windows rejects the move without writes.
+
+| Case | Input | Expected |
+| --- | --- | --- |
+| Prefix and significant zero | `001, 01, 011, 1, 101, 11` | Already in byte and numeric order. `1` precedes its proper extensions. |
+| Canonicality | Empty, `0`, `10`, `01 `, `12`, byte 0x80, 129 bytes | Reject each. `01` and 127 zeros followed by `1` are valid. |
+| Empty, head, middle, tail | 0/1 sentinels, (0,`01`), (`01`,`1`), (`1`,1) | `1`, `001`, `011`, `11` respectively. |
+| Carry and reduction | (`011`,`101`) | Numerators 3+5=8 at precision 4, yielding `1`. |
+| Equal rank | Rows U1,U2 with rank `1`, U1 < U2, insert between | Normalize 2 existing plus 1, exterior 0/1, p=2, L=1, H=3, ranks `01,1,11` in U1/new/U2 order. |
+| Non-grid exterior | a=1/8, b=7/8, n=2 | p=2, L=1, H=3, M=3; k=1→1, k=2→2; `01,1`. |
+| Exact grid endpoints | a=1/4, b=3/4, n=3 | p=3, L=3, H=5, M=3; `011,1,101`. |
+| Spare grid points | At p=4, L=2, H=10, M=9, n=3 | k=1,2,3 → 3,6,8; `0011,011,1`. This is an assignment-vector check independent of minimal-p selection. |
+| Head exhaustion | First rank 127 zeros then `1` | Midpoint from 0 requires 129 bits. With no other row, normalize first and incoming to `01,1` in new/old order. |
+| Bounded refusal | 131 existing equal-ranked rows at `1`, insertion between rows 65 and 66 | All 2,016 eligible windows have equal exterior ranks. Refuse without writes. |
+| Seed | Four existing tasks in UUID order | p=3, canonical `001,01,011,1`. |
+
+For initial seeding choose the smallest p with 2^p > N. n=0 performs zero
+writes. A level-by-level search can compute p without overflowing machine
+counts. Check capacity before any schema change if the reviewed source count
+cannot fit the encoder. Native tests must compare SQL ORDER BY against
+unsigned C++ order, including shorter prefixes, ties and case-sensitive
+canonical UUID bytes.
+
+### Migration 003 SQL specification
+
+This is the exact proposed statement sequence for a verified schema 2.
+Use UTF-8/LF for the eventual reviewed SQL resource. The DDL markers identify
+the runner manifest. The parameterized data and journal statements are runner
+operations, outside the DDL resource. Bind parameters in the order displayed.
+Keep identity, checksums, source row count, locks and backup checks from the
+migration plan above. Never run these statements on the accepted baseline as
+part of Stage A.
+
+#### DDL 01–03
+
+```sql
+CREATE TABLE Context (
+   id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+   datasetId CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+   name VARCHAR(1024) NOT NULL,
+   sortKey VARBINARY(128) NOT NULL,
+   createdAt BIGINT NOT NULL,
+   updatedAt BIGINT NOT NULL,
+   archivedAt BIGINT NULL,
+   deletedAt BIGINT NULL,
+   localRevision BIGINT NOT NULL,
+   UNIQUE KEY contextIdentity (datasetId, id),
+   INDEX contextOrder (datasetId, deletedAt, sortKey, id),
+   CONSTRAINT contextDataset FOREIGN KEY (datasetId) REFERENCES Dataset(id),
+   CONSTRAINT contextIdFormat CHECK (id REGEXP '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'),
+   CONSTRAINT contextName CHECK (OCTET_LENGTH(name) BETWEEN 1 AND 1024 AND CHAR_LENGTH(TRIM(name)) > 0),
+   CONSTRAINT contextRank CHECK (HEX(sortKey) REGEXP '^(30|31)*31$'),
+   CONSTRAINT contextTimes CHECK (createdAt > 0 AND updatedAt >= createdAt
+      AND (archivedAt IS NULL OR archivedAt BETWEEN createdAt AND updatedAt)
+      AND (deletedAt IS NULL OR deletedAt BETWEEN createdAt AND updatedAt)),
+   CONSTRAINT contextRevision CHECK (localRevision > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE TaskContext (
+   id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+   datasetId CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+   taskId CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+   contextId CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+   createdAt BIGINT NOT NULL,
+   updatedAt BIGINT NOT NULL,
+   deletedAt BIGINT NULL,
+   localRevision BIGINT NOT NULL,
+   liveTaskId CHAR(36) CHARACTER SET ascii COLLATE ascii_bin
+      GENERATED ALWAYS AS (CASE WHEN deletedAt IS NULL THEN RTRIM(taskId) ELSE NULL END) PERSISTENT,
+   UNIQUE KEY taskContextOneLive (datasetId, liveTaskId),
+   INDEX taskContextByTask (datasetId, taskId, deletedAt),
+   INDEX taskContextByContext (datasetId, contextId, deletedAt, taskId),
+   CONSTRAINT taskContextTask FOREIGN KEY (datasetId, taskId) REFERENCES Task(datasetId, id),
+   CONSTRAINT taskContextContext FOREIGN KEY (datasetId, contextId) REFERENCES Context(datasetId, id),
+   CONSTRAINT taskContextIdFormat CHECK (id REGEXP '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'),
+   CONSTRAINT taskContextTimes CHECK (createdAt > 0 AND updatedAt >= createdAt
+      AND (deletedAt IS NULL OR deletedAt BETWEEN createdAt AND updatedAt)),
+   CONSTRAINT taskContextRevision CHECK (localRevision > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE Task
+   ADD COLUMN priority BIGINT NOT NULL DEFAULT 5,
+   ADD COLUMN manualOrderKey VARBINARY(128) NULL,
+   ADD CONSTRAINT taskPriority CHECK (priority > 0);
+```
+
+#### Runner backfill after DDL 03
+
+Execute under both leases and inside one DML transaction. Materialize the
+ordered IDs before issuing updates on the same connection. Set only the new
+rank column. Require exactly one affected row per ID and verify that the
+resulting rank-ordered IDs equal the original sequence; compare all original
+task columns, including revision and timestamps, through the preservation
+digest. Record backfill completion in the same DML transaction. Rank bindings
+use bytes. Only one dataset is supported by the existing verifier.
+
+```sql
+SELECT id FROM Task WHERE datasetId = ? ORDER BY CAST(id AS BINARY);
+UPDATE Task SET manualOrderKey = ?
+  WHERE datasetId = ? AND id = ? AND manualOrderKey IS NULL;
+SELECT id, HEX(manualOrderKey) FROM Task
+  WHERE datasetId = ? ORDER BY manualOrderKey, CAST(id AS BINARY);
+```
+
+#### DDL 04–08
+
+```sql
+ALTER TABLE Task
+   MODIFY COLUMN manualOrderKey VARBINARY(128) NOT NULL,
+   ADD CONSTRAINT taskManualRank CHECK (HEX(manualOrderKey) REGEXP '^(30|31)*31$'),
+   ADD INDEX taskBandOrder (datasetId, deletedAt, priority, manualOrderKey, id);
+
+ALTER TABLE CommandRecord
+   ADD COLUMN contextId CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NULL DEFAULT NULL,
+   DROP CONSTRAINT commandTargetV2,
+   DROP CONSTRAINT commandPayloadV2,
+   DROP CONSTRAINT commandKindV2,
+   ADD UNIQUE KEY commandDatasetIdentity (datasetId, id),
+   ADD INDEX commandContextHistory (datasetId, contextId, resultingRevision),
+   ADD CONSTRAINT commandContextV3 FOREIGN KEY (datasetId, contextId) REFERENCES Context(datasetId, id),
+   ADD CONSTRAINT commandTargetV3 CHECK (
+      (taskId IS NOT NULL) + (pillarId IS NOT NULL) + (projectId IS NOT NULL)
+      + (objectiveId IS NOT NULL) + (contextId IS NOT NULL) = 1
+      AND (payloadVersion = 3 OR contextId IS NULL)),
+   ADD CONSTRAINT commandPayloadV3 CHECK (
+      ((payloadVersion = 1 AND taskId IS NOT NULL) OR payloadVersion IN (2,3))
+      AND resultingRevision > 0 AND JSON_VALID(afterSnapshot)
+      AND (beforeSnapshot IS NULL OR JSON_VALID(beforeSnapshot))),
+   ADD CONSTRAINT commandKindV3 CHECK (
+      commandType IN ('create','edit','move','archive','restore','complete','reopen','undo','redo')
+      OR (payloadVersion = 3 AND (
+         (commandType = 'delete' AND contextId IS NOT NULL)
+         OR (commandType = 'reorder' AND (taskId IS NOT NULL OR contextId IS NOT NULL))
+         OR (taskId IS NOT NULL AND commandType IN
+            ('assign','work','correct','day-close','day-resume')))));
+
+ALTER TABLE LocalChange
+   ADD COLUMN contextId CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NULL DEFAULT NULL,
+   DROP CONSTRAINT changeTargetV2,
+   DROP CONSTRAINT changePayloadV2,
+   ADD INDEX changeContext (datasetId, contextId),
+   ADD CONSTRAINT changeContextV3 FOREIGN KEY (datasetId, contextId) REFERENCES Context(datasetId, id),
+   ADD CONSTRAINT changeTargetV3 CHECK (
+      (taskId IS NOT NULL) + (pillarId IS NOT NULL) + (projectId IS NOT NULL)
+      + (objectiveId IS NOT NULL) + (contextId IS NOT NULL) = 1
+      AND (payloadVersion = 3 OR contextId IS NULL)),
+   ADD CONSTRAINT changePayloadV3 CHECK (
+      ((payloadVersion = 1 AND taskId IS NOT NULL) OR payloadVersion IN (2,3))
+      AND localRevision > 0 AND JSON_VALID(immutablePayload));
+
+CREATE TABLE WorkEntry (
+   id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+   datasetId CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+   taskId CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+   commandId CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+   workDate DATE NOT NULL,
+   timeZone VARCHAR(255) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+   recordedAt BIGINT NOT NULL,
+   kind VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+   note MEDIUMTEXT NULL,
+   correctsEntryId CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NULL,
+   voidedAt BIGINT NULL,
+   voidedByCommandId CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NULL,
+   localRevision BIGINT NOT NULL,
+   liveQuickTaskId CHAR(36) CHARACTER SET ascii COLLATE ascii_bin
+      GENERATED ALWAYS AS (CASE WHEN kind = 'quick' AND voidedAt IS NULL THEN RTRIM(taskId) ELSE NULL END) PERSISTENT,
+   UNIQUE KEY workTaskIdentity (datasetId, taskId, id),
+   UNIQUE KEY workOneQuick (datasetId, workDate, liveQuickTaskId),
+   INDEX workHistory (datasetId, taskId, workDate, recordedAt, id),
+   INDEX workByCommand (datasetId, commandId),
+   INDEX workByCorrection (datasetId, taskId, correctsEntryId),
+   INDEX workByVoidCommand (datasetId, voidedByCommandId),
+   CONSTRAINT workTask FOREIGN KEY (datasetId, taskId) REFERENCES Task(datasetId, id),
+   CONSTRAINT workCommand FOREIGN KEY (datasetId, commandId) REFERENCES CommandRecord(datasetId, id),
+   CONSTRAINT workCorrection FOREIGN KEY (datasetId, taskId, correctsEntryId) REFERENCES WorkEntry(datasetId, taskId, id),
+   CONSTRAINT workVoidCommand FOREIGN KEY (datasetId, voidedByCommandId) REFERENCES CommandRecord(datasetId, id),
+   CONSTRAINT workIdFormat CHECK (id REGEXP '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'),
+   CONSTRAINT workDateZone CHECK (YEAR(workDate) BETWEEN 1000 AND 9999
+      AND MONTH(workDate) BETWEEN 1 AND 12 AND DAYOFMONTH(workDate) BETWEEN 1 AND 31
+      AND OCTET_LENGTH(timeZone) > 0),
+   CONSTRAINT workKind CHECK (kind IN ('quick','session','closure','completion','correction')
+      AND ((kind = 'correction') = (correctsEntryId IS NOT NULL))
+      AND (correctsEntryId IS NULL OR correctsEntryId <> id)),
+   CONSTRAINT workNote CHECK (note IS NULL OR OCTET_LENGTH(note) <= 65535),
+   CONSTRAINT workTimes CHECK (recordedAt > 0
+      AND ((voidedAt IS NULL) = (voidedByCommandId IS NULL))
+      AND (voidedAt IS NULL OR (kind <> 'correction' AND voidedAt >= recordedAt))),
+   CONSTRAINT workRevision CHECK (localRevision > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE TaskDayDisposition (
+   datasetId CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+   taskId CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+   workDate DATE NOT NULL,
+   timeZone VARCHAR(255) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+   dayStatus VARCHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+   closureCommandId CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NULL,
+   lastCommandId CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+   updatedAt BIGINT NOT NULL,
+   localRevision BIGINT NOT NULL,
+   PRIMARY KEY (datasetId, taskId, workDate),
+   INDEX dayByStatus (datasetId, workDate, dayStatus, taskId),
+   INDEX dayByClosure (datasetId, closureCommandId),
+   INDEX dayByCommand (datasetId, lastCommandId),
+   CONSTRAINT dayTask FOREIGN KEY (datasetId, taskId) REFERENCES Task(datasetId, id),
+   CONSTRAINT dayClosure FOREIGN KEY (datasetId, closureCommandId) REFERENCES CommandRecord(datasetId, id),
+   CONSTRAINT dayCommand FOREIGN KEY (datasetId, lastCommandId) REFERENCES CommandRecord(datasetId, id),
+   CONSTRAINT dayDateZone CHECK (YEAR(workDate) BETWEEN 1000 AND 9999
+      AND MONTH(workDate) BETWEEN 1 AND 12 AND DAYOFMONTH(workDate) BETWEEN 1 AND 31
+      AND OCTET_LENGTH(timeZone) > 0),
+   CONSTRAINT dayState CHECK (
+      (dayStatus = 'open' AND closureCommandId IS NULL)
+      OR (dayStatus = 'closed' AND closureCommandId IS NOT NULL)),
+   CONSTRAINT dayRevision CHECK (updatedAt > 0 AND localRevision > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+The existing commandLifecycleTargetV2 CHECK remains. No historical columns
+change value. WorkEntry replaces the earlier timing-column proposal.
+Use SQL DATE through ISO text binding and verify an exact round trip; reject
+invalid Gregorian dates and unresolved zones in the application. Require
+strict mode, NO_ZERO_DATE, NO_ZERO_IN_DATE and ALLOW_INVALID_DATES off
+for new schema-3 test/runtime/migration connections, without mutating global
+server settings. Confirm those mode requirements on both platforms before
+adopting the connection gate. Application checks task/root/date agreement
+for audit references and historical correction lineage. For wall-clock
+regression, clamp projection update timestamps to required monotonic
+bounds while preserving raw issue instant in the receipt.
+
+#### Journal and failure manifest
+
+```sql
+INSERT INTO MigrationAttempt
+   (version, checksum, baselineFingerprint, startedAt, completedAt, lastCompletedStep, attemptState)
+   VALUES (3, ?, ?, ?, NULL, 1, 'running');
+UPDATE MigrationAttempt SET lastCompletedStep = ?
+   WHERE version = 3 AND checksum = ? AND attemptState = 'running' AND lastCompletedStep = ?;
+INSERT INTO SchemaMigration (version, checksum, schemaFingerprint, appliedAt)
+   VALUES (3, ?, ?, ?);
+UPDATE MigrationAttempt SET completedAt = ?, attemptState = 'completed'
+   WHERE version = 3 AND checksum = ? AND attemptState = 'running' AND lastCompletedStep = 10;
+UPDATE MigrationAttempt SET attemptState = 'failed'
+   WHERE version = 3 AND checksum = ? AND attemptState = 'running';
+```
+
+Bind step 2/3/4 after DDL 01/02/03, step 5 in the backfill transaction,
+and step 6/7/8/9/10 after DDL 04/05/06/07/08. Acknowledgment requires exactly
+one row. Check full shape and digest before the final transaction, which
+inserts SchemaMigration and commits completion together. If step evidence,
+backfill commit or final metadata commit is uncertain, stop and inspect in a
+fresh connection. A known failure may mark a confirmed running attempt
+failed. Preserve original attempt 2 and compare its complete row. Use the verified schema-2 SchemaMigration.schemaFingerprint as the
+baselineFingerprint. Compute the checksum from the 003 resource bytes. An unapproved target cannot be selected via
+auto-creation or an automatic upgrade chain. Version 3 on a fresh fixture
+requires explicit, reviewed 001→002→003 operations.
+
+Minimum privilege plan for separate approval. Migration requires SELECT
+for all preflight and digest reads, schema-scoped CREATE/ALTER/INDEX/REFERENCES
+for the manifest as supported by the target and INSERT/UPDATE restricted to
+journal/backfill operations as feasible. Grant verification must prove the
+exact approved procedure rather than assume privilege names imply scope.
+Runtime needs SELECT on the verified workspace, INSERT/UPDATE on mutable
+projections, INSERT on CommandRecord and LocalChange, and no schema changes
+or physical deletion. Diagnostics remain read-only. Restore/data import
+requires separate narrowly authorized identities and targets. The existing
+approved schemas/accounts remain outside these requests.
+
+#### Compatibility gates for both accepted server versions
+
+Review the official references for
+[generated columns](https://mariadb.com/docs/server/reference/sql-statements/data-definition/create/generated-columns),
+[ALTER TABLE](https://mariadb.com/docs/server/reference/sql-statements/data-definition/alter/alter-table)
+and [SQL mode](https://mariadb.com/docs/server/server-management/variables-and-modes/sql_mode).
+These document SQL features and mode dependencies. Native execution on the
+specific server builds remains a pending acceptance gate.
+
+Use independent, owner-approved synthetic fixtures on MariaDB 10.5.29
+(CentOS) and 13.0.2 (Windows). Fail closed until host/port, expected
+database/dataset and authenticated identities are fixed in a separate
+execution approval. Run these read-only diagnostics on that approved target
+before and after the approved migration:
+
+```sql
+SELECT VERSION(), DATABASE(), CURRENT_USER(), @@SESSION.sql_mode,
+       @@SESSION.foreign_key_checks, @@SESSION.check_constraint_checks,
+       @@lower_case_table_names, @@SESSION.time_zone;
+SELECT TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT,
+       EXTRA, GENERATION_EXPRESSION, COLLATION_NAME
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() ORDER BY TABLE_NAME, ORDINAL_POSITION;
+SELECT TABLE_NAME, INDEX_NAME, NON_UNIQUE, SEQ_IN_INDEX, COLUMN_NAME
+  FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE() ORDER BY TABLE_NAME, INDEX_NAME, SEQ_IN_INDEX;
+SELECT TABLE_NAME, CONSTRAINT_NAME, COLUMN_NAME, ORDINAL_POSITION,
+       REFERENCED_TABLE_SCHEMA, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
+  FROM information_schema.KEY_COLUMN_USAGE
+  WHERE CONSTRAINT_SCHEMA = DATABASE()
+  ORDER BY TABLE_NAME, CONSTRAINT_NAME, ORDINAL_POSITION;
+```
+
+Require 13 tables after upgrade, exact registered columns, defaults, CHECK
+bodies, generated expressions and all key parts, and no unexpected stored
+code. Verify raw SHOW CREATE output on both builds and normalize only
+approved identifier casing for the version fingerprint. Do not require
+server-rendered DDL bytes to match across different servers. Verify source
+001/002 checksums and preservation of each original projection separately.
+Update the verifier for generated expressions and composite PK order, the
+diagram generator, Mermaid and SVG under later source authorization.
+
+| Probe | Required outcome on both versions |
+| --- | --- |
+| SQL and QMYSQL mode | Exact DDL succeeds on verified schema 2 with enforced FK/CHECKs and approved strict session modes. Named CHECK replacement preserves existing v1/v2 rows and rejects invalid target/version/JSON inputs. Confirm CREATE/ALTER grants and SELECT-only catalog visibility with actual role identities. |
+| Rank and priorities | Exact QByteArray round trip and DATE/decimal binding through QMYSQL. Test `00`, `1010`, `1 `, NUL, oversized rank, 0 and negative priority, signed maximum and overflow. SQL rank order agrees with C++ order. |
+| Generated uniqueness | A second live TaskContext or quick marker for the same key fails; multiple tombstones or voided entries succeed. Replacement and undo restore uniqueness within one transaction. A different date and a different task remain independent. |
+| FK and calendar | Reject wrong dataset and wrong-task correction links, nonexistent audit references and inconsistent closure states. Reject zero date, zero month/day, February 30 and a non-leap February 29. Round-trip leap day and local ISO date with different server/session time zones. |
+| Fault and preservation | Test empty and populated schema-2 fixtures. Interrupt between each of journal steps 1–10 and after issuing DDL but before its acknowledgment. Probe backfill rollback, failed/unknown final commit, fresh verification and refusal to replay a partial attempt. Compare exact old projections and protected rows. |
+| Cross-platform tooling | Exercise native Qt SQL drivers and server identifier casing. Validate LF migration resource checksum, CRLF tool output, UTF-8 notes and Windows paths with spaces. Test separate native backup/restore/restart on approved targets and retain exact commands and artifacts. |
+
+### Receipt and concurrency contract for Stage B review
+
+A version-3 operation uses one root and one operation ID. Store audit and
+outbox within the same InnoDB transaction. During the schema-3 cutover,
+write new commands in v3 and retain v1/v2 decoding and serialized bytes.
+This table defines the logical wire fields. JSON uses explicit null,
+canonical UUIDs, decimal strings for all int64 fields, ISO date strings
+and ASCII rank strings. Keys and patches are emitted in stable order.
+
+| Section | Required content |
+| --- | --- |
+| Header | Version, dataset ID, command ID, operation ID, root typed key, kind, UTC issue and recorded instants, resulting root revision, optional prior compensates/reapplies command IDs. The existing typed SQL root columns and revision agree with the payload. |
+| Intent | For moves, source/destination effective group (No context tagged), source/resulting priority, old/new live assignment identity and rank, selected visible anchors, preview disposition for a removed link, view eligibility policy, and placement kind. For days/work, original date, zone and capture instant, affected marker/disposition/correction IDs, intent and lifecycle expectations. |
+| Patches | A unique typed key for each mutable projection, before/after revision or absence, field mask, and exact logical before/after values. Keys are entity UUIDs for Task, Context, TaskContext and WorkEntry; the disposition key is task/date scoped by the dataset. Include unchanged root logical values when a child-only operation advances the root. Exclude derived generated columns. |
+| Guards | Before/after typed row and revision witnesses, positive/negative membership predicates and ordered topology slices. Capture context visibility/revision, link identity/revision, bands, real and visible anchors, normalization participants and exterior boundaries. Record absence of link, marker or disposition where correctness depends on it. |
+| Storage | CommandRecord beforeSnapshot stores before-side values/guards and afterSnapshot the full canonical envelope. LocalChange carries the same complete envelope. The adapter rejects mismatch between envelope and SQL metadata. Compensation and reapplication have their own receipts. |
+
+A topology slice identifies a context/priority partition, the ordered IDs and
+rank tuples in the guarded interval, and the immediate exterior witnesses.
+Mark a missing end explicitly as head/tail, or both for an empty band.
+Record source and destination witnesses with the moving row excluded when
+resolving anchors, and store the before and after projected slices including
+participants for compensation. Overlapping slices are evaluated as one
+consistent simulated plan. Validation includes membership projected through
+live links and context visibility. An insertion in a guarded gap, a phantom
+in a formerly empty partition, and a changed context/link revision invalidate
+the witness. Changes outside the guarded regions do not conflict solely
+because they happened within the workspace.
+
+1. A view creates a stable-ID intent from one coherent workspace generation.
+   Capture source, visible anchor IDs/revisions and full-band gap witnesses.
+   Recompute preview after view-mode changes. Dropping into No context
+   explicitly previews clearing any assignment, including archived links.
+   Pointer and keyboard paths use the same preparation path.
+2. Acquire the existing database mutation lease before starting a transaction.
+   Reload committed workspace state, revalidate the view predicate against
+   fresh state, remove the moving row conceptually and resolve anchors.
+   Check the exact previewed neighbor/priority and link removal. Reject stale
+   observations rather than moving to a newly inferred gap. Compare context
+   deletion's exact confirmed impact set, including link revisions.
+3. Prepare and validate all patches as one simulated state. Enforce positive
+   revisions and checked increment with no overflow. CAS-update the root,
+   insert the immutable CommandRecord, then write child patches in FK-safe
+   order. Clear/tombstone a previous live link or void a live quick marker
+   before installing its replacement. Insert corrections after the referred
+   row exists. For multi-task normalization use deterministic key order and
+   retain untouched priorities. Insert LocalChange last and commit once.
+4. Undo/redo uses the expected receipt side, normalizes no positions, and
+   rechecks the same topology and predicate rules. Compare exact masked
+   values and effective membership. Infer expected revisions from the
+   original side plus a **verified** session revision chain per key. A chain
+   edge is accepted only when the committed receipt's actual before revision
+   equals the prior known revision and logical preconditions match. On any
+   discontinuity invalidate older dependent history for that key. A later
+   successful command that merely observed an external edit must not mask
+   it. Validate the hypothetical result against the opposite side's logical
+   placement, using new revisions for changed rows. Restore order and links
+   atomically, reporting a conflict instead of relocating a stale task.
+5. Undo/redo of day/work commands preserves original date and zone.
+   Append correction audit for each void or reactivation and keep immutable
+   work payloads. A replacement session is another identified row. On inverse
+   operations reapply void projections by CAS and preserve correction rows.
+   For day redo use the original logical closure identity as provenance and
+   the new command as lastCommandId. Compensation restores logical fields
+   exactly, with advanced revision, timestamps and audit stamps. The visible
+   current day changes only when it matches the affected date or task lifecycle
+   changed. Session history moves after a confirmed commit only.
+6. Two supported writers serialize under the lease. A second command
+   against an old gap, marker or closure fails its guard or returns a
+   verified idempotent no-op for the same logical intent, never duplicate
+   write. On lost commit acknowledgment clear tentative session state,
+   reconnect and check operation ID against both CommandRecord and LocalChange.
+   Report observed outcome, refresh authoritative state and require fresh
+   intent before retry. Never infer rollback from timeout or connection loss.
+
+Required receipt fixtures include a cross-context move with normalization
+and exact inverse; drop into No context while already effectively unassigned
+with an archived FK; empty-gap races; a newly completed or archived anchor;
+undo with an inserted intervening row; a local revision chain with an
+external edit in its middle; correction redo after a different quick marker
+asserts uniqueness; and commit loss with the operation observed or absent
+after reconnect. Fault injection after each CAS/audit/outbox boundary must
+leave the entire pre-state and session cursor intact for known rollback.
+
+### Daily presentation boundary and remaining product decisions
+
+The Stage A design retains Worked Today and Completed controls, Done for Today / Resume
+Today actions and a simple task history with Add work entry and Correct entry.
+An additional entry has the captured date and optional note. A correction
+voids an entry and optionally replaces it on that same date. Correcting a
+completion event goes through lifecycle commands. Timers, session intervals,
+duration, date editing, reporting and schedule integration are deferred.
+A checked indicator with remaining sessions after quick-marker removal points
+to history. A closed day requires Resume for adding new work. The existing
+permission rules for archived organizational branches keep applying.
+
+| Decision for owner review | Recommended default and reason |
+| --- | --- |
+| Rank storage and local bound | Adopt the proven dyadic scheme, signed int64 priority, 128 bytes and at most 64 existing rows per repair. Rare dense failures are explicit. Seed old rows by UUID to avoid a giant initial collision set. |
+| Archived and hidden targets | Preserve keys on archive/restore and use UUID ties. Include all non-tombstoned tasks in a full effective band, use exact nearest hidden neighbors, and append in the retained priority band for visually empty groups. Collapsed headers mean end. This keeps existing ranks meaningful. Link removal on every No context drop is already approved. |
+| Context naming and direct moves | Allow duplicate display names with stable-ID disambiguation in pickers and preview. Append direct context/priority changes to their new band because these commands supply no anchor. |
+| Calendar setting | Persist a device-initialized per-user IANA zone, verify Qt mappings on native builds, require a valid explicit choice if unresolved, and confirm original intent for dialogs crossing midnight or changing zones. Day state identities stay task/date. |
+| Closed-day presentation and correction | Default to canonical order with a closed badge and optional closed-only view. Reopen preserves day closure; Resume removes it. Permit correcting prior work even if the day is closed, including removing its last live work marker. Disposition and work answer different questions. |
+| Legacy completions | Retain and display historical complete/reopen events from CommandRecord when requested, with legacy timestamps and no fabricated local dates. New lifecycle changes use WorkEntry completion events. |
+| Receipt root and mode policy | Advance the Task revision/timestamp on child commands to preserve compatibility with the existing audit root model. Require checked session date modes for schema 3, with no global setting changes. Confirm the strategy after isolated native compatibility evidence. |
+| Native target and privileges | Use separate fresh fixtures and a separate restore target per server. Exact identities, grant commands, backup procedure and write execution remain later approvals. |
+
+### 2026-11-22 Stage A evidence and limitations
+
+- `git status --short --branch` and `git rev-parse HEAD` verified a clean
+  starting tree at the baseline above. `git hash-object migrations/mariadb/*.sql`
+  matched the previously recorded 001 and 002 blob IDs.
+- An offline `python3 -` check used standard-library Fraction arithmetic.
+  It confirmed canonical byte order for all 63 interior 1/64 grid points
+  and verified 2,080 midpoint pairs over all 65 grid endpoints. It compared
+  16,640 normalization cases (same bound pairs, n=1 through 8, precision
+  limit 6) with explicitly enumerated interior points, including minimal
+  precision and exact-fill endpoint assertions. Worked vectors covered
+  non-grid and exact-grid endpoints, 128/129-bit exhaustion, and all 2,016
+  eligible windows in the deterministic refusal fixture.
+- A static check found eight DDL statements in the proposed order (four
+  CREATE and four ALTER). This establishes statement inventory only.
+  The migration SQL, QMYSQL binding, timezone mapping and compatibility
+  gate remain unexecuted on both server versions.
+- `git diff --check` and a direct `python3 -` UTF-8, LF, code-fence and
+  relative-link check passed. Only this milestone changed. No application
+  build or CTest was run for documentation-only work.
+
+### Approval Requested — Stage A exit and Stage B entry
+
+Approve the Stage A specification and record the recommended defaults or
+your changes to the remaining product decisions. Separately authorize
+Stage B source work on `jb_20261122_ms1p3`. Stage B would add the reviewed
+rank primitive, context/assignment commands, schema-3 migration source,
+receipt infrastructure, schema diagrams and focused offline tests. Changes
+are reviewable in Git and recoverable by ordinary source edits. Verify
+against the rank vectors, context and receipt fixtures, immutable migration
+checksums, and updated diagrams before the Stage B exit review. Database
+execution, fixture provisioning, grants, restore and subsequent stages
+remain separate checkpoints. The MariaDB compatibility findings must be
+recorded from separately approved isolated runs before relying on 003
+for a deployment.
