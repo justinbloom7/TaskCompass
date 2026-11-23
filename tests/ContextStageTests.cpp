@@ -326,6 +326,61 @@ void priorityTests() {
    rejects([&] { f.commands.execute(TaskPriorityCommand{task.id, revision(task), 1}); });
 }
 
+void priorityArchiveAndRedoTests() {
+   Fixture f;
+   const auto moving = f.capture("Archived assignment");
+   const auto tail = f.capture("No context tail");
+   const auto outside = f.capture("Other context");
+   const auto joining = f.capture("Concurrent append");
+   const auto archived = f.create("Archive");
+   const auto active = f.create("Active");
+   const auto row = [&](const Task &task) { return std::get<Task>(*findEntity(f.repo.snapshot, entityKey(task))); };
+   f.assign(moving.id, archived.id);
+   f.assign(outside.id, active.id);
+   f.commands.execute(TaskPriorityCommand{outside.id, row(outside).localRevision, 1});
+   f.commands.execute(TaskPriorityCommand{tail.id, row(tail).localRevision, 1});
+   f.commands.execute(TaskPriorityCommand{joining.id, row(joining).localRevision, 7});
+   f.context(ContextOperation::ARCHIVE, archived.id);
+
+   const auto link = *primaryContext(f.repo.snapshot, moving.id);
+   const auto otherContextTask = row(outside);
+   const auto original = row(moving);
+   check(!effectiveContext(f.repo.snapshot, moving.id));
+   const auto changed = f.commands.execute(TaskPriorityCommand{moving.id, original.localRevision, 1});
+   const auto &after = std::get<Task>(changed.after);
+   check(after.manualOrderKey > row(tail).manualOrderKey);
+   check(changed.patches.empty() && row(outside) == otherContextTask);
+   check(*primaryContext(f.repo.snapshot, moving.id) == link);
+
+   f.commands.undo();
+   check(row(moving).priority == original.priority && row(moving).manualOrderKey == original.manualOrderKey);
+   check(*primaryContext(f.repo.snapshot, moving.id) == link);
+   CommandService concurrent(f.repo, id(1), [&] { return ++f.now; }, [&] { return id(++f.nextId); });
+   concurrent.execute(TaskPriorityCommand{joining.id, row(joining).localRevision, 1});
+   const auto beforeRedo = f.repo.snapshot;
+   const auto count = f.repo.receipts.size();
+   rejects([&] { f.commands.redo(); });
+   check(f.repo.snapshot == beforeRedo && f.commands.canRedo());
+   check(f.repo.receipts.size() == count && f.repo.changes.size() == count);
+}
+
+void priorityBoundedRefusalTests() {
+   Fixture f;
+   const auto moving = f.capture("Move into exhausted band");
+   for (std::size_t i = 0; i <= MAX_RANK_WINDOW; ++i) {
+      auto task = moving;
+      task.id = id(1000 + static_cast<int>(i));
+      task.priority = 1;
+      task.manualOrderKey.assign(MAX_RANK_BYTES, '1');
+      f.repo.snapshot.tasks.push_back(task);
+   }
+   const auto before = f.repo.snapshot;
+   const auto count = f.repo.receipts.size();
+   rejects([&] { f.commands.execute(TaskPriorityCommand{moving.id, moving.localRevision, 1}); });
+   check(f.repo.snapshot == before && f.repo.receipts.size() == count && f.repo.changes.size() == count);
+   check(f.commands.undoDescription() == "Create task");
+}
+
 void seededPriorityBandTests() {
    Fixture f;
    const auto one = f.capture("Zulu");
@@ -454,6 +509,8 @@ int main(int argc, char **argv) {
       deleteCompensationConflictTests();
       normalizedUndoTests();
       priorityTests();
+      priorityArchiveAndRedoTests();
+      priorityBoundedRefusalTests();
       seededPriorityBandTests();
       modelAndCodecTests(application.arguments());
       std::cout << "PASS: fractional ranks, context transactions, inverse receipts, schema-3 preview and grouping.\n";

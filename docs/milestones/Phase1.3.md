@@ -1729,3 +1729,111 @@ tree contains the 17 files listed in the Stage C inventory.
 source and database-free evidence. Stage D requires separate authorization.
 Any separately requested database execution still requires an approved
 isolated target, exact scope, verification and recovery plan.
+
+### 2026-11-23 Stage C native Windows gate preparation
+
+Reviewed clean `jb_20261122_ms1p3` at pushed Stage C revision
+`314ba7f3bbdc5f272862b09958fc8ed3ced57e6d`. The review found no production
+correction necessary. The priority editor validates before submitting and
+again after acceptance. The application checks the task revision,
+positive range and ownership, keeps the primary link, and uses the default
+effective group to place the task after the destination tail. Context and
+band guards capture the order affected by the edit. Normalization touches
+only ranks in a bounded window and keeps other task priorities unchanged.
+The adapter writes the root and participants with the same receipt and
+outbox in one transaction. Undo/redo verifies the expected topology and
+revisions before restoring exact priority and rank keys. The grouped
+comparison retains context precedence, and the priority-column alternate
+sort compares signed integers without writing the ordering.
+
+Added two regression cases to `tests/ContextStageTests.cpp`:
+
+- A priority edit on a task with an archived context link appends within its
+  effective No context band, preserves the archived link, and leaves the
+  matching priority in an active context alone. After undo, another
+  session appends to the destination, and redo refuses without changing
+  tasks, audit, outbox or redo availability.
+- A destination with 65 copies of the maximal 128-byte rank exhausts every
+  allowed tail-normalization window. The command rejects with the whole
+  snapshot, audit/outbox and history position preserved.
+
+#### Native Windows operator sequence
+
+Once the new files and the review regressions are present in a clean
+Windows checkout, run from native MSYS2 UCRT64:
+
+```bash
+bash scripts/phase13/03-build.sh
+bash scripts/phase13/04-test.sh
+```
+
+03 creates a fresh ignored run directory under `build-ucrt64-stage-c/`,
+builds with Ninja, writes configure/build logs, records the Git revision
+and writes the offline environment report. 04 uses that successful build,
+requires the same clean revision, and writes another report, the
+CTest inventory and test log in the same evidence directory. Both print
+the directory. Share the two stage summaries and the reported environment
+snapshot paths. If a stage fails, preserve its printed diagnostics and logs.
+
+The scripts reuse the unchanged Stage B Windows preflight and environment
+report. They use an independent build selector. A failed stage 03
+invalidates that selector. Stage 04 admits the reviewed 33-suite native
+offline inventory only. It refuses live integration names and executables,
+live/database labels, unknown or duplicate entries, missing required
+entries and missing commands before starting execution. The legacy
+live-test CMake opt-ins remain intentionally set ON during configure to
+exercise the registration guard. No database setup, credentials or
+database service are needed.
+
+Changed files are `tests/ContextStageTests.cpp`,
+`scripts/phase13/03-build.sh`, `scripts/phase13/04-test.sh`,
+`scripts/phase13/check-stage-c-inventory.py`, and this milestone. Stage B
+scripts, production code, migrations, schema manifests and earlier accepted
+evidence remain untouched.
+
+#### Agent validation and remaining approval
+
+Syntax checks used `bash -n` on both new shell entry points. A temporary
+mock fixture explicitly selected Windows/UCRT64, Linux and the wrong
+Windows shell. It used a path with spaces and UTF-8, Windows executable
+path syntax, and inherited MSYS2 conversion settings and credential
+placeholders. All 13 dispatch/refusal cases passed, covering successful
+build and test selection, a stale revision, a failed build with no
+reusable selector, a live executable registered under an alias, a live
+label, unknown and missing suites, and a missing command. Its only mock
+test execution was the reviewed inventory. Native behavior is pending
+owner execution.
+
+Linux commands:
+
+```bash
+cmake -S . -B /tmp/taskcompass-stagec-review \
+   -DTASKCOMPASS_ENABLE_DB_TESTS=ON -DTASKCOMPASS_ENABLE_PHASE12_DB_TESTS=ON
+cmake --build /tmp/taskcompass-stagec-review -j 8
+scripts/environment-report.sh --build-dir /tmp/taskcompass-stagec-review \
+   --output-dir /tmp/taskcompass-stagec-review-evidence --context stage-c-linux-acceptance-review
+ctest --test-dir /tmp/taskcompass-stagec-review --show-only=json-v1
+ctest --test-dir /tmp/taskcompass-stagec-review \
+   -R 'ContextStageTests|OrganizationDesktopTests|WorkspaceCodecTests' --output-on-failure
+ctest --test-dir /tmp/taskcompass-stagec-review --output-on-failure -j 6
+git diff --check
+```
+
+The Linux CTest inventory contains 31 entries and neither integration
+binary. CMake reported both legacy options unused. The offline report is
+`/tmp/taskcompass-stagec-review-evidence/environment-2026-11-23T183925.793058_0000-d1e74019.json`.
+No migration, database connection, provisioning, database-backed test
+or Stage D work was performed.
+
+CentOS build passed with GCC 11.5.0 and Qt 6.10.3. Focused CTest passed
+3/3 in 1.70 seconds. Full database-free CTest passed **31/31 in 79.08
+seconds**, with zero failures or skips. Build log:
+`/tmp/taskcompass-stagec-review-build.log`. Inventory and test log:
+`/tmp/taskcompass-stagec-review-evidence/`. Script/document UTF-8 and
+LF checks, Markdown link/fence checks, the preservation diff and
+`git diff --check` passed.
+
+**Approval Requested — Stage C Windows validation procedure.** Review the
+regressions and numbered scripts for the native Windows offline gate.
+Native evidence and Stage C acceptance are pending. Stage D and all
+database execution remain separate approvals.
