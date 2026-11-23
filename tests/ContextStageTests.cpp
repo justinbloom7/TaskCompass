@@ -12,6 +12,7 @@
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QMimeData>
 #include <QProcess>
 #include <QProcessEnvironment>
 #include <iostream>
@@ -411,6 +412,136 @@ void seededPriorityBandTests() {
    assertOrder();
 }
 
+void taskMoveTests() {
+   Fixture f;
+   const auto moving = f.capture("Moving");
+   const auto hidden = f.capture("Completed hidden");
+   const auto early = f.capture("Early");
+   const auto late = f.capture("Late");
+   const auto from = f.create("Source");
+   const auto to = f.create("Destination");
+   const auto empty = f.create("Empty");
+   const auto row = [&](const Task &task) { return std::get<Task>(*findEntity(f.repo.snapshot, entityKey(task))); };
+   f.assign(moving.id, from.id);
+   f.assign(hidden.id, to.id);
+   f.assign(early.id, to.id);
+   f.assign(late.id, to.id);
+   f.commands.execute(TaskPriorityCommand{hidden.id, row(hidden).localRevision, 2});
+   f.commands.execute(TaskPriorityCommand{early.id, row(early).localRevision, 2});
+   f.commands.execute(TaskPriorityCommand{late.id, row(late).localRevision, 7});
+   f.commands.execute(TaskCommand{TaskOperation::COMPLETE, hidden.id, row(hidden).localRevision, {}, {}});
+   const auto sourceLink = *primaryContext(f.repo.snapshot, moving.id);
+   const auto original = f.repo.snapshot;
+
+   const auto before = previewTaskMove(original, {moving.id, to.id, TaskMovePosition::BEFORE, early.id});
+   check(before.priority == 2 && before.bandPredecessor->key.id == hidden.id && before.visibleAnchor->key.id == early.id);
+   check(previewTaskMove(original, {moving.id, to.id, TaskMovePosition::GROUP_END, {}}).priority == 7);
+   const auto emptyMove = previewTaskMove(original, {moving.id, empty.id, TaskMovePosition::GROUP_END, {}});
+   check(emptyMove.priority == 5 && !emptyMove.visibleAnchor);
+   rejects([&] { previewTaskMove(original, {moving.id, to.id, TaskMovePosition::AFTER, early.id}); });
+   check(original == f.repo.snapshot);
+   const auto count = f.repo.receipts.size();
+   f.repo.failAfter = 2;
+   rejects([&] { f.commands.execute(before); });
+   f.repo.failAfter = -1;
+   check(f.repo.snapshot == original && f.repo.receipts.size() == count && f.repo.changes.size() == count);
+
+   f.commands.execute(before);
+   check(row(moving).priority == 2 && row(hidden).manualOrderKey < row(moving).manualOrderKey
+         && row(moving).manualOrderKey < row(early).manualOrderKey);
+   check(primaryContext(f.repo.snapshot, moving.id)->contextId == to.id && row(late).priority == 7);
+   const auto movedReceipt = f.repo.receipts.back();
+   const auto json = QJsonDocument::fromJson(encodeReceiptSnapshot(movedReceipt, false, 3).toUtf8()).object();
+   check(json["movePreview"].toObject()["priority"].toString() == "2");
+   check(json["movePreview"].toObject()["bandPredecessor"].toObject()["id"].toString().toStdString() == hidden.id);
+   f.commands.undo();
+   check(primaryContext(f.repo.snapshot, moving.id)->id == sourceLink.id && row(moving).priority == 5);
+   f.commands.redo();
+   check(row(moving).manualOrderKey == std::get<Task>(movedReceipt.after).manualOrderKey);
+   f.commands.undo();
+   rejects([&] { f.commands.execute(emptyMove); }); // Preview predates compensation revisions.
+   f.commands.execute(previewTaskMove(f.repo.snapshot, {moving.id, empty.id, TaskMovePosition::GROUP_END, {}}));
+   check(row(moving).priority == 5 && primaryContext(f.repo.snapshot, moving.id)->contextId == empty.id);
+
+   f.context(ContextOperation::ARCHIVE, empty.id);
+   const auto clear = previewTaskMove(f.repo.snapshot, {moving.id, {}, TaskMovePosition::GROUP_END, {}});
+   check(!clear.noChange && clear.clearedContextId == empty.id && clear.sourceContextId.empty());
+   f.commands.execute(clear);
+   check(!primaryContext(f.repo.snapshot, moving.id));
+   f.commands.undo();
+   check(primaryContext(f.repo.snapshot, moving.id)->contextId == empty.id && !effectiveContext(f.repo.snapshot, moving.id));
+}
+
+void taskMoveNormalizationTests() {
+   Fixture f;
+   const auto first = f.capture("First");
+   const auto second = f.capture("Second");
+   const auto third = f.capture("Third");
+   const auto equal = previewTaskMove(f.repo.snapshot, {second.id, {}, TaskMovePosition::BEFORE, third.id});
+   const auto count = f.repo.receipts.size();
+   check(equal.noChange);
+   f.commands.execute(equal);
+   check(f.repo.receipts.size() == count);
+   const auto stale = previewTaskMove(f.repo.snapshot, {third.id, {}, TaskMovePosition::BEFORE, first.id});
+   ++f.repo.snapshot.tasks.front().localRevision;
+   rejects([&] { f.commands.execute(stale); });
+   check(f.repo.receipts.size() == count);
+   f.commands.execute(previewTaskMove(f.repo.snapshot, {third.id, {}, TaskMovePosition::BEFORE, first.id}));
+   const auto &move = f.repo.receipts.back();
+   check(move.changedFields == RANK && move.patches.empty());
+   check(f.repo.snapshot.tasks.back().manualOrderKey < f.repo.snapshot.tasks.front().manualOrderKey);
+
+   const auto target = f.create("Target");
+   f.assign(second.id, target.id);
+   auto &tail = f.repo.snapshot.tasks.at(1);
+   tail.manualOrderKey.assign(MAX_RANK_BYTES, '1');
+   ++tail.localRevision;
+   const auto baseline = f.repo.snapshot;
+   f.commands.execute(previewTaskMove(baseline, {third.id, target.id, TaskMovePosition::GROUP_END, {}}));
+   check(f.repo.receipts.back().patches.size() == 2);
+   check(f.repo.snapshot.tasks.at(1).manualOrderKey == "01" && f.repo.snapshot.tasks.at(2).manualOrderKey == "1");
+   f.commands.undo();
+   check(f.repo.snapshot.tasks.at(1).manualOrderKey == baseline.tasks.at(1).manualOrderKey);
+   check(f.repo.snapshot.tasks.at(2).manualOrderKey == baseline.tasks.at(2).manualOrderKey);
+   check(!primaryContext(f.repo.snapshot, third.id));
+   f.commands.redo();
+   check(primaryContext(f.repo.snapshot, third.id)->contextId == target.id);
+}
+
+void taskMoveMimeTests() {
+   Fixture f;
+   const auto moving = f.capture("Moving");
+   const auto one = f.capture("One");
+   const auto two = f.capture("Two");
+   f.commands.execute(TaskPriorityCommand{one.id, one.localRevision, 1});
+   f.commands.execute(TaskPriorityCommand{two.id, two.localRevision, 2});
+   PersistentTaskModel model;
+   PersistentTaskFilter proxy;
+   proxy.setSourceModel(&model);
+   model.replaceWorkspace(f.repo.snapshot);
+   proxy.sort(PersistentTaskModel::CONTEXT_COLUMN);
+   int submissions = 0;
+   proxy.setTaskMoveCallbacks([&](const auto &target) -> std::optional<TaskMovePreview> {
+      try { return previewTaskMove(f.repo.snapshot, target); }
+      catch (const std::exception &) { return {}; }
+   }, [&](const auto &preview) { ++submissions; f.commands.execute(preview); });
+   check(!proxy.mimeData({proxy.index(2, 0)}));
+   proxy.setTaskOrderingEnabled(true);
+   std::unique_ptr<QMimeData> mime(proxy.mimeData({proxy.index(2, 0)}));
+   check(mime && proxy.canDropMimeData(mime.get(), Qt::MoveAction, -1, 0, proxy.index(0, 0)));
+   const auto between = proxy.previewTableDrop(mime.get(), proxy.index(0, 0), true);
+   check(between && between->priority == 2 && between->visibleAnchor->key.id == two.id);
+   check(!proxy.previewTableDrop(mime.get(), proxy.index(2, 0), true));
+   QMimeData malformed;
+   malformed.setData(proxy.mimeTypes().front(), "invalid");
+   check(!proxy.dropMimeData(&malformed, Qt::MoveAction, 0, 0, {}));
+   check(!proxy.dropMimeData(mime.get(), Qt::CopyAction, 0, 0, {}));
+   check(submissions == 0);
+   check(proxy.dropMimeData(mime.get(), Qt::MoveAction, 0, 0, {}));
+   check(submissions == 1 && f.repo.snapshot.tasks.front().priority == 1);
+   check(!proxy.dropMimeData(mime.get(), Qt::MoveAction, 0, 0, {})); // Stale drag MIME revision.
+}
+
 void modelAndCodecTests(const QStringList &arguments) {
    Fixture f;
    const auto unassigned = f.capture("A unassigned");
@@ -512,6 +643,9 @@ int main(int argc, char **argv) {
       priorityArchiveAndRedoTests();
       priorityBoundedRefusalTests();
       seededPriorityBandTests();
+      taskMoveTests();
+      taskMoveNormalizationTests();
+      taskMoveMimeTests();
       modelAndCodecTests(application.arguments());
       std::cout << "PASS: fractional ranks, context transactions, inverse receipts, schema-3 preview and grouping.\n";
       return 0;

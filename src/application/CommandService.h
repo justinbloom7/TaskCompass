@@ -16,6 +16,7 @@ public:
    WorkspaceSnapshot read();
    WorkspaceReceipt execute(const TaskCommand &command);
    WorkspaceReceipt execute(const TaskPriorityCommand &command);
+   void execute(const TaskMovePreview &preview);
    WorkspaceReceipt execute(const OrganizationCommand &command);
    WorkspaceReceipt execute(const ContextCommand &command);
    WorkspaceReceipt undo();

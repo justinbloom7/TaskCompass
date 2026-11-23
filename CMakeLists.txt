@@ -174,6 +174,7 @@ add_library(PersistentDesktop STATIC
             src/desktop/persistent/PersistentTaskController.cpp
             src/desktop/persistent/PersistentTaskModel.cpp
             src/desktop/persistent/PersistentTaskFilter.cpp
+            src/desktop/persistent/PersistentTaskOrderView.cpp
             src/desktop/persistent/PersistentTaskWindow.cpp)
 target_link_libraries(PersistentDesktop PUBLIC TaskCore Qt6::Widgets)
 add_executable(TaskCompass src/desktop/persistent/PersistentMain.cpp)

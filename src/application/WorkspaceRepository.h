@@ -1,6 +1,7 @@
 #pragma once
 
 #include "OrganizationCommand.h"
+#include "TaskMove.h"
 #include "domain/Context.h"
 #include "CommitOutcomeUnknown.h"
 #include <functional>
@@ -50,6 +51,7 @@ struct WorkspaceReceipt {
    std::vector<ContextGuard> contextGuards;
    Timestamp issuedAt = 0;
    std::optional<AssignmentIntent> assignment = {};
+   std::optional<TaskMovePreview> move = {};
 };
 struct WorkspaceSnapshot {
    std::vector<Task> tasks; // Includes tombstones for history/dependency validation.

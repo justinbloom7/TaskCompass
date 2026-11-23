@@ -209,6 +209,21 @@ QString encodeReceiptSnapshot(const WorkspaceReceipt &receipt, bool before, int 
              {"effectiveSourceId", optionalString(assignment.effectiveSourceId)},
              {"effectiveDestinationId", optionalString(assignment.effectiveDestinationId)}};
       }
+      if (receipt.move) {
+         const auto &move = *receipt.move;
+         const auto witness = [](const std::optional<RevisionCheck> &anchor) -> QJsonValue {
+            if (!anchor) { return QJsonValue::Null; }
+            return QJsonObject{{"id", QString::fromStdString(anchor->key.id)},
+                               {"revision", QString::number(anchor->revision)}};
+         };
+         const char *position = move.target.position == TaskMovePosition::BEFORE ? "before"
+            : move.target.position == TaskMovePosition::AFTER ? "after" : "groupEnd";
+         object["movePreview"] = QJsonObject{{"sourceGroup", QString::fromStdString(move.sourceContextId)},
+             {"destinationGroup", QString::fromStdString(move.target.contextId)}, {"position", position},
+             {"priority", QString::number(move.priority)}, {"visibleAnchor", witness(move.visibleAnchor)},
+             {"bandPredecessor", witness(move.bandPredecessor)}, {"bandSuccessor", witness(move.bandSuccessor)},
+             {"clearedContextId", optionalString(move.clearedContextId)}};
+      }
       if (before) { object.remove("rootAfter"); }
    }
    return QString::fromUtf8(QJsonDocument(object).toJson(QJsonDocument::Compact));

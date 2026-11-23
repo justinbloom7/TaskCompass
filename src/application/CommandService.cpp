@@ -55,6 +55,7 @@ std::string operationDescription(CommandOperation operation) {
    }
 }
 std::string label(const WorkspaceReceipt &receipt) {
+   if (receipt.move) { return "Move task"; }
    if (receipt.changedFields & PRIORITY) { return "Set task priority"; }
    static constexpr const char *NAMES[] = {"task", "pillar", "project", "objective", "context", "assignment"};
    return operationDescription(receipt.operation) + " " + NAMES[receipt.after.index()];

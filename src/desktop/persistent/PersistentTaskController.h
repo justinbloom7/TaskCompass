@@ -18,6 +18,7 @@ public:
    void execute(const taskcompass::TaskPriorityCommand &command);
    void execute(const taskcompass::OrganizationCommand &command);
    void execute(const taskcompass::ContextCommand &command);
+   void execute(const taskcompass::TaskMovePreview &preview);
    void undo();
    void redo();
    bool isBusy() const;

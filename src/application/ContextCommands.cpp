@@ -411,6 +411,183 @@ WorkspaceReceipt CommandService::execute(const TaskPriorityCommand &command) {
    });
 }
 
+std::vector<Task> taskMoveRows(const WorkspaceSnapshot &snapshot, const std::string &contextId,
+                              const std::string &excluding) {
+   std::vector<Task> rows;
+   if (snapshot.tasks.empty()) { return rows; }
+   const OrganizationRules graph(snapshot.tasks.front().datasetId, snapshot.organizations);
+   for (const auto &task : snapshot.tasks) {
+      if (task.id == excluding || task.deletedAt || task.status != TaskStatus::ACTIVE || graph.taskArchived(task)) { continue; }
+      const auto *context = effectiveContext(snapshot, task.id);
+      if ((context ? context->id : "") == contextId) { rows.push_back(task); }
+   }
+   std::ranges::sort(rows, [](const auto &left, const auto &right) {
+      return std::tie(left.priority, left.manualOrderKey, left.id)
+           < std::tie(right.priority, right.manualOrderKey, right.id);
+   });
+   return rows;
+}
+
+TaskMovePreview previewTaskMove(const WorkspaceSnapshot &snapshot, const TaskMoveTarget &target) {
+   switch (target.position) {
+      case TaskMovePosition::BEFORE:
+      case TaskMovePosition::AFTER:
+      case TaskMovePosition::GROUP_END: break;
+      default: throw std::invalid_argument("Invalid task move position.");
+   }
+   const auto *task = findRecord(snapshot.tasks, target.taskId);
+   if (snapshot.schemaVersion != 3 || !task || task->deletedAt || task->status != TaskStatus::ACTIVE) {
+      throw std::invalid_argument("Only active schema-3 tasks can be reordered.");
+   }
+   const OrganizationRules graph(task->datasetId, snapshot.organizations);
+   graph.requireTaskOwner(*task, false);
+   const auto *destination = findRecord(snapshot.contexts, target.contextId);
+   if (!target.contextId.empty() && (!destination || destination->deletedAt || destination->archivedAt
+                                     || destination->datasetId != task->datasetId)) {
+      throw std::invalid_argument("Reorder destination is unavailable.");
+   }
+   const auto *source = effectiveContext(snapshot, task->id);
+   const auto *link = primaryContext(snapshot, task->id);
+   TaskMovePreview result;
+   result.target = target;
+   result.datasetId = task->datasetId;
+   if (source) { result.sourceContextId = source->id; }
+   if (link && target.contextId.empty()) { result.clearedContextId = link->contextId; }
+   const auto revision = [](const EntitySnapshot &row) {
+      return RevisionCheck{entityKey(row), entityRevision(row)};
+   };
+   const auto depend = [&](const EntitySnapshot &row) {
+      const auto observed = revision(row);
+      if (std::ranges::find(result.dependencies, observed) == result.dependencies.end()) {
+         result.dependencies.push_back(observed);
+      }
+   };
+   depend(*task);
+   if (link) {
+      depend(*link);
+      const auto *assigned = findRecord(snapshot.contexts, link->contextId);
+      if (!assigned) { throw std::invalid_argument("The primary context is unavailable."); }
+      depend(*assigned);
+   }
+   if (destination) { depend(*destination); }
+
+   const auto visible = taskMoveRows(snapshot, target.contextId, task->id);
+   const Task *anchor = nullptr;
+   if (target.position == TaskMovePosition::GROUP_END) {
+      if (!target.anchorId.empty()) { throw std::invalid_argument("Unexpected group-end anchor."); }
+      if (!visible.empty()) { anchor = &visible.back(); }
+   } else {
+      anchor = findRecord(visible, target.anchorId);
+      if (!anchor || (target.position == TaskMovePosition::AFTER && anchor != &visible.back())) {
+         throw std::invalid_argument("The visible insertion anchor changed.");
+      }
+   }
+   if (anchor) {
+      result.visibleAnchor = revision(*anchor);
+      if (anchor->owner.kind != TaskOwnerKind::INDEPENDENT) {
+         const auto kind = anchor->owner.kind == TaskOwnerKind::PROJECT ? OrganizationKind::PROJECT : OrganizationKind::OBJECTIVE;
+         for (const auto &key : graph.path({kind, anchor->owner.id})) { depend(asSnapshot(graph.find(key))); }
+      }
+   }
+   const ContextGuard sourceBand{ContextGuardKind::BAND, result.sourceContextId, task->priority, {}, {}, {}, {}};
+   const auto originalRows = contextWitness(snapshot, sourceBand);
+   const auto moving = std::ranges::find(originalRows, entityKey(*task), entityKey);
+   if (moving == originalRows.end()) { throw std::invalid_argument("The source band changed."); }
+   if (moving != originalRows.begin()) { depend(*std::prev(moving)); }
+   if (std::next(moving) != originalRows.end()) { depend(*std::next(moving)); }
+   result.priority = anchor ? anchor->priority : task->priority;
+   const ContextGuard band{ContextGuardKind::BAND, target.contextId, result.priority, {}, {}, {}, {}};
+   auto rows = contextWitness(snapshot, band);
+   const auto original = std::ranges::find(rows, entityKey(*task), entityKey);
+   const auto originalGap = static_cast<std::size_t>(original - rows.begin());
+   const bool sameBand = original != rows.end();
+   if (sameBand) { rows.erase(original); }
+   auto insertion = rows.end();
+   if (anchor) {
+      insertion = std::ranges::find(rows, entityKey(*anchor), entityKey);
+      if (insertion == rows.end()) { throw std::invalid_argument("The insertion band changed."); }
+      if (target.position != TaskMovePosition::BEFORE) { ++insertion; }
+   }
+   result.gap = static_cast<std::size_t>(insertion - rows.begin());
+   result.noChange = sameBand && result.gap == originalGap && !result.clearedContextId;
+   if (insertion != rows.begin()) { result.bandPredecessor = revision(*std::prev(insertion)); }
+   if (insertion != rows.end()) { result.bandSuccessor = revision(*insertion); }
+
+   if (!result.noChange && (!sameBand || result.gap != originalGap)) {
+      std::vector<std::string> ranks;
+      for (const auto &row : rows) { ranks.push_back(std::get<Task>(row).manualOrderKey); }
+      const auto placement = placeRank(ranks, result.gap);
+      const auto count = placement.ranks.size() - 1;
+      // Observe the entire rewritten window and its fixed exterior boundaries.
+      const auto first = placement.first == 0 ? 0 : placement.first - 1;
+      const auto last = std::min(rows.size(), placement.first + count + 1);
+      for (auto i = first; i < last; ++i) { depend(rows[i]); }
+   }
+   return result;
+}
+
+void CommandService::execute(const TaskMovePreview &preview) {
+   if (preview.noChange) { return; }
+   executePrepared([&](const WorkspaceSnapshot &snapshot) {
+      const auto current = previewTaskMove(snapshot, preview.target);
+      auto expected = preview;
+      // Absolute row numbers can change outside the guarded interval.
+      expected.gap = current.gap;
+      if (preview.datasetId != datasetId || current != expected) {
+         throw std::runtime_error("Task move preview changed. Reload and choose the destination again.");
+      }
+      const auto &target = preview.target;
+      const auto before = *findEntity(snapshot, {EntityKind::TASK, target.taskId});
+      auto task = std::get<Task>(before);
+      const auto issuedAt = clock();
+      Plan plan(snapshot, issuedAt);
+      plan.watch(ContextGuardKind::TASK_LINK, task.id);
+      plan.watch(ContextGuardKind::BAND, preview.sourceContextId, task.priority);
+      plan.watch(ContextGuardKind::BAND, target.contextId, preview.priority);
+      const auto *link = primaryContext(snapshot, task.id);
+      if ((link ? link->contextId : "") != target.contextId) {
+         if (link) {
+            auto removed = *link;
+            removed.deletedAt = std::max(issuedAt, removed.updatedAt);
+            plan.change(removed, REMOVAL);
+         }
+         if (!target.contextId.empty()) {
+            const auto id = generateId();
+            if (findRecord(snapshot.taskContexts, id)) { throw std::runtime_error("Duplicate assignment identity."); }
+            plan.change(TaskContext{id, datasetId, task.id, target.contextId, issuedAt, 0, {}, 0}, REMOVAL);
+         }
+      }
+      unsigned fields = 0;
+      if (preview.priority != task.priority) { fields |= PRIORITY; }
+      task.priority = preview.priority;
+      EntitySnapshot after = task;
+      const auto &destination = plan.guards.back();
+      const auto oldPosition = std::ranges::find(destination.before, entityKey(task), entityKey);
+      if (oldPosition == destination.before.end()
+          || static_cast<std::size_t>(oldPosition - destination.before.begin()) != current.gap) {
+         plan.place(destination, after, current.gap);
+         fields |= RANK;
+      }
+      auto result = receipt(CommandOperation::REORDER, before, after, fields, snapshot);
+      result.issuedAt = issuedAt;
+      for (const auto &dependency : preview.dependencies) {
+         if (dependency.key.kind != EntityKind::TASK && dependency.key.kind != EntityKind::TASK_CONTEXT
+             && std::ranges::find(result.dependencies, dependency) == result.dependencies.end()) {
+            result.dependencies.push_back(dependency);
+         }
+      }
+      putEntity(plan.after, result.after);
+      validateChange(snapshot, result.after, false);
+      validateContextState(plan.after, datasetId);
+      plan.finalizeGuards();
+      result.assignment = assignmentIntent(snapshot, plan.after, task.id);
+      result.move = current;
+      result.contextGuards = std::move(plan.guards);
+      result.patches = std::move(plan.patches);
+      return result;
+   });
+}
+
 void CommandService::prepareTaskCaptureRank(WorkspaceReceipt &result, const WorkspaceSnapshot &snapshot) {
    Plan plan(snapshot, result.issuedAt);
    plan.watch(ContextGuardKind::BAND, {}, std::get<Task>(result.after).priority);
@@ -483,6 +660,7 @@ WorkspaceReceipt CommandService::compensateContext(const WorkspaceReceipt &origi
       }
       result.contextGuards.push_back(std::move(next));
    }
+   result.move = original.move;
    if (original.assignment) {
       result.assignment = assignmentIntent(snapshot, plan.after, entityKey(result.after).id);
    }

@@ -2,13 +2,14 @@
 
 # Phase 1.3 — Everyday task management
 
-**Current status — Stages A and B accepted. Stage C Linux and Windows offline validation passed. Owner acceptance is pending.**
+**Current status — Stages A, B and C accepted. Stage D source review pending.**
 The owner approved the Stage A recommended defaults and authorized only Stage B
 source and database-free validation. See the [Stage B record](#stage-b-contexts-and-shared-persistence).
 See the [native Windows result](#2026-11-23-native-windows-stage-b-result).
 The owner authorized Stage C source work. See the [Stage C record](#stage-c-task-priorities-and-persistent-order).
 See the [Stage C native Windows result](#2026-11-23-native-windows-stage-c-result).
-Stage D and every database execution require separate explicit authorization.
+The owner authorized Stage D source work. See the [Stage D review](#stage-d-grouped-task-reordering).
+Stage E and every database execution require separate explicit authorization.
 
 ## Baseline and authorization
 
@@ -1878,3 +1879,187 @@ focused review's full offline run, and native Windows passed 33/33.
 Please review and formally accept Stage C. Stage D requires separate
 authorization, as does any database execution. Migration 003 and live
 QMYSQL compatibility remain unverified.
+
+### 2026-11-23 Stage C formal owner acceptance
+
+The owner formally accepted Stage C. The Linux review passed **31/31**
+database-free tests. The [owner-run Windows gate](#2026-11-23-native-windows-stage-c-result)
+passed **33/33** at revision `126e2eadc2d9f1a8dbc6ea778d8773ba7673b234` on
+Windows 10 build 19045, UCRT64, GCC 16.2.0 and Qt Widgets 6.12.0. Both live
+integration suites were excluded. The Windows evidence is under
+`C:/Users/justin/repo/TaskCompass/build-ucrt64-stage-c/run.id5PIGhM/evidence`,
+including the snapshots
+`environment-2026-11-23T185036.297989_0000-911fc699.json` and
+`environment-2026-11-23T185152.654906_0000-723700ab.json`.
+The owner separately authorized Stage D. Migration 003, database access,
+account and schema provisioning, database-backed tests and Stage E remain
+outside that authorization.
+
+## Stage D grouped task reordering
+
+Stage D started with no working-tree edits at
+`c846521694d6c664bd787225f144722709c83e8e`. The local branch was one commit
+ahead of its upstream tracking ref. The implementation uses the existing
+grouped task table and adds a list of context group-end targets beside it.
+These targets include active empty contexts and the synthetic No context
+target. Header/end semantics are provided by this target list. The table
+keeps contiguous groups. Drops use a between-row insertion line and a
+preview below the table and in the status bar. The view autoscrolls near
+its edges during a drag and clears feedback when the drag ends or leaves.
+
+Task → Move Task (`Ctrl+Alt+M`) offers keyboard selection of a group and
+an exact destination, either before a visible task or at the group end.
+Both input paths use stable task/context IDs and the same preview and
+command. The pointer path accepts an internal drag carrying a task UUID
+and revision. It maps the hit through the proxy and checks that the
+release still matches the displayed preview. Qt does not optimistically
+move storage rows. Commits update source data while same-ID rows retain
+identity, allowing the proxy to update its sorted layout. The controller
+restores selection by UUID. Failed commands leave the authoritative model
+unchanged and offer Reload through the existing error path.
+
+The planning code removes the moving row before resolving the anchor.
+It uses successor priority before a visible task, predecessor priority
+after the final visible task, and keeps priority for an empty visible group.
+Full-band neighbors, including hidden rows, determine the insertion
+token. A No context drop clears a live primary link including an archived
+link, and shows that removal in preview. The command rechecks source and
+destination witnesses, target and anchor revisions, and bounded
+normalization participants under the existing transaction lease. An
+unchanged placement returns without a write. The move, link patches,
+priority and rank patches, journal and outbox commit together. The
+version-3 receipt includes the original move witnesses, before/after
+snapshots and inverse guards. Undo/redo uses the original exact rank and
+assignment values and can refuse stale topology or revisions.
+
+Drag and keyboard moves are enabled only in the default ascending grouped
+view with all organizational scopes, empty search, and completed and
+archived expansion off. The View menu clears filters and restores this
+mode. Context and priority commands from earlier stages remain usable in
+their supported views. This stage adds no migration and no Worked Today
+or other Stage E functionality.
+
+### Stage D file inventory
+
+- `CMakeLists.txt` registers the new Qt view source.
+- Application: `src/application/TaskMove.h`, `CommandService.{h,cpp}`,
+  `ContextCommands.cpp` and `WorkspaceRepository.h`.
+- Qt: `src/desktop/persistent/PersistentTaskOrderView.{h,cpp}` and
+  `PersistentTaskController.{h,cpp}`, `PersistentTaskFilter.{h,cpp}`,
+  `PersistentTaskModel.cpp`, and `PersistentTaskWindow.{h,cpp}`.
+- Storage codec: `src/infrastructure/storage/WorkspaceCodec.cpp`.
+- Tests and manual fixture: `tests/ContextStageTests.cpp`,
+  `tests/OrganizationDesktopTests.cpp`.
+- Operator entry points: `scripts/phase13/05-build.sh` and
+  `scripts/phase13/06-test.sh`. They use the previously reviewed native
+  preflight and 33-test allowlist unchanged. This milestone records the result.
+
+### Windows offline execution procedure
+
+After source review, use a clean checkout containing Stage D in a native
+MSYS2 UCRT64 shell:
+
+```bash
+bash scripts/phase13/05-build.sh
+bash scripts/phase13/06-test.sh
+```
+
+05 builds in a fresh ignored `build-ucrt64-stage-d/run.*` directory and
+records logs, source revision and offline environment evidence. 06 selects
+that build, verifies it matches the clean source revision, and checks the
+33-suite offline CTest inventory before execution. The inventory, test log
+and environment report are in the printed evidence directory. The earlier
+Stage B and C scripts and run directories retain their roles.
+Report the source revision, native tool versions, final counts and
+evidence path. If there is a failure, preserve that run directory.
+
+### Manual interactive GUI checklist for review
+
+The existing Qt test binary includes a memory-only manual fixture. It uses
+the normal persistent window and command service with the in-memory
+repository and temporary settings. A fresh launch resets the fixture.
+On native Windows after stage 05, launch it from UCRT64:
+
+```bash
+runName=$(cat build-ucrt64-stage-d/latest)
+./build-ucrt64-stage-d/"$runName"/OrganizationDesktopTests.exe --manual-task-order
+```
+
+On Linux with the review build:
+
+```bash
+/tmp/taskcompass-stage-d/OrganizationDesktopTests --manual-task-order
+```
+
+Record revision, platform and pass/fail per row. Restart the fixture between
+scenarios where a known initial order is helpful. Preserve screenshots of
+the preview, resulting order and undo/redo if a result is unclear.
+
+| Scenario | Review checks |
+| --- | --- |
+| Initial view | Home precedes Office, then the empty group target and No context last. Home A/B/C all show priority 5 and their initial order. The group-end target list has Home, Office, Empty and No context. The archived link appears under No context and exposes its archived assignment in its context tooltip. |
+| Same priority | Drag Home B before Home A, then drag Home B to the Home group-end target. Verify the between-row line, named anchor and priority 5 on preview, post-drop selection retention and unchanged other priorities. Undo and redo both operations and check exact order. |
+| Cross-context successor | Drop Home A above Office urgent. Preview Office, before Office urgent, priority 1. Verify the Office position and task priority, then undo and redo. Toggle Show completed after the move to verify the completed anchor still precedes the moved task. |
+| Predecessor and boundary | Drop a Home task in the lower half of an Office row with a following visible task and verify it uses the next row's priority. Drop at the Office tail or on the Office group-end target and verify the preview adopts the final visible predecessor's priority and states the end placement. |
+| Empty and No context | Drop a Home task on Empty and verify its priority is retained. Drop a Home task or Archived link into No context and verify the preview discloses removal of the old link. Undo restores the link, including an archived link, and redo clears it. |
+| Hover and cancellation | Hover without releasing, leave the table and press Escape, release outside the app, and try a self/no-op drop. Verify no saved order, priority, assignment or undo label changes. The line and preview clear. |
+| Long drag | Drag toward the top/bottom of the task table with the 36 scroll rows present. Verify continuous autoscroll and that the visible line, anchor and final drop remain aligned. Repeat with a slow drag and a quick release near a group boundary. |
+| Keyboard | Select a Home task and invoke Ctrl+Alt+M. Use Tab and arrow keys to select Office and Before Office urgent, and confirm the same preview and result as pointer drop. Repeat with Empty and No context, cancel once, and verify focus/selection and undo behavior. |
+| View guards | Try search, an organization selection, title or priority sort, Show Completed, and Show Archived. Confirm dragging and Move Task are disabled, and View → Clear Filters and Enable Task Reordering restores them. Confirm merely changing views creates no history. |
+
+The fixture supports interactive UI validation and session undo/redo.
+Cross-client database races, failure injection through QMYSQL and durable
+restart comparisons remain execution gates for a separately approved
+isolated database. No preserved workspace is a target for this checklist.
+
+### Stage D agent validation
+
+The Linux build used CentOS Stream 9, GCC 11.5.0 and Qt 6.10.3. Commands
+and build/test output were captured under `/tmp/taskcompass-stage-d` and
+`/tmp/taskcompass-stage-d-evidence`.
+
+```bash
+cmake -S . -B /tmp/taskcompass-stage-d \
+   -DTASKCOMPASS_ENABLE_DB_TESTS=ON -DTASKCOMPASS_ENABLE_PHASE12_DB_TESTS=ON
+cmake --build /tmp/taskcompass-stage-d -j 8
+ctest --test-dir /tmp/taskcompass-stage-d \
+   -R 'ContextStageTests|OrganizationDesktopTests|PersistentDesktopTests' --output-on-failure
+scripts/environment-report.sh --build-dir /tmp/taskcompass-stage-d \
+   --output-dir /tmp/taskcompass-stage-d-evidence --context stage-d-linux-offline
+ctest --test-dir /tmp/taskcompass-stage-d --show-only=json-v1
+ctest --test-dir /tmp/taskcompass-stage-d --output-on-failure -j 6
+bash -n scripts/phase13/05-build.sh
+bash -n scripts/phase13/06-test.sh
+git diff --check
+```
+
+- Focused tests passed **3/3 in 2.63 seconds**. Regressions cover same-band
+  no-op and real movement, cross-context priority adoption, empty targets,
+  archived assignment removal, hidden anchors, receipt serialization,
+  stale previews, injected participant rollback, normalization and exact
+  undo/redo. Qt tests exercise proxy MIME/drop routing, invalid and stale
+  MIME, external-drop refusal, filtered view guards, dialog cancellation,
+  keyboard preview and committed selection preservation.
+- Full database-free CTest passed **31/31 in 78.16 seconds** with zero
+  failures or skips. The JSON inventory was checked before running CTest.
+  Both live integration suites were absent and CMake reported both legacy
+  live registration options unused. The build log is
+  `/tmp/taskcompass-stage-d-build.log`.
+- The offline environment snapshot is
+  `/tmp/taskcompass-stage-d-evidence/environment-2026-11-23T214119.556067_0000-ed993816.json`.
+  It records no server query. Six mocked Windows script cases passed
+  with explicit UCRT64 and Linux modes, a path containing spaces and UTF-8,
+  inherited credential placeholders and path state, a live executable alias,
+  and a stale source revision. The mock ran only the reviewed inventory.
+- Markdown links/fences and the preservation diff passed. Earlier migrations,
+  diagrams, validation scripts and milestone acceptance records were untouched.
+  No database connection, migration, provisioning, live test, commit or push
+  was performed in Stage D.
+- Automated tests cover intent and proxy behavior. Native pointer interaction,
+  autoscroll and visuals remain on the manual checklist. Native Windows
+  Stage D and live MariaDB behavior remain pending.
+
+**Approval Requested — Stage D source and validation procedure.** Review the
+implementation, Linux offline evidence, numbered Windows steps and manual
+checklist. Stage D acceptance remains pending the native Windows and manual
+results. Stage E and any database execution require separate explicit approval.

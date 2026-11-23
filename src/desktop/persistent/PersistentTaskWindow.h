@@ -15,6 +15,8 @@ class QAction;
 class QComboBox;
 class QMenu;
 class QLabel;
+class QListWidget;
+class PersistentTaskOrderView;
 class OrganizationTreeModel;
 
 class PersistentTaskWindow : public QMainWindow {
@@ -35,6 +37,12 @@ private:
    void changeContext(taskcompass::ContextOperation operation);
    void assignContext();
    void editPriority();
+   void moveTaskWithKeyboard();
+   bool taskOrderingAvailable() const;
+   void updateTaskOrdering();
+   void rebuildTaskGroups();
+   QString taskGroupName(const std::string &id) const;
+   QString describeTaskMove(const taskcompass::TaskMovePreview &preview) const;
    void archiveOrganization(bool restore);
    void rebuildNavigation();
    void updateScope();
@@ -47,6 +55,11 @@ private:
    PersistentTaskModel *model;
    QSortFilterProxyModel *proxy;
    QTableView *table;
+   PersistentTaskOrderView *taskOrderView;
+   QListWidget *taskGroups;
+   QLabel *taskMovePreview;
+   QAction *taskMoveAction;
+   QAction *enableTaskOrderingAction;
    QLineEdit *search;
    QCheckBox *showCompleted;
    QCheckBox *showArchived;

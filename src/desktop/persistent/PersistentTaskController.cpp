@@ -122,6 +122,14 @@ void PersistentTaskController::execute(const taskcompass::ContextCommand &comman
       });
    }
 }
+void PersistentTaskController::execute(const taskcompass::TaskMovePreview &preview) {
+   if (ready && !preview.noChange) {
+      dispatch([preview](PersistentTaskSession &session) {
+         if (!session.commands) { throw std::runtime_error("Task reorder requires schema 3."); }
+         session.commands->execute(preview);
+      });
+   }
+}
 void PersistentTaskController::undo() {
    if (ready) {
       dispatch([](PersistentTaskSession &session) { if (session.commands) { session.commands->undo(); } else { session.service->undo(); } });

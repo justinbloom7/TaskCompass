@@ -1,6 +1,9 @@
 #include "PersistentTaskWindow.h"
 #include "PersistentTaskModel.h"
 #include "PersistentTaskFilter.h"
+#include "PersistentTaskOrderView.h"
+#include <QListWidget>
+#include <QHBoxLayout>
 #include "desktop/models/OrganizationTreeModel.h"
 #include "desktop/dialogs/OrganizationEditDialog.h"
 #include "desktop/dialogs/OrganizationMoveDialog.h"
@@ -94,7 +97,8 @@ PersistentTaskWindow::PersistentTaskWindow(PersistentTaskController::SessionFact
    layout->addWidget(search);
    layout->addWidget(showCompleted);
    layout->addWidget(showArchived);
-   table = new QTableView(panel);
+   auto *orderTable = new PersistentTaskOrderTable(panel);
+   table = orderTable;
    table->setObjectName("persistentTaskTable");
    model = new PersistentTaskModel(this);
    auto *activeProxy = new PersistentTaskFilter;
@@ -119,7 +123,34 @@ PersistentTaskWindow::PersistentTaskWindow(PersistentTaskController::SessionFact
    table->setColumnWidth(0, 300);
    table->setColumnHidden(PersistentTaskModel::CONTEXT_COLUMN, true);
    table->setColumnHidden(PersistentTaskModel::PRIORITY_COLUMN, true);
-   layout->addWidget(table);
+   auto *taskPane = new QHBoxLayout;
+   taskGroups = new QListWidget(panel);
+   taskGroups->setObjectName("taskOrderGroups");
+   taskGroups->setAccessibleName("Move to end of context group");
+   taskGroups->setToolTip("Drop onto a context to move to its end, including empty groups.");
+   taskGroups->setMaximumWidth(200);
+   taskGroups->hide();
+   taskPane->addWidget(taskGroups);
+   taskPane->addWidget(table, 1);
+   layout->addLayout(taskPane, 1);
+   taskMovePreview = new QLabel(panel);
+   taskMovePreview->setObjectName("taskMovePreview");
+   taskMovePreview->setWordWrap(true);
+   taskMovePreview->hide();
+   layout->addWidget(taskMovePreview);
+   taskOrderView = new PersistentTaskOrderView(orderTable, taskGroups, activeProxy,
+      [this](const auto &preview) { return describeTaskMove(preview); });
+   activeProxy->setTaskMoveCallbacks([this](const auto &target) -> std::optional<taskcompass::TaskMovePreview> {
+      if (!taskOrderingAvailable()) { return {}; }
+      try { return taskcompass::previewTaskMove(renderedWorkspace, target); }
+      catch (const std::exception &) { return {}; }
+   }, [this](const auto &preview) { controller->execute(preview); });
+   connect(taskOrderView, &PersistentTaskOrderView::previewChanged, this, [this](const QString &message) {
+      taskMovePreview->setText(message);
+      taskMovePreview->setVisible(!message.isEmpty());
+      if (message.isEmpty()) { statusBar()->clearMessage(); }
+      else { statusBar()->showMessage(message); }
+   });
    splitter->setSizes({240, 860});
    splitter->setStretchFactor(1, 1);
    setCentralWidget(splitter);
@@ -146,6 +177,9 @@ PersistentTaskWindow::PersistentTaskWindow(PersistentTaskController::SessionFact
    assignContextAction->setObjectName("assignContextAction");
    priorityAction = taskMenu->addAction("Set Priority...", this, &PersistentTaskWindow::editPriority);
    priorityAction->setObjectName("taskPriorityAction");
+   taskMoveAction = taskMenu->addAction("Move Task...", QKeySequence("Ctrl+Alt+M"), this,
+                                       &PersistentTaskWindow::moveTaskWithKeyboard);
+   taskMoveAction->setObjectName("moveTaskAction");
    auto *contexts = menuBar()->addMenu("&Contexts");
    contextMenuAction = contexts->menuAction();
    using Operation = taskcompass::ContextOperation;
@@ -202,6 +236,14 @@ PersistentTaskWindow::PersistentTaskWindow(PersistentTaskController::SessionFact
    groupByContextAction = view->addAction("Group by Context", this, [this]() {
       table->sortByColumn(PersistentTaskModel::CONTEXT_COLUMN, Qt::AscendingOrder);
    });
+   enableTaskOrderingAction = view->addAction("Clear Filters and Enable Task Reordering", this, [this]() {
+      search->clear();
+      showCompleted->setChecked(false);
+      showArchived->setChecked(false);
+      navigation->setCurrentIndex(organizationModel->index(0, 0));
+      table->sortByColumn(PersistentTaskModel::CONTEXT_COLUMN, Qt::AscendingOrder);
+      updateTaskOrdering();
+   });
    navigationAction = view->addAction("Show &Navigation");
    navigationAction->setCheckable(true);
    navigationAction->setChecked(true);
@@ -242,8 +284,11 @@ PersistentTaskWindow::PersistentTaskWindow(PersistentTaskController::SessionFact
       });
    });
    connect(search, &QLineEdit::textChanged, proxy, &QSortFilterProxyModel::setFilterFixedString);
-   connect(showCompleted, &QCheckBox::toggled, this, [activeProxy](bool enabled) {
+   connect(search, &QLineEdit::textChanged, this, &PersistentTaskWindow::updateTaskOrdering);
+   connect(table->horizontalHeader(), &QHeaderView::sortIndicatorChanged, this, &PersistentTaskWindow::updateTaskOrdering);
+   connect(showCompleted, &QCheckBox::toggled, this, [this, activeProxy](bool enabled) {
       activeProxy->setIncludeCompleted(enabled);
+      updateTaskOrdering();
    });
    connect(showArchived, &QCheckBox::toggled, this, [this](bool) { rebuildNavigation(); updateScope(); refresh(); });
    connect(navigationMode, &QComboBox::currentIndexChanged, this, [this](int) { rebuildNavigation(); updateScope(); refresh(); });
@@ -283,6 +328,7 @@ void PersistentTaskWindow::refresh() {
       const bool enableGrouping = renderedWorkspace.schemaVersion != 3 && controller->workspace().schemaVersion == 3;
       renderedWorkspace = controller->workspace();
       model->replaceWorkspace(renderedWorkspace);
+      rebuildTaskGroups();
       table->setColumnHidden(PersistentTaskModel::CONTEXT_COLUMN, renderedWorkspace.schemaVersion != 3);
       table->setColumnHidden(PersistentTaskModel::PRIORITY_COLUMN, renderedWorkspace.schemaVersion != 3);
       if (enableGrouping) { table->sortByColumn(PersistentTaskModel::CONTEXT_COLUMN, Qt::AscendingOrder); }
@@ -329,6 +375,7 @@ void PersistentTaskWindow::refresh() {
       if (organization && index == 8) { allowed = allowed && navigation->currentIndex().data(OrganizationTreeModel::EFFECTIVE_ARCHIVE_ROLE).toBool(); }
       organizationActions[index]->setEnabled(allowed);
    }
+   updateTaskOrdering();
    statusBar()->showMessage(controller->isBusy() ? "Working..." : enabled
                             ? QString("%1 visible of %2 tasks — changes persist immediately").arg(proxy->rowCount()).arg(model->rowCount())
                             : "Database unavailable — resolve the error, then Reload");
@@ -717,4 +764,124 @@ void PersistentTaskWindow::assignContext() {
       if (link && link->contextId == *command.destination) { return; }
    }
    controller->execute(command);
+}
+
+bool PersistentTaskWindow::taskOrderingAvailable() const {
+   return controller->isReady() && !controller->isBusy() && renderedWorkspace.schemaVersion == 3
+       && proxy->sortColumn() == PersistentTaskModel::CONTEXT_COLUMN && proxy->sortOrder() == Qt::AscendingOrder
+       && search->text().isEmpty() && !showCompleted->isChecked() && !showArchived->isChecked()
+       && navigationSelection() == "all";
+}
+
+void PersistentTaskWindow::updateTaskOrdering() {
+   const bool enabled = taskOrderingAvailable();
+   taskOrderView->setEnabled(enabled);
+   taskGroups->setVisible(enabled);
+   taskMoveAction->setEnabled(enabled && selectedTask().has_value());
+   enableTaskOrderingAction->setEnabled(renderedWorkspace.schemaVersion == 3 && controller->isReady()
+                                       && !controller->isBusy() && !enabled);
+   const auto hint = enabled ? QString("Drag a task between rows or use Task → Move Task.")
+      : QString("Task reordering requires the unfiltered grouped view. Use View → Clear Filters and Enable Task Reordering.");
+   table->setToolTip(renderedWorkspace.schemaVersion == 3 ? hint : QString{});
+}
+
+QString PersistentTaskWindow::taskGroupName(const std::string &id) const {
+   if (id.empty()) { return "No context"; }
+   const auto &contexts = renderedWorkspace.contexts;
+   const auto found = std::ranges::find(contexts, id, &taskcompass::Context::id);
+   if (found == contexts.end()) { return "Unavailable context"; }
+   auto name = QString::fromStdString(found->name);
+   if (found->archivedAt) { name += " [archived]"; }
+   if (found->name == "No context" || std::ranges::count(contexts, found->name, &taskcompass::Context::name) > 1) {
+      name += " (" + QString::fromStdString(id) + ")";
+   }
+   return name;
+}
+
+void PersistentTaskWindow::rebuildTaskGroups() {
+   taskGroups->clear();
+   for (const auto &context : taskcompass::orderedContexts(renderedWorkspace, false)) {
+      auto *item = new QListWidgetItem(taskGroupName(context.id), taskGroups);
+      item->setData(Qt::UserRole, QString::fromStdString(context.id));
+   }
+   auto *unassigned = new QListWidgetItem("No context", taskGroups);
+   unassigned->setData(Qt::UserRole, QString{});
+}
+
+QString PersistentTaskWindow::describeTaskMove(const taskcompass::TaskMovePreview &preview) const {
+   using taskcompass::TaskMovePosition;
+   const auto target = taskGroupName(preview.target.contextId);
+   QString text = QString("%1 · priority %2").arg(target).arg(preview.priority);
+   if (preview.noChange) { return text + " · already at this position"; }
+   if (preview.visibleAnchor) {
+      const auto found = std::ranges::find(renderedWorkspace.tasks, preview.visibleAnchor->key.id, &taskcompass::Task::id);
+      if (found != renderedWorkspace.tasks.end()) {
+         const auto title = QString::fromStdString(found->title);
+         text += preview.target.position == TaskMovePosition::BEFORE ? " · before “" + title + "”"
+                                                                     : " · after “" + title + "”";
+      }
+   } else {
+      text += " · empty group";
+   }
+   if (preview.target.position == TaskMovePosition::GROUP_END) { text += " · end of group"; }
+   if (preview.clearedContextId) { text += " · remove assignment to " + taskGroupName(*preview.clearedContextId); }
+   return text;
+}
+
+void PersistentTaskWindow::moveTaskWithKeyboard() {
+   using namespace taskcompass;
+   const auto selected = selectedTask();
+   if (!selected || !taskOrderingAvailable()) { return; }
+   const auto snapshot = renderedWorkspace;
+   QDialog dialog(this);
+   dialog.setWindowTitle("Move Task");
+   QFormLayout layout(&dialog);
+   QComboBox group(&dialog);
+   group.setObjectName("taskMoveGroup");
+   QComboBox position(&dialog);
+   position.setObjectName("taskMovePosition");
+   QLabel previewLabel(&dialog);
+   previewLabel.setObjectName("keyboardTaskMovePreview");
+   previewLabel.setWordWrap(true);
+   layout.addRow("&Context", &group);
+   layout.addRow("&Position", &position);
+   layout.addRow(&previewLabel);
+   QDialogButtonBox buttons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+   layout.addRow(&buttons);
+   const auto *current = effectiveContext(snapshot, selected->id);
+   for (const auto &context : orderedContexts(snapshot, false)) {
+      group.addItem(taskGroupName(context.id), QString::fromStdString(context.id));
+   }
+   group.addItem("No context", QString{});
+   group.setCurrentIndex(current ? group.findData(QString::fromStdString(current->id)) : group.count() - 1);
+   std::optional<TaskMovePreview> preview;
+   const auto updatePreview = [&]() {
+      preview.reset();
+      if (position.currentIndex() >= 0) {
+         const auto anchor = position.currentData().toString().toStdString();
+         try {
+            preview = previewTaskMove(snapshot, {selected->id, group.currentData().toString().toStdString(),
+               anchor.empty() ? TaskMovePosition::GROUP_END : TaskMovePosition::BEFORE, anchor});
+            previewLabel.setText(describeTaskMove(*preview));
+         } catch (const std::exception &error) { previewLabel.setText(QString::fromUtf8(error.what())); }
+      }
+      buttons.button(QDialogButtonBox::Ok)->setEnabled(preview && !preview->noChange);
+   };
+   const auto selectGroup = [&]() {
+      const QSignalBlocker block(&position);
+      position.clear();
+      for (const auto &task : taskMoveRows(snapshot, group.currentData().toString().toStdString(), selected->id)) {
+         position.addItem(QString("Before “%1”").arg(QString::fromStdString(task.title)), QString::fromStdString(task.id));
+      }
+      position.addItem("End of group", QString{});
+      updatePreview();
+   };
+   connect(&group, &QComboBox::currentIndexChanged, &dialog, selectGroup);
+   connect(&position, &QComboBox::currentIndexChanged, &dialog, updatePreview);
+   connect(&buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+   connect(&buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+   selectGroup();
+   if (dialog.exec() == QDialog::Accepted && preview && taskOrderingAvailable()) {
+      static_cast<PersistentTaskFilter *>(proxy)->commitTaskMove(*preview);
+   }
 }

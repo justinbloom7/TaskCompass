@@ -1,4 +1,5 @@
 #include "MemoryWorkspaceRepository.h"
+#include "domain/FractionalRank.h"
 #include "desktop/models/OrganizationTreeModel.h"
 #include "desktop/dialogs/OrganizationMoveDialog.h"
 #include "desktop/dialogs/OrganizationEditDialog.h"
@@ -12,6 +13,9 @@
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QLineEdit>
+#include <QLabel>
+#include <QListWidget>
+#include <QDropEvent>
 #include <QPushButton>
 #include <QMessageBox>
 #include <QSignalSpy>
@@ -57,6 +61,44 @@ PersistentTaskController::SessionFactory factory(const std::shared_ptr<MemoryWor
       session->commands = std::make_unique<CommandService>(*session->workspaceRepository, DATASET, []() { return 2000; }, uuid);
       return session;
    };
+}
+WorkspaceSnapshot taskOrderSample(bool many = false) {
+   auto snapshot = sample();
+   snapshot.schemaVersion = 3;
+   const auto home = uuid();
+   const auto office = uuid();
+   const auto empty = uuid();
+   const auto archived = uuid();
+   snapshot.contexts = {
+      {home, DATASET, "Home", "001", 1000, 1000, {}, {}, 1},
+      {office, DATASET, "Office", "01", 1000, 1000, {}, {}, 1},
+      {empty, DATASET, "Empty", "1", 1000, 1000, {}, {}, 1},
+      {archived, DATASET, "Archived", "11", 1000, 1000, 1000, {}, 1}
+   };
+   snapshot.tasks.clear();
+   const auto addTask = [&](std::string title, const std::string &context, std::int64_t priority, std::string rank,
+                            TaskStatus status = TaskStatus::ACTIVE, TaskOwner owner = {}) {
+      const auto id = uuid();
+      snapshot.tasks.push_back({id, DATASET, std::move(title), {}, status, 1000, 1000,
+                                status == TaskStatus::COMPLETED ? std::optional<Timestamp>(1000) : std::nullopt,
+                                {}, 1, std::move(owner), priority, std::move(rank)});
+      if (!context.empty()) { snapshot.taskContexts.push_back({uuid(), DATASET, id, context, 1000, 1000, {}, 1}); }
+   };
+   addTask("Home A", home, 5, "01");
+   addTask("Home B", home, 5, "1");
+   addTask("Home C", home, 5, "11", TaskStatus::ACTIVE,
+           {TaskOwnerKind::OBJECTIVE, organizationFields(snapshot.organizations.back()).id});
+   addTask("Office completed anchor", office, 1, "01", TaskStatus::COMPLETED);
+   addTask("Office urgent", office, 1, "1");
+   addTask("Office later", office, 7, "1");
+   addTask("Archived link", archived, 5, "1");
+   addTask("Independent task", {}, 5, "11");
+   if (many) {
+      for (int i = 1; i <= 36; ++i) {
+         addTask("Scroll task " + std::to_string(i), office, 9, seedRank(i, 36));
+      }
+   }
+   return snapshot;
 }
 void confirmMessage() {
    QTimer::singleShot(0, []() {
@@ -134,6 +176,76 @@ private slots:
       QCOMPARE(model.index(3, 0).data(OrganizationTreeModel::ID_ROLE).toString(), QString::fromStdString(alpha.id));
       QVERIFY(model.index(3, 0).data().toString().endsWith("(0)"));
    }
+   void taskMoveKeyboardAndEligibility() {
+      auto store = std::make_shared<MemoryWorkspaceRepository>();
+      store->snapshot = taskOrderSample();
+      PersistentTaskWindow window(factory(store)); window.show();
+      auto *controller = window.findChild<PersistentTaskController *>();
+      QTRY_VERIFY(controller->isReady() && !controller->isBusy());
+      auto *table = window.findChild<QTableView *>("persistentTaskTable");
+      auto *groups = window.findChild<QListWidget *>("taskOrderGroups");
+      auto *move = window.findChild<QAction *>("moveTaskAction");
+      QCOMPARE(groups->count(), 4);
+      QCOMPARE(groups->item(2)->text(), QString("Empty"));
+      QCOMPARE(groups->item(3)->text(), QString("No context"));
+      table->selectRow(0);
+      QTRY_VERIFY(move->isEnabled() && table->dragEnabled());
+
+      auto *search = window.findChild<QLineEdit *>("searchEdit");
+      search->setText("Home A");
+      QVERIFY(!move->isEnabled() && !table->dragEnabled());
+      search->clear();
+      table->sortByColumn(PersistentTaskModel::PRIORITY_COLUMN, Qt::AscendingOrder);
+      QVERIFY(!move->isEnabled() && !table->dragEnabled());
+      table->sortByColumn(PersistentTaskModel::CONTEXT_COLUMN, Qt::AscendingOrder);
+      table->selectRow(0);
+      QTRY_VERIFY(move->isEnabled());
+      auto *completed = window.findChild<QCheckBox *>("showCompleted");
+      completed->setChecked(true);
+      QVERIFY(!move->isEnabled());
+      completed->setChecked(false);
+      table->selectRow(0);
+
+      const auto id = controller->workspace().tasks.front().id;
+      QTimer::singleShot(0, []() {
+         if (auto *dialog = qobject_cast<QDialog *>(QApplication::activeModalWidget())) { dialog->reject(); }
+      });
+      move->trigger();
+      QCOMPARE(store->receipts.size(), std::size_t(0));
+      QMimeData external;
+      QDropEvent event(QPointF(10, 10), Qt::MoveAction, &external, Qt::LeftButton, Qt::NoModifier);
+      QApplication::sendEvent(table->viewport(), &event);
+      QVERIFY(!event.isAccepted());
+      QCOMPARE(store->receipts.size(), std::size_t(0));
+
+      bool sawPreview = false;
+      QTimer::singleShot(0, [&]() {
+         auto *dialog = qobject_cast<QDialog *>(QApplication::activeModalWidget());
+         if (!dialog) { return; }
+         auto *group = dialog->findChild<QComboBox *>("taskMoveGroup");
+         auto *position = dialog->findChild<QComboBox *>("taskMovePosition");
+         auto *label = dialog->findChild<QLabel *>("keyboardTaskMovePreview");
+         if (!group || !position || !label) { dialog->reject(); return; }
+         group->setCurrentIndex(1);
+         position->setCurrentIndex(0);
+         sawPreview = label->text().contains("Office") && label->text().contains("priority 1")
+                   && label->text().contains("before") && label->text().contains("Office urgent");
+         dialog->accept();
+      });
+      move->trigger();
+      QTRY_VERIFY(!controller->isBusy());
+      QVERIFY(sawPreview);
+      QCOMPARE(store->receipts.size(), std::size_t(1));
+      const auto *link = primaryContext(controller->workspace(), id);
+      QVERIFY(link);
+      QCOMPARE(link->contextId, controller->workspace().contexts.at(1).id);
+      QCOMPARE(controller->workspace().tasks.front().priority, 1);
+      QCOMPARE(table->selectionModel()->selectedRows(0).front().data(Qt::UserRole).toString(), QString::fromStdString(id));
+      controller->undo();
+      QTRY_VERIFY(!controller->isBusy());
+      QCOMPARE(controller->workspace().tasks.front().priority, 5);
+   }
+
    void priorityEditorAcceptsFullSignedRange() {
       auto store = std::make_shared<MemoryWorkspaceRepository>();
       store->snapshot = sample();
@@ -522,6 +634,15 @@ int main(int argc, char **argv) {
    QApplication application(argc, argv);
    QTemporaryDir settings; if (!settings.isValid()) { return 1; }
    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, settings.path());
+   if (application.arguments() == QStringList{application.arguments().front(), "--manual-task-order"}) {
+      auto store = std::make_shared<MemoryWorkspaceRepository>();
+      store->snapshot = taskOrderSample(true);
+      PersistentTaskWindow window(factory(store));
+      window.setWindowTitle("TaskCompass — Stage D offline fixture");
+      window.resize(1180, 620);
+      window.show();
+      return application.exec();
+   }
    OrganizationDesktopTests tests; return QTest::qExec(&tests, argc, argv);
 }
 #include "OrganizationDesktopTests.moc"

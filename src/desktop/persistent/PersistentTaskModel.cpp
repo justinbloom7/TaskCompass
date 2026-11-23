@@ -103,7 +103,13 @@ void PersistentTaskModel::replaceWorkspace(const taskcompass::WorkspaceSnapshot 
    if (!replacement.organizations.empty()) {
       replacementGraph = std::make_unique<taskcompass::OrganizationRules>(taskcompass::organizationFields(replacement.organizations.front()).datasetId, replacement.organizations);
    }
-   beginResetModel();
+   auto incoming = replacement.tasks;
+   std::erase_if(incoming, [](const auto &task) { return task.deletedAt.has_value(); });
+   // Source rows retain identity and order for rank edits. The dynamic proxy
+   // then publishes the committed change to its sorted layout.
+   const bool sameRows = replacement.schemaVersion == contextSnapshot.schemaVersion
+      && std::ranges::equal(tasks, incoming, {}, &taskcompass::Task::id, &taskcompass::Task::id);
+   if (!sameRows) { beginResetModel(); }
    graph = std::move(replacementGraph);
    contextSnapshot.contexts = replacement.contexts;
    contextSnapshot.taskContexts = replacement.taskContexts;
@@ -118,9 +124,9 @@ void PersistentTaskModel::replaceWorkspace(const taskcompass::WorkspaceSnapshot 
       const auto context = contexts.find(link.contextId);
       if (!link.deletedAt && context != contexts.end()) { contextIndexes.emplace(link.taskId, context->second); }
    }
-   tasks = replacement.tasks;
-   std::erase_if(tasks, [](const auto &task) { return task.deletedAt.has_value(); });
-   endResetModel();
+   tasks = std::move(incoming);
+   if (!sameRows) { endResetModel(); }
+   else if (rowCount()) { emit dataChanged(index(0, 0), index(rowCount() - 1, COLUMN_COUNT - 1)); }
 }
 bool PersistentTaskModel::effectivelyArchived(int row) const { return graph && graph->taskArchived(tasks.at(row)); }
 bool PersistentTaskModel::matchesScope(int row, const std::optional<taskcompass::OrganizationKey> &scope, bool independentOnly) const {
