@@ -1537,3 +1537,36 @@ regression and the pre-connection CLI refusal cases. Build and CTest logs are
 `/tmp/taskcompass-stageb-review-final-ctest.log`. The final
 `git diff --check` passed. The working tree contains only the five review
 files listed above.
+
+#### Numbered native Windows validation scripts
+
+The owner requested numbered scripts for the pending Stage B Windows run.
+From a clean native MSYS2 UCRT64 checkout that includes these scripts and the
+review corrections pushed at `ac2bf59`, run in order:
+
+```bash
+bash scripts/phase13/01-build.sh
+bash scripts/phase13/02-test.sh
+```
+
+Stage 01 configures and builds in a fresh ignored subdirectory under
+`build-ucrt64-stage-b/`. It records the source revision, build logs and offline
+environment report. Stage 02 selects that successful build automatically and
+requires the same clean source revision. It records the exact CTest inventory,
+rejects live integration suites by name or executable, checks that the required
+offline suites are present, reports the environment, and saves the CTest log.
+Both scripts print the evidence directory. Collect its configure/build logs,
+environment snapshots, CTest inventory and test results. No database service,
+account or credentials are requested.
+
+Added `scripts/phase13/01-build.sh`, `scripts/phase13/02-test.sh` and their
+shared preflight `scripts/phase13/stage-b-windows.sh`. Syntax was checked with
+`bash -n` on each file. A temporary offline fixture explicitly mocked Windows
+UCRT64 and Linux, used a path containing spaces and UTF-8, inherited a database
+credential placeholder and MSYS2 path settings, and exercised successful
+dispatch, missing build, failed build/stale selector, changed revision, rejected
+platform, and a live executable registered under an alias. All case assertions
+passed. A trailing workspace diff check in that mock shell was intercepted by
+the fake Git command and returned its unsupported-command exit 80. The real
+workspace check was rerun separately. Native Windows execution and Stage B
+acceptance remain pending. No application code or build registration changed.
