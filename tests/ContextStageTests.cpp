@@ -13,6 +13,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QProcess>
+#include <QProcessEnvironment>
 #include <iostream>
 #include <limits>
 #include <source_location>
@@ -202,6 +203,38 @@ void guardTests() {
    check(!ledger.commands.canUndo() && rename.before.has_value());
 }
 
+void deleteCompensationConflictTests() {
+   Fixture f;
+   const auto first = f.capture("First");
+   const auto second = f.capture("Second");
+   const auto original = f.create("Original");
+   const auto replacement = f.create("Replacement");
+   f.assign(first.id, original.id);
+   f.assign(second.id, original.id);
+   const auto before = f.repo.snapshot;
+   const auto receiptCount = f.repo.receipts.size();
+   f.repo.failAfter = 2;
+   rejects([&] { f.context(ContextOperation::DELETE_CONTEXT, original.id); });
+   check(f.repo.snapshot == before && f.repo.receipts.size() == receiptCount && f.repo.changes.size() == receiptCount);
+   f.repo.failAfter = -1;
+   const auto deletion = f.context(ContextOperation::DELETE_CONTEXT, original.id);
+   check(deletion.patches.size() == 2 && f.repo.snapshot.tasks == before.tasks);
+   check(!primaryContext(f.repo.snapshot, first.id) && !primaryContext(f.repo.snapshot, second.id));
+
+   CommandService concurrent(f.repo, id(1), [&] { return ++f.now; }, [&] { return id(++f.nextId); });
+   ContextCommand assign;
+   assign.operation = ContextOperation::ASSIGN;
+   assign.id = second.id;
+   assign.expectedRevision = second.localRevision + 1;
+   assign.destination = replacement.id;
+   concurrent.execute(assign);
+   const auto changed = f.repo.snapshot;
+   const auto beforeUndo = f.repo.receipts.size();
+   rejects([&] { f.commands.undo(); });
+   check(f.repo.snapshot == changed && f.repo.receipts.size() == beforeUndo && f.commands.canUndo());
+   check(!primaryContext(f.repo.snapshot, first.id) && primaryContext(f.repo.snapshot, second.id)->contextId == replacement.id);
+}
+
 void normalizedUndoTests() {
    Fixture f;
    const auto context = f.create("Existing");
@@ -288,11 +321,35 @@ void modelAndCodecTests(const QStringList &arguments) {
    preview.start(arguments[2], {"--print-migration", "3"});
    check(preview.waitForFinished(5000) && preview.exitCode() == 0
          && preview.readAllStandardOutput().replace("\r\n", "\n") == MigrationRunner::migrationSql(3));
-   // Missing explicit fixture arguments must fail before reading inherited target settings.
-   QProcess blocked;
-   blocked.start(arguments[2], {"--apply", "--to-version", "3"});
-   check(blocked.waitForFinished(5000) && blocked.exitCode() == 1
-         && blocked.readAllStandardError().contains("003 requires --phase13-test"));
+   // Every candidate below must fail before opening a connection.
+   auto environment = QProcessEnvironment::systemEnvironment();
+   for (const auto &key : environment.keys()) {
+      if (key.startsWith("TASKCOMPASS_")) { environment.remove(key); }
+   }
+   const QStringList expected{"--expected-dataset", QString::fromStdString(id(1)),
+                              "--expected-baseline-fingerprint", QString(64, 'a')};
+   const auto rejectsCli = [&](const QStringList &flags, const QByteArray &reason) {
+      QProcess blocked;
+      blocked.setProcessEnvironment(environment);
+      blocked.start(arguments[2], flags);
+      check(blocked.waitForFinished(5000) && blocked.exitStatus() == QProcess::NormalExit
+            && blocked.exitCode() == 1 && blocked.readAllStandardError().contains(reason));
+   };
+   const QStringList apply{"--apply", "--to-version", "3"};
+   rejectsCli(apply, "003 requires --phase13-test");
+   rejectsCli(apply + QStringList{"--phase12-test"} + expected, "003 requires --phase13-test");
+   rejectsCli(apply + QStringList{"--integration"} + expected, "003 requires --phase13-test");
+   rejectsCli(apply + QStringList{"--phase13-test"}, "003 requires --phase13-test");
+   environment.insert("TASKCOMPASS_PHASE13_TEST_DB_ISOLATED", "1");
+   environment.insert("TASKCOMPASS_PHASE13_TEST_DB_HOST", "127.0.0.1");
+   environment.insert("TASKCOMPASS_PHASE13_TEST_DB_PORT", "3306");
+   environment.insert("TASKCOMPASS_PHASE13_TEST_DB_USER", "taskcompass_phase13_test");
+   environment.insert("TASKCOMPASS_PHASE13_TEST_DB_PASSWORD", "offline-fixture");
+   for (const auto *target : {"taskcompass_dev", "taskcompass_integration", "taskcompass_phase12_test"}) {
+      environment.insert("TASKCOMPASS_PHASE13_TEST_DB_NAME", target);
+      rejectsCli(apply + QStringList{"--phase13-test"} + expected, "Explicit isolated Phase 1.3");
+   }
+
 }
 
 }
@@ -303,6 +360,7 @@ int main(int argc, char **argv) {
       rankTests();
       contextTests();
       guardTests();
+      deleteCompensationConflictTests();
       normalizedUndoTests();
       modelAndCodecTests(application.arguments());
       std::cout << "PASS: fractional ranks, context transactions, inverse receipts, schema-3 preview and grouping.\n";

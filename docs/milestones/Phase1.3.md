@@ -1399,3 +1399,141 @@ for 002, and
 `9d7328b58902fd135c1433e62695274e677d2e91ad02561a419323f395e76755`
 for the accepted v1/v2 schema registry. The working tree contains the Stage B
 inventory above. Prior accepted evidence files have no diff.
+
+### 2026-11-23 focused Stage B acceptance review
+
+Reviewed the pushed source at `861f112af786d5cabc5d5dc2e01a0d54f0ad8811`
+on `jb_20261122_ms1p3`. The local and remote-tracking refs agreed and
+the starting worktree was clean. Stage B acceptance remains pending.
+
+| Area | Review result |
+| --- | --- |
+| Context atomicity | Repository acquires the mutation lease, loads fresh state in one transaction, compares the expected receipt projection, CAS-writes root and participants, then commits with audit and outbox. Participant writes clear a live link before activating its replacement. A known failure rolls back before the session cursor moves. |
+| Delete, restore and assignment | Delete compares the exact confirmed live link set and tombstones context and links. Archive/restore preserves links and sort keys. Undo restores the original identifiers only if the topology and one-primary-link invariant still hold. The new fixture checks a two-link rollback and rejects the entire inverse when another session has already reassigned one task. |
+| Rank and receipts | Reviewed unsigned ASCII ordering through canonical validation, head/tail sentinels, strict exterior bounds and the capped normalization window. Endpoint and touched participant guards recheck before and after slices. The existing tests exercise boundary lengths, exhausted ranks, bounded rejection, normalized undo, stale witnesses and independent bands. The unknown-commit recovery path refreshes a verified dataset and compares the correlated audit/outbox envelope. Native InnoDB fault injection remains unexecuted. |
+| Schema 2 | Desktop startup and repository operations select the verified schema version. The schema-2 branch uses its existing manifest and column/target shapes, performs no context reads, disables context controls and writes version-2 payloads without priority/rank fields. The review restores the exact schema-2 column metadata query by selecting generated-column metadata only for schema 3. This is source plus database-free legacy regression evidence. Live QMYSQL compatibility was not exercised. |
+| Migration 003 | Desktop and repository call read-only verification. The default CLI prints migration 001. Preview of 003 returns embedded bytes with no connection. Apply requires version 3, the explicit Phase 1.3 fixture flag, reviewed UUID/fingerprint and the dedicated fixture realm. The runner rechecks the authenticated identity, schema-2 version and fingerprint before journaling. Added process tests refuse omitted fixture metadata and Phase 1.1/1.2/development targets before opening a connection. |
+
+Corrective source changes are local. The context picker maps the selected
+row directly to a context ID rather than resolving the dialog's returned
+caption with a text lookup. If a literal context name matches a generated
+disambiguation caption, the dialog displays distinct ID-qualified choices.
+The offscreen regression selects that literal context and verifies the
+resulting assignment. Other changes are the schema-2 catalog query isolation,
+migration CLI rejection cases and multi-record deletion/inverse tests.
+
+Changed files for this review are
+`src/desktop/persistent/PersistentTaskWindow.cpp`,
+`src/infrastructure/storage/MigrationRunner.cpp`,
+`tests/ContextStageTests.cpp`, `tests/OrganizationDesktopTests.cpp` and
+this milestone. No commit or push was performed.
+
+#### Preservation evidence
+
+```bash
+git rev-parse HEAD origin/jb_20261122_ms1p3
+git diff --exit-code 7849827 HEAD -- \
+   migrations/mariadb/001_PersistentTaskFoundation.sql \
+   migrations/mariadb/002_OrganizationalManagement.sql \
+   migrations/mariadb/SchemaManifest.json \
+   docs/milestones/Phase1.1.md docs/milestones/Phase1.2.md 'docs/Phase1.2*' \
+   scripts/phase11 scripts/phase12
+sha256sum migrations/mariadb/00{1,2}*.sql migrations/mariadb/SchemaManifest.json
+python3 docs/diagrams/GenerateDatabaseSchema.py --check
+git diff --check
+```
+
+Both refs showed the pushed revision above. The preservation diff was empty.
+The SHA-256 values matched the hashes recorded in the Stage B validation above.
+The diagram check verified 13 tables, 130 columns, 32 SQL FKs and two logical
+references. Affected historical evidence, migrations and registry also have
+no working-tree diff. No SQL or database connection was attempted.
+
+#### Windows MSYS2 UCRT64 gate
+
+Native execution is pending access to Windows. `uname -a` identified this
+session as CentOS Linux. `vmrun list` showed zero running VMs. A Windows 10
+VM is present but powered off. The historical host `feldria-w10` did not
+resolve in the current environment and has no configured SSH guest access
+here. No VM boot, guest login or network database access was attempted.
+Linux and mocked Windows cases are recorded as offline evidence only.
+
+For the native run, use a separate Windows checkout containing the pushed
+revision and the same review corrections. The source/test-only review patch
+is `/tmp/taskcompass-stageb-review.patch` on the Linux host, SHA-256
+`568ae64baa9dea5d4bdba6d72e4c21b8a2010af52b81497a872551fcc86e65cf`. In an isolated
+checkout at the exact pushed revision, check and apply that patch if it is
+not already present. Do not overwrite an existing checkout. Then run this
+block from native UCRT64 Bash:
+
+```bash
+set -euo pipefail
+test "${MSYSTEM:-}" = UCRT64
+git rev-parse HEAD
+git status --short --branch
+git diff --check
+for key in "${!TASKCOMPASS_@}"; do unset "$key"; done
+unset MSYS2_ARG_CONV_EXCL MSYS2_ENV_CONV_EXCL
+buildDir=$(cygpath -m "$(mktemp -d)")
+cmake -S . -B "$buildDir" -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON \
+   -DTASKCOMPASS_ENABLE_DB_TESTS=ON -DTASKCOMPASS_ENABLE_PHASE12_DB_TESTS=ON
+cmake --build "$buildDir"
+bash scripts/environment-report.sh --build-dir "$buildDir" \
+   --output-dir "$buildDir/evidence" --context stage-b-native-ucrt64
+ctest --test-dir "$buildDir" --show-only=json-v1 > "$buildDir/evidence/ctest-inventory.json"
+python - "$buildDir/evidence/ctest-inventory.json" <<'PYTHON'
+import json
+from pathlib import Path
+import sys
+names = {item["name"] for item in json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))["tests"]}
+assert not names.intersection({"MariaDbIntegrationTests", "OrganizationIntegrationTests"})
+assert {"ContextStageTests", "OrganizationDesktopTests", "WorkspaceCodecTests"} <= names
+PYTHON
+ctest --test-dir "$buildDir" --output-on-failure \
+   --output-log "$buildDir/evidence/ctest.log"
+```
+
+Record the actual source revision or patch checksum, configure/build
+results, native test counts, test failure messages, and the environment
+report. The old cache opt-ins are intentionally set ON as a guard regression.
+The CTest inventory check stops before execution if either database
+integration binary appears. No database setup, service or connection is
+part of this procedure. MariaDB 003 compatibility and schema-2 live runtime
+testing remain separate approvals.
+
+#### Acceptance checkpoint
+
+The existing Stage B approval request remains open. Native UCRT64 evidence
+is outstanding, so the focused review cannot establish Stage B acceptance
+yet. No Stage C or database work is authorized by this review.
+
+#### Linux rerun for the focused review
+
+```bash
+cmake -S . -B /tmp/taskcompass-stageb-review \
+   -DTASKCOMPASS_ENABLE_DB_TESTS=ON -DTASKCOMPASS_ENABLE_PHASE12_DB_TESTS=ON
+cmake --build /tmp/taskcompass-stageb-review -j 8
+ctest --test-dir /tmp/taskcompass-stageb-review --show-only=json-v1
+ctest --test-dir /tmp/taskcompass-stageb-review \
+   -R 'ContextStageTests|OrganizationDesktopTests|WorkspaceCodecTests' --output-on-failure
+scripts/environment-report.sh --build-dir /tmp/taskcompass-stageb-review \
+   --output-dir /tmp/taskcompass-stageb-review-evidence --context stage-b-focused-review-final
+ctest --test-dir /tmp/taskcompass-stageb-review --output-on-failure -j 6
+git apply --reverse --check /tmp/taskcompass-stageb-review.patch
+```
+
+The initial focused selection passed 3/3. The subsequent full run before
+the added two-link case passed 31/31 in 78.08 seconds. Configure reported
+both obsolete DB-test options unused, and the CTest inventory had 31 entries
+and neither live integration binary. The final environment report is
+`/tmp/taskcompass-stageb-review-evidence/environment-2026-11-23T173207.869743_0000-6181f612.json`.
+It records CentOS Stream 9, GCC 11.5.0, Qt 6.10.3 and no server query. The
+review patch passes a reverse dry-run against the current working tree.
+
+The final corrected build succeeded. Full database-free CTest passed
+**31/31 in 76.02 seconds**, including the two-link checks, the context picker
+regression and the pre-connection CLI refusal cases. Build and CTest logs are
+`/tmp/taskcompass-stageb-review-final-build.log` and
+`/tmp/taskcompass-stageb-review-final-ctest.log`. The final
+`git diff --check` passed. The working tree contains only the five review
+files listed above.

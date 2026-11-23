@@ -137,7 +137,10 @@ void MigrationRunner::requireShape(int version) {
       const auto descriptor = entry.value().toObject();
       const auto expectedColumns = descriptor["columns"].toArray();
       QSqlQuery columns(database);
-      columns.prepare("SELECT COLUMN_NAME,COLUMN_TYPE,IS_NULLABLE,CHARACTER_SET_NAME,COLLATION_NAME,EXTRA,GENERATION_EXPRESSION FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND LOWER(TABLE_NAME)=LOWER(?) ORDER BY ORDINAL_POSITION");
+      const QString generatedMetadata = version == 3 ? ",EXTRA,GENERATION_EXPRESSION" : "";
+      columns.prepare("SELECT COLUMN_NAME,COLUMN_TYPE,IS_NULLABLE,CHARACTER_SET_NAME,COLLATION_NAME"
+                      + generatedMetadata + " FROM information_schema.COLUMNS"
+                      " WHERE TABLE_SCHEMA=DATABASE() AND LOWER(TABLE_NAME)=LOWER(?) ORDER BY ORDINAL_POSITION");
       columns.addBindValue(table);
       require(columns.exec(), "Cannot verify migration column structure.");
       for (const auto &value : expectedColumns) {

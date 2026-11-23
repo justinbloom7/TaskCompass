@@ -9,6 +9,7 @@
 #include <QApplication>
 #include <QAction>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QDialogButtonBox>
 #include <QLineEdit>
 #include <QPushButton>
@@ -132,6 +133,44 @@ private slots:
       QCOMPARE(model.index(3, 0).data(OrganizationTreeModel::ID_ROLE).toString(), QString::fromStdString(alpha.id));
       QVERIFY(model.index(3, 0).data().toString().endsWith("(0)"));
    }
+   void contextPickerUsesSelectedIdentityWhenCaptionsCollide() {
+      auto store = std::make_shared<MemoryWorkspaceRepository>();
+      store->snapshot = sample();
+      store->snapshot.schemaVersion = 3;
+      const auto first = uuid();
+      const auto second = uuid();
+      const auto literal = uuid();
+      store->snapshot.contexts = {
+         {first, DATASET, "Desk", "1", 1000, 1000, {}, {}, 1},
+         {second, DATASET, "Desk", "11", 1000, 1000, {}, {}, 1},
+         {literal, DATASET, "Desk (" + first + ")", "111", 1000, 1000, {}, {}, 1}
+      };
+      PersistentTaskWindow window(factory(store)); window.show();
+      auto *controller = window.findChild<PersistentTaskController *>();
+      QTRY_VERIFY(controller->isReady() && !controller->isBusy());
+      auto *table = window.findChild<QTableView *>("persistentTaskTable");
+      auto *action = window.findChild<QAction *>("assignContextAction");
+      table->selectRow(0);
+      QTRY_VERIFY(action->isEnabled());
+      bool distinguishable = false;
+      QTimer::singleShot(0, [&]() {
+         auto *dialog = qobject_cast<QDialog *>(QApplication::activeModalWidget());
+         if (!dialog) { return; }
+         auto *picker = dialog->findChild<QComboBox *>("contextPicker");
+         if (!picker || picker->count() != 4) { dialog->reject(); return; }
+         distinguishable = picker->itemText(1) != picker->itemText(3);
+         picker->setCurrentIndex(3);
+         dialog->accept();
+      });
+      action->trigger();
+      QTRY_VERIFY(!controller->isBusy());
+      QVERIFY(distinguishable);
+      const auto &snapshot = controller->workspace();
+      const auto *link = primaryContext(snapshot, snapshot.tasks.front().id);
+      QVERIFY(link);
+      QCOMPARE(link->contextId, literal);
+   }
+
    void countRefreshPreservesNavigationAndSharedHistory() {
       QSettings settings(QSettings::IniFormat, QSettings::UserScope, "TaskCompass", "Desktop"); settings.clear();
       auto store = std::make_shared<MemoryWorkspaceRepository>(); store->snapshot = sample();

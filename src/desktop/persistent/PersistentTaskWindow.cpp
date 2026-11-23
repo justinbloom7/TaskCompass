@@ -561,13 +561,49 @@ void PersistentTaskWindow::populateCreationMenu(QMenu *menu) {
 
 namespace {
 
-QString contextChoice(const taskcompass::Context &context, const std::vector<taskcompass::Context> &choices) {
-   auto name = QString::fromStdString(context.name);
-   if (context.archivedAt) { name += " [archived]"; }
-   if (context.name == "No context" || std::ranges::count(choices, context.name, &taskcompass::Context::name) > 1) {
-      name += " (" + QString::fromStdString(context.id) + ")";
+std::optional<int> chooseContext(QWidget *parent, const QString &title, const QString &prompt,
+                                 const std::vector<taskcompass::Context> &choices, bool allowUnassigned,
+                                 int selected = 0) {
+   QDialog dialog(parent);
+   dialog.setWindowTitle(title);
+   QFormLayout layout(&dialog);
+   QComboBox labels(&dialog);
+   labels.setObjectName("contextPicker");
+   if (allowUnassigned) { labels.addItem("No context"); }
+   QStringList captions;
+   for (const auto &context : choices) {
+      auto caption = QString::fromStdString(context.name);
+      if (context.archivedAt) { caption += " [archived]"; }
+      captions.push_back(caption);
    }
-   return name;
+   for (int i = 0; i < captions.size(); ++i) {
+      auto caption = captions.at(i);
+      if (caption == "No context" || captions.count(caption) > 1) {
+         caption += " (" + QString::fromStdString(choices.at(static_cast<std::size_t>(i)).id) + ")";
+      }
+      labels.addItem(caption);
+   }
+   // A literal context name can also match a generated disambiguation label.
+   QStringList displayed;
+   for (int i = 0; i < labels.count(); ++i) { displayed.push_back(labels.itemText(i)); }
+   const int offset = allowUnassigned ? 1 : 0;
+   for (int i = offset; i < labels.count(); ++i) {
+      if (displayed.count(displayed.at(i)) > 1) {
+         for (int row = offset; row < labels.count(); ++row) {
+            labels.setItemText(row, captions.at(row - offset) + " (" +
+               QString::fromStdString(choices.at(static_cast<std::size_t>(row - offset)).id) + ")");
+         }
+         break;
+      }
+   }
+   labels.setCurrentIndex(selected);
+   layout.addRow(prompt, &labels);
+   QDialogButtonBox buttons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+   layout.addRow(&buttons);
+   QObject::connect(&buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+   QObject::connect(&buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+   if (dialog.exec() != QDialog::Accepted || labels.currentIndex() < 0) { return {}; }
+   return labels.currentIndex();
 }
 
 }
@@ -590,15 +626,13 @@ void PersistentTaskWindow::changeContext(taskcompass::ContextOperation operation
          return (operation == Operation::RESTORE && !context.archivedAt)
                 || (operation == Operation::ARCHIVE && context.archivedAt);
       });
-      QStringList labels;
-      for (const auto &context : choices) { labels.append(contextChoice(context, choices)); }
-      if (labels.empty()) {
+      if (choices.empty()) {
          QMessageBox::information(this, "Contexts", "There are no contexts available for this action.");
          return;
       }
-      const auto label = QInputDialog::getItem(this, "Contexts", "Context", labels, 0, false, &confirmed);
-      if (!confirmed) { return; }
-      const auto &context = choices.at(static_cast<std::size_t>(labels.indexOf(label)));
+      const auto selected = chooseContext(this, "Contexts", "Context", choices, false);
+      if (!selected) { return; }
+      const auto &context = choices.at(static_cast<std::size_t>(*selected));
       command.id = context.id;
       command.expectedRevision = context.localRevision;
       oldName = QString::fromStdString(context.name);
@@ -629,26 +663,22 @@ void PersistentTaskWindow::assignContext() {
    const auto choices = taskcompass::orderedContexts(snapshot, false);
    const auto *link = taskcompass::primaryContext(snapshot, task->id);
    const auto *current = taskcompass::effectiveContext(snapshot, task->id, true);
-   QStringList labels{"No context"};
    int selected = 0;
-   for (const auto &context : choices) {
-      labels.append(contextChoice(context, choices));
-      if (link && link->contextId == context.id) { selected = static_cast<int>(labels.size() - 1); }
+   if (link) {
+      const auto assigned = std::ranges::find(choices, link->contextId, &taskcompass::Context::id);
+      if (assigned != choices.end()) { selected = static_cast<int>(assigned - choices.begin()) + 1; }
    }
-   bool confirmed = false;
-   const auto label = QInputDialog::getItem(this, "Set Context", current && current->archivedAt
+   const auto index = chooseContext(this, "Set Context", current && current->archivedAt
       ? QString("Context — currently assigned to archived “%1”").arg(QString::fromStdString(current->name)) : "Context",
-      labels, selected, false, &confirmed);
-   if (!confirmed) { return; }
-   const auto index = labels.indexOf(label);
-   if (index < 0 || (index == 0 && !link)) { return; }
+      choices, true, selected);
+   if (!index || (*index == 0 && !link)) { return; }
    taskcompass::ContextCommand command;
    command.operation = taskcompass::ContextOperation::ASSIGN;
    command.id = task->id;
    command.expectedRevision = task->localRevision;
    command.expectedWorkspace = taskcompass::workspaceRevisions(snapshot);
-   if (index > 0) {
-      command.destination = choices.at(static_cast<std::size_t>(index - 1)).id;
+   if (*index > 0) {
+      command.destination = choices.at(static_cast<std::size_t>(*index - 1)).id;
       if (link && link->contextId == *command.destination) { return; }
    }
    controller->execute(command);
