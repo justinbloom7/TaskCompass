@@ -2,11 +2,12 @@
 
 # Phase 1.3 — Everyday task management
 
-**Current status — Stage A accepted. Stage B Linux and Windows offline validation passed. Owner acceptance is pending.**
+**Current status — Stages A and B accepted. Stage C source review pending.**
 The owner approved the Stage A recommended defaults and authorized only Stage B
 source and database-free validation. See the [Stage B record](#stage-b-contexts-and-shared-persistence).
 See the [native Windows result](#2026-11-23-native-windows-stage-b-result).
-Stage C and every database execution require separate explicit authorization.
+The owner authorized Stage C source work. See the [Stage C record](#stage-c-task-priorities-and-persistent-order).
+Stage D and every database execution require separate explicit authorization.
 
 ## Baseline and authorization
 
@@ -1616,3 +1617,115 @@ database-free tests during the focused review, and native Windows passed
 Migration 003 compatibility and live QMYSQL behavior remain unverified on
 both MariaDB versions and require separately approved isolated tests.
 Please approve Stage B and explicitly authorize Stage C if desired.
+
+### 2026-11-23 Stage B formal owner acceptance
+
+The owner formally accepted Stage B and its required offline evidence. Linux
+passed 31/31 and native Windows MSYS2 UCRT64 passed 33/33 database-free tests.
+This decision supersedes the Stage B approval request above. The owner
+separately authorized Stage C source implementation and database-free tests.
+Migration 003 execution, live tests, provisioning, privileges and Stage D
+remain separate checkpoints. The Phase 1.1 and 1.2 acceptance records and
+their existing databases and backups retain their preservation boundaries.
+
+## Stage C task priorities and persistent order
+
+Stage C adds a Task menu priority editor and a numeric priority column in
+schema 3. Priorities are ASCII decimal positive signed 64-bit integers.
+New captures retain priority 5 and append to that band. An explicit edit
+appends to the end of the destination priority band within the task's current
+effective context. It does not alter the primary link, task status, owner
+or unrelated priorities. The grouped view keeps the approved
+context/priority/rank/UUID tuple. Sorting by the priority column provides a
+numeric alternate sort and does not change the persisted order. Schema 2
+retains its earlier commands and views.
+
+The command uses the existing workspace lease, snapshots and multi-record
+receipt. It validates the task revision and organization state, captures
+the primary link and context dependencies, and guards source and destination
+bands. The existing fractional-rank planner rekeys only the bounded window
+when a destination append exhausts available precision. The task change and
+any window patches commit with the audit receipt and outbox entry. Undo/redo
+restores the exact priority and rank values of the task and each participant
+if revisions and topology still match. An unchanged editor value does not
+submit a command. The application rejects no-op, invalid, stale and
+schema-2 command attempts. Grouped task drag/drop and its keyboard path
+remain Stage D work.
+
+No schema changes were required. Migration 003 already provides the signed
+priority and binary rank columns, and the schema-3 codec already carries
+both values. Migrations 001–003, both schema registries and diagrams are
+unchanged. The database-free fixtures model command persistence, rollback
+and reopening a service over stored state. Native QMYSQL binding, migration
+backfill on actual MariaDB and restart persistence remain unverified and
+require approved isolated validation.
+
+### Stage C files
+
+- Domain and application: `src/domain/Task.{h,cpp}`,
+  `src/application/TaskCommand.h`, `WorkspaceRepository.h`,
+  `CommandService.{h,cpp}` and `ContextCommands.cpp`.
+- Qt adapter: `src/desktop/persistent/PersistentTaskController.{h,cpp}`,
+  `PersistentTaskModel.{h,cpp}`, `PersistentTaskFilter.cpp` and
+  `PersistentTaskWindow.{h,cpp}`.
+- Tests and report: `tests/ContextStageTests.cpp`,
+  `tests/OrganizationDesktopTests.cpp` and this milestone.
+
+No application process was pointed at MariaDB. No migration, provisioning,
+privilege change, backup operation, live test, commit or push was performed.
+
+### Stage C acceptance evidence and limits
+
+The work began from clean `jb_20261122_ms1p3` at
+`4b860e045a55f13fa60409ef4ef722c48f33e3d8`. The database-free tests cover
+default capture ordering, the 64-bit endpoints and decimal input rejection,
+numeric alternate sorting, context precedence and No context placement,
+UUID seeding and tied ranks, a destination-band rekey, unchanged
+out-of-band rows, rollback after a rank participant, stale root/anchor
+rejection, receipt serialization, in-memory service reopen and exact
+compensation. The offscreen Qt fixture tests the priority dialog and undo.
+
+Agent commands on CentOS Stream 9:
+
+```bash
+cmake -S . -B /tmp/taskcompass-stagec \
+   -DTASKCOMPASS_ENABLE_DB_TESTS=ON -DTASKCOMPASS_ENABLE_PHASE12_DB_TESTS=ON
+cmake --build /tmp/taskcompass-stagec -j 8
+ctest --test-dir /tmp/taskcompass-stagec \
+   -R 'ContextStageTests|OrganizationDesktopTests|WorkspaceCodecTests|PersistentDesktopTests' \
+   --output-on-failure
+scripts/environment-report.sh --build-dir /tmp/taskcompass-stagec \
+   --output-dir /tmp/taskcompass-stagec-evidence --context stage-c-offline
+ctest --test-dir /tmp/taskcompass-stagec --show-only=json-v1
+ctest --test-dir /tmp/taskcompass-stagec --output-on-failure -j 6
+git diff --check
+```
+
+The focused tests passed 4/4. CMake reported the legacy live-test cache
+options unused. The saved CTest JSON inventory was checked before execution
+for the required offline suites and absence of both live database integration
+binaries. The environment report
+`/tmp/taskcompass-stagec-evidence/environment-2026-11-23T183343.959565_0000-46a92f2d.json`
+records the source and build environment and no server query.
+
+Native Windows Stage C was not run. The Stage B result above belongs to
+its recorded source revision. The separately approved MariaDB follow-up
+must verify UUID-ordered migration ranks, signed 64-bit values and rank
+bytes through QMYSQL, conditional root and participant writes, rollback
+on a participant or audit/outbox failure, and exact task order after
+reconnect/restart. No existing TaskCompass database is a fixture for that
+work. Its exact isolated target, commands and credentials procedure must be
+reviewed before any execution.
+
+Final CentOS build succeeded with GCC 11.5.0 and Qt 6.10.3. Full offline
+CTest passed **31/31 in 79.45 seconds**, with zero failures or skips. The
+build and CTest logs are `/tmp/taskcompass-stagec-build.log` and
+`/tmp/taskcompass-stagec-evidence/ctest.log`. Markdown links and fences,
+`git diff --check`, and the preservation diff against all migration files,
+schema diagrams and the Phase 1.1/1.2 acceptance records passed. The working
+tree contains the 17 files listed in the Stage C inventory.
+
+**Approval Requested — Stage C review.** Please review and accept the Stage C
+source and database-free evidence. Stage D requires separate authorization.
+Any separately requested database execution still requires an approved
+isolated target, exact scope, verification and recovery plan.

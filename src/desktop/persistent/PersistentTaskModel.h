@@ -9,7 +9,7 @@
 class PersistentTaskModel : public QAbstractTableModel {
    Q_OBJECT
 public:
-   enum Column { TITLE_COLUMN, STATUS_COLUMN, CREATED_COLUMN, UPDATED_COLUMN, COMPLETED_COLUMN, ORGANIZATION_COLUMN, CONTEXT_COLUMN, COLUMN_COUNT };
+   enum Column { TITLE_COLUMN, STATUS_COLUMN, CREATED_COLUMN, UPDATED_COLUMN, COMPLETED_COLUMN, ORGANIZATION_COLUMN, CONTEXT_COLUMN, PRIORITY_COLUMN, COLUMN_COUNT };
    explicit PersistentTaskModel(QObject *parent = nullptr);
    int rowCount(const QModelIndex &parent = {}) const override;
    int columnCount(const QModelIndex &parent = {}) const override;

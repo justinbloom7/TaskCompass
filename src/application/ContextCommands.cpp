@@ -375,6 +375,42 @@ WorkspaceReceipt CommandService::execute(const ContextCommand &command) {
    });
 }
 
+WorkspaceReceipt CommandService::execute(const TaskPriorityCommand &command) {
+   return executePrepared([&](const WorkspaceSnapshot &snapshot) {
+      if (snapshot.schemaVersion != 3) { throw std::runtime_error("Task priorities require schema 3."); }
+      const auto before = requireEntity(snapshot, {EntityKind::TASK, command.taskId}, command.expectedRevision);
+      auto task = std::get<Task>(before);
+      if (task.deletedAt) { throw std::invalid_argument("Task is removed."); }
+      if (command.priority <= 0 || task.priority == command.priority) {
+         throw std::invalid_argument("Choose a different positive task priority.");
+      }
+      OrganizationRules(datasetId, snapshot.organizations).requireTaskOwner(task, false);
+      const auto issuedAt = clock();
+      const auto *context = effectiveContext(snapshot, task.id);
+      const std::string group = context ? context->id : "";
+      Plan plan(snapshot, issuedAt);
+      plan.watch(ContextGuardKind::TASK_LINK, task.id);
+      plan.watch(ContextGuardKind::BAND, group, task.priority);
+      plan.watch(ContextGuardKind::BAND, group, command.priority);
+      task.priority = command.priority;
+      EntitySnapshot after = task;
+      const auto &destination = plan.guards.back();
+      plan.place(destination, after, destination.before.size());
+      auto result = receipt(CommandOperation::EDIT, before, std::move(after), PRIORITY | RANK, snapshot);
+      result.issuedAt = issuedAt;
+      if (const auto *link = primaryContext(snapshot, task.id)) {
+         const auto *assigned = findRecord(snapshot.contexts, link->contextId);
+         result.dependencies.push_back({entityKey(*assigned), assigned->localRevision});
+      }
+      validateChange(snapshot, result.after, false);
+      putEntity(plan.after, result.after);
+      plan.finalizeGuards();
+      result.contextGuards = std::move(plan.guards);
+      result.patches = std::move(plan.patches);
+      return result;
+   });
+}
+
 void CommandService::prepareTaskCaptureRank(WorkspaceReceipt &result, const WorkspaceSnapshot &snapshot) {
    Plan plan(snapshot, result.issuedAt);
    plan.watch(ContextGuardKind::BAND, {}, std::get<Task>(result.after).priority);

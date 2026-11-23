@@ -15,6 +15,7 @@ public:
    ~PersistentTaskController() override;
    void reload();
    void execute(const taskcompass::TaskCommand &command);
+   void execute(const taskcompass::TaskPriorityCommand &command);
    void execute(const taskcompass::OrganizationCommand &command);
    void execute(const taskcompass::ContextCommand &command);
    void undo();

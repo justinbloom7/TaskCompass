@@ -15,6 +15,7 @@ public:
                   Clock clock, IdGenerator generateId);
    WorkspaceSnapshot read();
    WorkspaceReceipt execute(const TaskCommand &command);
+   WorkspaceReceipt execute(const TaskPriorityCommand &command);
    WorkspaceReceipt execute(const OrganizationCommand &command);
    WorkspaceReceipt execute(const ContextCommand &command);
    WorkspaceReceipt undo();

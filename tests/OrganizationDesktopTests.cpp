@@ -28,6 +28,7 @@
 #include <QTest>
 #include <QTimer>
 #include <QUuid>
+#include <limits>
 
 using namespace taskcompass;
 namespace {
@@ -133,6 +134,42 @@ private slots:
       QCOMPARE(model.index(3, 0).data(OrganizationTreeModel::ID_ROLE).toString(), QString::fromStdString(alpha.id));
       QVERIFY(model.index(3, 0).data().toString().endsWith("(0)"));
    }
+   void priorityEditorAcceptsFullSignedRange() {
+      auto store = std::make_shared<MemoryWorkspaceRepository>();
+      store->snapshot = sample();
+      store->snapshot.schemaVersion = 3;
+      PersistentTaskWindow window(factory(store)); window.show();
+      auto *controller = window.findChild<PersistentTaskController *>();
+      QTRY_VERIFY(controller->isReady() && !controller->isBusy());
+      auto *table = window.findChild<QTableView *>("persistentTaskTable");
+      auto *action = window.findChild<QAction *>("taskPriorityAction");
+      table->selectRow(0);
+      QTRY_VERIFY(action->isEnabled());
+      bool constrained = false;
+      QTimer::singleShot(0, [&]() {
+         auto *dialog = qobject_cast<QDialog *>(QApplication::activeModalWidget());
+         if (!dialog) { return; }
+         auto *input = dialog->findChild<QLineEdit *>("taskPriorityInput");
+         auto *buttons = dialog->findChild<QDialogButtonBox *>();
+         if (!input || !buttons) { dialog->reject(); return; }
+         auto *ok = buttons->button(QDialogButtonBox::Ok);
+         const bool untouchedDisabled = !ok->isEnabled();
+         input->setText("9223372036854775808");
+         const bool overflowDisabled = !ok->isEnabled();
+         input->setText("9223372036854775807");
+         constrained = untouchedDisabled && overflowDisabled && ok->isEnabled();
+         ok->click();
+         if (!constrained) { dialog->reject(); }
+      });
+      action->trigger();
+      QTRY_VERIFY(!controller->isBusy());
+      QVERIFY(constrained);
+      QCOMPARE(controller->workspace().tasks.front().priority, std::numeric_limits<std::int64_t>::max());
+      controller->undo();
+      QTRY_VERIFY(!controller->isBusy());
+      QCOMPARE(controller->workspace().tasks.front().priority, 5);
+   }
+
    void contextPickerUsesSelectedIdentityWhenCaptionsCollide() {
       auto store = std::make_shared<MemoryWorkspaceRepository>();
       store->snapshot = sample();

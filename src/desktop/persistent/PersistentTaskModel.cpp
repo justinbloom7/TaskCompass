@@ -39,6 +39,7 @@ QVariant PersistentTaskModel::data(const QModelIndex &index, int role) const {
       case CREATED_COLUMN: return date(task.createdAt);
       case UPDATED_COLUMN: return date(task.updatedAt);
       case COMPLETED_COLUMN: return task.completedAt ? date(*task.completedAt) : QString();
+      case PRIORITY_COLUMN: return hasContexts() ? QVariant::fromValue<qlonglong>(task.priority) : QVariant();
       case CONTEXT_COLUMN: {
          const auto *context = contextAt(index.row(), archivedContextsVisible);
          if (!context) { return "No context"; }
@@ -67,7 +68,7 @@ QVariant PersistentTaskModel::headerData(int section, Qt::Orientation orientatio
    if (orientation == Qt::Vertical) {
       return section + 1;
    }
-   const QStringList headers = {"Task name", "Status", "Created", "Last modified", "Completed at", "Organization", "Context"};
+   const QStringList headers = {"Task name", "Status", "Created", "Last modified", "Completed at", "Organization", "Context", "Priority"};
    return section >= 0 && section < headers.size() ? QVariant(headers.at(section)) : QVariant();
 }
 

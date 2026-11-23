@@ -269,6 +269,93 @@ void normalizedUndoTests() {
    check(primaryContext(independent.repo.snapshot, other.id)->contextId == outside.id);
 }
 
+void priorityTests() {
+   constexpr auto highestNumber = std::numeric_limits<std::int64_t>::max();
+   check(parseTaskPriority("1") == 1 && parseTaskPriority("9223372036854775807") == highestNumber);
+   for (const auto *invalid : {"", "0", "-1", "+1", "1.5", "1e2", " 1", "1 ", "9223372036854775808", "１"}) {
+      check(!parseTaskPriority(invalid));
+   }
+   check(!parseTaskPriority(std::string("1\0x", 3)));
+
+   Fixture f;
+   const auto task = f.capture("Change priority");
+   const auto anchor = f.capture("Existing destination");
+   const auto outside = f.capture("Outside the destination band");
+   const auto revision = [&](const Task &record) {
+      return entityRevision(*findEntity(f.repo.snapshot, entityKey(record)));
+   };
+   rejects([&] { f.commands.execute(TaskPriorityCommand{task.id, task.localRevision, 0}); });
+   rejects([&] { f.commands.execute(TaskPriorityCommand{task.id, task.localRevision, 5}); });
+   f.commands.execute(TaskPriorityCommand{anchor.id, revision(anchor), highestNumber});
+   auto &storedAnchor = f.repo.snapshot.tasks.at(1);
+   storedAnchor.manualOrderKey = std::string(MAX_RANK_BYTES, '1');
+   ++storedAnchor.localRevision;
+   const auto before = f.repo.snapshot;
+   const TaskPriorityCommand edit{task.id, revision(task), highestNumber};
+   f.repo.failAfter = 1;
+   const auto receiptCount = f.repo.receipts.size();
+   rejects([&] { f.commands.execute(edit); });
+   check(f.repo.snapshot == before && f.repo.receipts.size() == receiptCount);
+   f.repo.failAfter = -1;
+
+   const auto change = f.commands.execute(edit);
+   const auto &moved = std::get<Task>(change.after);
+   check(moved.priority == highestNumber && moved.manualOrderKey == "1");
+   check(change.changedFields == (PRIORITY | RANK) && change.patches.size() == 1);
+   const auto &normalized = std::get<Task>(change.patches.front().after);
+   check(normalized.id == anchor.id && normalized.priority == highestNumber && normalized.manualOrderKey == "01");
+   check(f.repo.snapshot.tasks.at(2) == outside);
+   check(f.commands.undoDescription() == "Set task priority");
+   const auto encoded = QJsonDocument::fromJson(encodeReceiptSnapshot(change, false, 3).toUtf8()).object();
+   check(decodeEntity(encoded["rootAfter"].toObject(), 3) == change.after);
+   check(encoded["rootAfter"].toObject()["priority"].toString() == "9223372036854775807");
+
+   f.commands.undo();
+   check(f.repo.snapshot.tasks.at(0).priority == 5 && f.repo.snapshot.tasks.at(0).manualOrderKey == task.manualOrderKey);
+   check(f.repo.snapshot.tasks.at(1).manualOrderKey == before.tasks.at(1).manualOrderKey);
+   f.commands.redo();
+   CommandService reopened(f.repo, id(1), [&] { return ++f.now; }, [&] { return id(++f.nextId); });
+   check(reopened.read().tasks.at(0).priority == highestNumber && reopened.read().tasks.at(0).manualOrderKey == "1");
+   check(!reopened.canUndo());
+   ++f.repo.snapshot.tasks.at(1).localRevision;
+   const auto changedExternally = f.repo.snapshot;
+   rejects([&] { f.commands.undo(); });
+   check(f.repo.snapshot == changedExternally);
+   rejects([&] { f.commands.execute(edit); });
+   f.repo.snapshot.schemaVersion = 2;
+   rejects([&] { f.commands.execute(TaskPriorityCommand{task.id, revision(task), 1}); });
+}
+
+void seededPriorityBandTests() {
+   Fixture f;
+   const auto one = f.capture("Zulu");
+   const auto two = f.capture("Alpha");
+   const auto three = f.capture("Middle");
+   // Model the migration's UUID-ordered seed from a repository with different read order.
+   auto &rows = f.repo.snapshot.tasks;
+   std::ranges::reverse(rows);
+   std::vector<std::string> ids{one.id, two.id, three.id};
+   std::ranges::sort(ids);
+   for (auto &row : rows) {
+      const auto position = std::ranges::find(ids, row.id) - ids.begin() + 1;
+      row.manualOrderKey = seedRank(position, ids.size());
+   }
+   PersistentTaskModel model;
+   PersistentTaskFilter filter;
+   filter.setSourceModel(&model);
+   filter.sort(PersistentTaskModel::CONTEXT_COLUMN);
+   auto assertOrder = [&]() {
+      model.replaceWorkspace(f.repo.snapshot);
+      for (int row = 0; row < filter.rowCount(); ++row) {
+         check(filter.index(row, 0).data(Qt::UserRole).toString().toStdString() == ids.at(row));
+      }
+   };
+   assertOrder();
+   // Two merged bands can contain equal ranks. UUID remains the stable tie-breaker.
+   for (auto &row : rows) { row.manualOrderKey = "1"; }
+   assertOrder();
+}
+
 void modelAndCodecTests(const QStringList &arguments) {
    Fixture f;
    const auto unassigned = f.capture("A unassigned");
@@ -278,6 +365,8 @@ void modelAndCodecTests(const QStringList &arguments) {
    const auto office = f.create("Office");
    f.assign(early.id, home.id);
    const auto receipt = f.assign(late.id, office.id);
+   f.commands.execute(TaskPriorityCommand{early.id, early.localRevision + 1, 10});
+   f.commands.execute(TaskPriorityCommand{unassigned.id, unassigned.localRevision, 2});
 
    PersistentTaskModel model;
    PersistentTaskFilter filter;
@@ -296,6 +385,8 @@ void modelAndCodecTests(const QStringList &arguments) {
    check(archived.data().toString() == "No context" && archived.data(Qt::ToolTipRole).toString().contains("Morning"));
    filter.setIncludeArchived(true);
    check(actual(0) == early.id && archived.data().toString().contains("Morning"));
+   filter.sort(PersistentTaskModel::PRIORITY_COLUMN, Qt::AscendingOrder);
+   check(actual(0) == unassigned.id && actual(1) == late.id && actual(2) == early.id);
    filter.sort(PersistentTaskModel::TITLE_COLUMN, Qt::AscendingOrder);
    check(actual(0) == unassigned.id);
 
@@ -362,6 +453,8 @@ int main(int argc, char **argv) {
       guardTests();
       deleteCompensationConflictTests();
       normalizedUndoTests();
+      priorityTests();
+      seededPriorityBandTests();
       modelAndCodecTests(application.arguments());
       std::cout << "PASS: fractional ranks, context transactions, inverse receipts, schema-3 preview and grouping.\n";
       return 0;

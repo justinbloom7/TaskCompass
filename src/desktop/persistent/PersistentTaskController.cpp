@@ -106,6 +106,14 @@ void PersistentTaskController::execute(const taskcompass::OrganizationCommand &c
       });
    }
 }
+void PersistentTaskController::execute(const taskcompass::TaskPriorityCommand &command) {
+   if (ready) {
+      dispatch([command](PersistentTaskSession &session) {
+         if (!session.commands) { throw std::runtime_error("Priority editing requires a schema-3 workspace."); }
+         session.commands->execute(command);
+      });
+   }
+}
 void PersistentTaskController::execute(const taskcompass::ContextCommand &command) {
    if (ready) {
       dispatch([command](PersistentTaskSession &session) {

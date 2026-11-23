@@ -2,6 +2,7 @@
 #include "FractionalRank.h"
 
 #include <algorithm>
+#include <charconv>
 #include <stdexcept>
 
 namespace taskcompass {
@@ -72,6 +73,15 @@ std::string normalizeTitle(const std::string &title) {
       throw std::invalid_argument("Title must contain valid UTF-8, at most 1024 bytes and no NUL characters.");
    }
    return result;
+}
+
+std::optional<std::int64_t> parseTaskPriority(std::string_view input) {
+   if (input.empty()) { return {}; }
+   std::int64_t priority = 0;
+   const auto end = input.data() + input.size();
+   const auto result = std::from_chars(input.data(), end, priority);
+   if (result.ec != std::errc{} || result.ptr != end || priority <= 0) { return {}; }
+   return priority;
 }
 
 void validateTask(const Task &task) {

@@ -118,6 +118,7 @@ PersistentTaskWindow::PersistentTaskWindow(PersistentTaskController::SessionFact
    table->horizontalHeader()->setStretchLastSection(true);
    table->setColumnWidth(0, 300);
    table->setColumnHidden(PersistentTaskModel::CONTEXT_COLUMN, true);
+   table->setColumnHidden(PersistentTaskModel::PRIORITY_COLUMN, true);
    layout->addWidget(table);
    splitter->setSizes({240, 860});
    splitter->setStretchFactor(1, 1);
@@ -143,6 +144,8 @@ PersistentTaskWindow::PersistentTaskWindow(PersistentTaskController::SessionFact
    completeAction->setObjectName("completeTaskAction");
    assignContextAction = taskMenu->addAction("Set Context...", this, &PersistentTaskWindow::assignContext);
    assignContextAction->setObjectName("assignContextAction");
+   priorityAction = taskMenu->addAction("Set Priority...", this, &PersistentTaskWindow::editPriority);
+   priorityAction->setObjectName("taskPriorityAction");
    auto *contexts = menuBar()->addMenu("&Contexts");
    contextMenuAction = contexts->menuAction();
    using Operation = taskcompass::ContextOperation;
@@ -281,6 +284,7 @@ void PersistentTaskWindow::refresh() {
       renderedWorkspace = controller->workspace();
       model->replaceWorkspace(renderedWorkspace);
       table->setColumnHidden(PersistentTaskModel::CONTEXT_COLUMN, renderedWorkspace.schemaVersion != 3);
+      table->setColumnHidden(PersistentTaskModel::PRIORITY_COLUMN, renderedWorkspace.schemaVersion != 3);
       if (enableGrouping) { table->sortByColumn(PersistentTaskModel::CONTEXT_COLUMN, Qt::AscendingOrder); }
       rebuildNavigation(); updateScope();
       for (int row = 0; row < model->rowCount(); ++row) {
@@ -300,6 +304,7 @@ void PersistentTaskWindow::refresh() {
    contextMenuAction->setEnabled(contextsEnabled);
    groupByContextAction->setEnabled(contextsEnabled);
    assignContextAction->setEnabled(contextsEnabled && task.has_value());
+   priorityAction->setEnabled(contextsEnabled && task.has_value());
    newAction->setEnabled(enabled);
    editAction->setEnabled(enabled && task.has_value());
    completeAction->setEnabled(enabled && task.has_value());
@@ -654,6 +659,36 @@ void PersistentTaskWindow::changeContext(taskcompass::ContextOperation operation
       command.name = name.toStdString();
    }
    controller->execute(command);
+}
+
+void PersistentTaskWindow::editPriority() {
+   const auto task = selectedTask();
+   if (!task) { return; }
+   QDialog dialog(this);
+   dialog.setWindowTitle("Set Task Priority");
+   QFormLayout layout(&dialog);
+   QLineEdit input(QString::number(task->priority), &dialog);
+   input.setObjectName("taskPriorityInput");
+   input.selectAll();
+   layout.addRow("&Priority (1 is highest)", &input);
+   QLabel invalid("Enter a whole number from 1 to 9223372036854775807.", &dialog);
+   layout.addRow(&invalid);
+   QDialogButtonBox buttons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+   layout.addRow(&buttons);
+   const auto validate = [&]() {
+      const auto value = taskcompass::parseTaskPriority(input.text().toStdString());
+      invalid.setVisible(!value);
+      buttons.button(QDialogButtonBox::Ok)->setEnabled(value && *value != task->priority);
+   };
+   connect(&input, &QLineEdit::textChanged, &dialog, validate);
+   connect(&buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+   connect(&buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+   validate();
+   if (dialog.exec() != QDialog::Accepted) { return; }
+   const auto value = taskcompass::parseTaskPriority(input.text().toStdString());
+   if (value && *value != task->priority) {
+      controller->execute(taskcompass::TaskPriorityCommand{task->id, task->localRevision, *value});
+   }
 }
 
 void PersistentTaskWindow::assignContext() {

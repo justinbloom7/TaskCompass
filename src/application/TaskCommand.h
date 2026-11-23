@@ -5,6 +5,12 @@
 
 namespace taskcompass {
 
+struct TaskPriorityCommand {
+   std::string taskId;
+   std::int64_t expectedRevision;
+   std::int64_t priority;
+};
+
 enum class TaskOperation { CREATE, EDIT, COMPLETE, REOPEN, UNDO, REDO };
 
 struct TaskCommand {

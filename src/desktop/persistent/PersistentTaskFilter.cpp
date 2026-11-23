@@ -57,6 +57,11 @@ bool PersistentTaskFilter::lessThan(const QModelIndex &left, const QModelIndex &
       };
       return sortOrder() == Qt::AscendingOrder ? key(left.row()) < key(right.row()) : key(right.row()) < key(left.row());
    }
+   if (left.column() == PersistentTaskModel::PRIORITY_COLUMN && model->hasContexts()) {
+      const auto &a = model->taskAt(left.row());
+      const auto &b = model->taskAt(right.row());
+      return std::tie(a.priority, a.id) < std::tie(b.priority, b.id);
+   }
    const int comparison = QString::compare(left.data().toString(), right.data().toString(), Qt::CaseInsensitive);
    return comparison == 0 ? left.data(Qt::UserRole).toString() < right.data(Qt::UserRole).toString() : comparison < 0;
 }

@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 
 namespace taskcompass {
 
@@ -31,6 +32,7 @@ struct Task {
 
 bool isUuid(const std::string &value);
 std::string normalizeTitle(const std::string &title);
+std::optional<std::int64_t> parseTaskPriority(std::string_view input);
 void validateTask(const Task &task);
 
 }

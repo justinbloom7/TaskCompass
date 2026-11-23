@@ -9,7 +9,7 @@ namespace taskcompass {
 
 using EntitySnapshot = std::variant<Task, Pillar, Project, Objective, Context, TaskContext>;
 enum class CommandOperation { CREATE, EDIT, COMPLETE, REOPEN, MOVE, ARCHIVE, RESTORE, UNDO, REDO, DELETE_CONTEXT, ASSIGN, REORDER };
-enum ChangedField : unsigned { TITLE = 1, NOTES = 2, OWNER = 4, ARCHIVE = 8, REMOVAL = 16, LIFECYCLE = 32, RANK = 64 };
+enum ChangedField : unsigned { TITLE = 1, NOTES = 2, OWNER = 4, ARCHIVE = 8, REMOVAL = 16, LIFECYCLE = 32, RANK = 64, PRIORITY = 128 };
 struct WorkspacePatch {
    std::optional<EntitySnapshot> before;
    EntitySnapshot after;

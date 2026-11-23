@@ -34,6 +34,7 @@ private:
    QLabel *selectionDetails;
    void changeContext(taskcompass::ContextOperation operation);
    void assignContext();
+   void editPriority();
    void archiveOrganization(bool restore);
    void rebuildNavigation();
    void updateScope();
@@ -65,5 +66,6 @@ private:
    QAction *navigationAction;
    QAction *contextMenuAction;
    QAction *assignContextAction;
+   QAction *priorityAction;
    QAction *groupByContextAction;
 };
