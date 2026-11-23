@@ -2,13 +2,14 @@
 
 # Phase 1.3 — Everyday task management
 
-**Current status — Stages A, B and C accepted. Stage D source review pending.**
+**Current status — Stages A, B and C accepted. Stage D Linux and Windows offline validation passed. Interactive GUI results and owner acceptance are pending.**
 The owner approved the Stage A recommended defaults and authorized only Stage B
 source and database-free validation. See the [Stage B record](#stage-b-contexts-and-shared-persistence).
 See the [native Windows result](#2026-11-23-native-windows-stage-b-result).
 The owner authorized Stage C source work. See the [Stage C record](#stage-c-task-priorities-and-persistent-order).
 See the [Stage C native Windows result](#2026-11-23-native-windows-stage-c-result).
 The owner authorized Stage D source work. See the [Stage D review](#stage-d-grouped-task-reordering).
+See the [Stage D interactive checkpoints](#stage-d-windows-interactive-checkpoints).
 Stage E and every database execution require separate explicit authorization.
 
 ## Baseline and authorization
@@ -2063,3 +2064,119 @@ git diff --check
 implementation, Linux offline evidence, numbered Windows steps and manual
 checklist. Stage D acceptance remains pending the native Windows and manual
 results. Stage E and any database execution require separate explicit approval.
+
+### 2026-11-23 native Windows Stage D automated result
+
+Owner-reported output from `feldria-w10` closes the native Windows
+database-free automated gate. The owner ran these commands from a clean
+`jb_20261122_ms1p3` checkout at
+`73347c319577a6dc55ff4b2fe0f9aefed898c045`:
+
+```bash
+bash scripts/phase13/05-build.sh
+bash scripts/phase13/06-test.sh
+```
+
+Stage 05 completed all 97 Ninja build steps on Windows 10 build 19045,
+MSYS2 UCRT64, GCC 16.2.0 and Qt Widgets 6.12.0. Stage 06 admitted the
+reviewed 33-test inventory and excluded both live integration suites.
+**33 passed, zero failed or skipped, in 1657.52 seconds.** The earlier Linux
+agent run passed 31/31. Both Windows environment reports show the verified
+revision and source SHA-256
+`38e20c32bd903edc175c4b6043504e9c788cf09827d017cd85c51327eaafd3f1`.
+Stage 06 reported no environment changes and neither report queried MariaDB.
+
+Owner-side evidence directory:
+`C:/Users/justin/repo/TaskCompass/build-ucrt64-stage-d/run.4LfTmlR6/evidence`.
+The reported snapshots are
+`environment-2026-11-23T215058.065825_0000-4beb2342.json` and
+`environment-2026-11-23T215419.914729_0000-b21628e2.json`.
+This entry records the supplied console output. The saved Windows files
+were not independently read.
+
+### Stage D Windows interactive checkpoints
+
+Use the exact build from the automated pass. From the repository root in
+UCRT64, launch:
+
+```bash
+./build-ucrt64-stage-d/run.4LfTmlR6/OrganizationDesktopTests.exe --manual-task-order
+```
+
+Confirm the window is titled **TaskCompass — Stage D offline fixture**.
+The fixture uses memory only and resets when you close and relaunch it.
+Start each numbered checkpoint with a fresh launch. For a drop **before**
+a task, hover over the **upper half** of its row. For a drop **after**
+a row, use its **lower half**. Pause before releasing so you can compare
+the line, preview beneath the table, and status bar.
+
+1. **D-01 — Baseline.** Expect the group targets **Home**, **Office**,
+   **Empty**, **No context**, in that order. The first three task rows
+   are **Home A**, **Home B**, **Home C**, all priority 5. **Office urgent**
+   has priority 1 and **Office later** has 7. **Archived link** appears
+   in No context. Hover in its Context cell to see the archived link
+   tooltip. The completed Office anchor is hidden initially. Undo and
+   Redo are disabled.
+2. **D-02 — Same group and exact undo.** Drag **Home B** to the upper
+   half of **Home A**. The line appears above Home A, and the preview says
+   **Home · priority 5 · before Home A**. Release. The Home rows are
+   **B, A, C**, still priority 5. Home B stays selected. Use Edit → Undo
+   to restore **A, B, C**, then Edit → Redo to restore **B, A, C**.
+3. **D-03 — Cross-context successor and hidden anchor.** Drop **Home A**
+   on the upper half of **Office urgent**. Expect **Office · priority 1
+   · before Office urgent** before release. After release, Home A is
+   immediately above Office urgent at priority 1. Turn on **Show completed
+   tasks**. At the head of Office the sequence is **Office completed
+   anchor, Home A, Office urgent**, all priority 1. Turn the checkbox
+   back off. Undo returns Home A to the first Home row at priority 5.
+   Redo returns it to Office at priority 1.
+4. **D-04 — Boundary and end placement.** Drop **Home A** on the lower
+   half of **Office urgent**. Preview **before Office later**, priority
+   **7**, and verify Home A lands between those rows. Undo. Then drag
+   Home A onto the **Office** group target beside the table. Preview
+   **after Scroll task 36 · end of group**, priority **9**. Release and
+   scroll to the Office end. Home A follows Scroll task 36 at priority 9.
+5. **D-05 — Empty group and clearing an archived link.** Drop **Home A**
+   onto **Empty**. Preview says **Empty**, priority **5**, and end of
+   group. Confirm Home A leaves Home and appears under Empty at 5. Undo.
+   Drag **Archived link** onto the **No context** group target. Preview
+   must disclose **remove assignment to Archived [archived]**. After
+   release, it remains in No context and its archived assignment tooltip
+   is gone. Undo restores the tooltip. Redo removes it again.
+6. **D-06 — No-write cases.** Drag **Home B** over a valid destination
+   and pause. The preview appears and the visible order and Undo remain
+   unchanged. Press **Esc** while still dragging. Then repeat and release
+   over a non-target such as the search field. Finally, drop Home B just
+   above **Home C**, its current successor. Expect **A, B, C** at priority
+   5, original assignments, Undo still disabled, and no lingering line
+   or preview after each attempt.
+7. **D-07 — Autoscroll.** Start dragging **Home A** and hold near the
+   bottom edge of the visible task table. The table should scroll without
+   mouse-wheel input. Move back toward the top edge while still dragging
+   and verify reverse scrolling. Pause on a visible Office row and release
+   only once the line and named anchor agree. Verify Home A lands at the
+   previewed position and priority. Undo restores the Home start order.
+8. **D-08 — Keyboard and view guards.** Select **Home A**, press
+   **Ctrl+Alt+M** (or Task → Move Task), and use Tab and arrow keys to
+   choose **Office** and **Before Office urgent**. Verify priority 1 and
+   the named anchor. Cancel first and confirm Undo stays disabled.
+   Repeat and confirm. Check the same result as D-03, then undo. Test
+   each restriction independently: enter search text, select **Outcome**
+   or another organizational scope, sort by **Priority**, turn on
+   **Show completed tasks**, and turn on **Show archived organization
+   and tasks**. Each should disable dragging and Task → Move Task.
+   Between restrictions use **View → Clear Filters and Enable Task
+   Reordering** and verify the commands return. View changes should
+   leave the task order and undo/redo history intact.
+
+Report **PASS**, **FAIL**, or **NOT RUN** for D-01 through D-08. For a
+failure, include the task, target, exact preview text and resulting
+order or priority. A screenshot of the line and preview is helpful
+for visual discrepancies. These checks do not establish durable
+restart behavior or live MariaDB behavior.
+
+Agent documentation checks used `git rev-parse HEAD`,
+`git diff --check` and direct Markdown link/fence checks. Only this
+milestone changed, so the application build and tests were not rerun.
+Stage D acceptance awaits the interactive results and explicit owner
+approval. Stage E and database execution retain separate approval gates.
