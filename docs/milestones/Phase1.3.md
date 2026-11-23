@@ -2,9 +2,10 @@
 
 # Phase 1.3 — Everyday task management
 
-**Current status — Stage A accepted. Stage B source work submitted for review.**
+**Current status — Stage A accepted. Stage B Linux and Windows offline validation passed. Owner acceptance is pending.**
 The owner approved the Stage A recommended defaults and authorized only Stage B
 source and database-free validation. See the [Stage B record](#stage-b-contexts-and-shared-persistence).
+See the [native Windows result](#2026-11-23-native-windows-stage-b-result).
 Stage C and every database execution require separate explicit authorization.
 
 ## Baseline and authorization
@@ -1570,3 +1571,48 @@ passed. A trailing workspace diff check in that mock shell was intercepted by
 the fake Git command and returned its unsupported-command exit 80. The real
 workspace check was rerun separately. Native Windows execution and Stage B
 acceptance remain pending. No application code or build registration changed.
+
+#### 2026-11-23 native Windows Stage B result
+
+Owner-reported output from `feldria-w10` closes the outstanding native
+Windows database-free validation gate. This supersedes the earlier
+native-access and execution-pending notes. The owner ran these commands
+from a clean checkout on `jb_20261122_ms1p3` at
+`dbf63f47e5bb59283904b1d006c680446e879757`:
+
+```bash
+scripts/phase13/01-build.sh
+scripts/phase13/02-test.sh
+```
+
+- Stage 01 passed. Native Windows 10 build 19045, MSYS2 UCRT64, GCC 16.2.0,
+  Qt Widgets 6.12.0 and Ninja. All 96 build steps completed. CMake reported
+  both legacy database-test registration options unused, as expected.
+- Stage 02 passed. The inventory guard found 33 entries and neither live
+  integration suite. **33 passed, zero failed or skipped, in 1653.22 seconds.**
+  ContextStageTests, OrganizationDesktopTests, WorkspaceCodecTests and
+  DatabaseSchemaTests passed, along with the native ACL test entries and
+  Phase 1.1/1.2 offline regression fixtures.
+- Both offline environment reports recorded the clean revision above and
+  source SHA-256
+  `91588ceae3b85d7e0eefc7bd6b2cab49c8d32f46a4d340328aaa701448cb3f3a`.
+  Stage 02 reported no environment changes. The reports record that the
+  MariaDB server was not queried.
+- Owner-side evidence directory:
+  `C:/Users/justin/repo/TaskCompass/build-ucrt64-stage-b/run.62wfXI2U/evidence`.
+  Reported snapshots are
+  `environment-2026-11-23T175635.834818_0000-fdd2e74d.json` and
+  `environment-2026-11-23T175715.698014_0000-867abed0.json`.
+  This entry records the supplied console output. The saved Windows files
+  were not independently read.
+
+Agent documentation checks used `git rev-parse HEAD`, `git diff --check`
+and a direct Markdown link and fence check. Only this milestone changed in
+this follow-up, so the application build and tests were not rerun.
+
+**Approval Requested — Stage B acceptance.** Linux passed 31/31
+database-free tests during the focused review, and native Windows passed
+33/33 in this run. The Stage B offline evidence is ready for owner acceptance.
+Migration 003 compatibility and live QMYSQL behavior remain unverified on
+both MariaDB versions and require separately approved isolated tests.
+Please approve Stage B and explicitly authorize Stage C if desired.
