@@ -1,0 +1,2118 @@
+{
+   "3": {
+      "CommandRecord": {
+         "checks": [
+            [
+               "commandLifecycleTargetV2",
+               "commandType NOT IN ('complete', 'reopen') OR taskId IS NOT NULL"
+            ],
+            [
+               "commandTargetV3",
+               " (taskId IS NOT NULL) + (pillarId IS NOT NULL) + (projectId IS NOT NULL) + (objectiveId IS NOT NULL) + (contextId IS NOT NULL) = 1 AND (payloadVersion = 3 OR contextId IS NULL)"
+            ],
+            [
+               "commandPayloadV3",
+               " ((payloadVersion = 1 AND taskId IS NOT NULL) OR payloadVersion IN (2,3)) AND resultingRevision > 0 AND JSON_VALID(afterSnapshot) AND (beforeSnapshot IS NULL OR JSON_VALID(beforeSnapshot))"
+            ],
+            [
+               "commandKindV3",
+               " commandType IN ('create','edit','move','archive','restore','complete','reopen','undo','redo') OR (payloadVersion = 3 AND ( (commandType = 'delete' AND contextId IS NOT NULL) OR (commandType = 'reorder' AND (taskId IS NOT NULL OR contextId IS NOT NULL)) OR (taskId IS NOT NULL AND commandType IN ('assign','work','correct','day-close','day-resume'))))"
+            ]
+         ],
+         "columns": [
+            {
+               "keys": [
+                  "PK",
+                  "UK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY",
+               "name": "id",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "UK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL UNIQUE",
+               "name": "operationId",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK",
+                  "UK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "datasetId",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NULL",
+               "name": "taskId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "commandType",
+               "nullable": false,
+               "type": "VARCHAR(16)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "payloadVersion",
+               "nullable": false,
+               "type": "INT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "recordedAt",
+               "nullable": false,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NULL",
+               "name": "beforeSnapshot",
+               "nullable": true,
+               "type": "MEDIUMTEXT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "afterSnapshot",
+               "nullable": false,
+               "type": "MEDIUMTEXT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "resultingRevision",
+               "nullable": false,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NULL",
+               "name": "compensatesCommandId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NULL",
+               "name": "reappliesCommandId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NULL DEFAULT NULL",
+               "name": "pillarId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NULL DEFAULT NULL",
+               "name": "projectId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NULL DEFAULT NULL",
+               "name": "objectiveId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NULL DEFAULT NULL",
+               "name": "contextId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            }
+         ],
+         "foreignKeys": [
+            [
+               "commandTaskV2",
+               [
+                  "datasetId",
+                  "taskId"
+               ],
+               "Task",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ],
+            [
+               "commandPillarV2",
+               [
+                  "datasetId",
+                  "pillarId"
+               ],
+               "Pillar",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ],
+            [
+               "commandProjectV2",
+               [
+                  "datasetId",
+                  "projectId"
+               ],
+               "Project",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ],
+            [
+               "commandObjectiveV2",
+               [
+                  "datasetId",
+                  "objectiveId"
+               ],
+               "Objective",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ],
+            [
+               "commandContextV3",
+               [
+                  "datasetId",
+                  "contextId"
+               ],
+               "Context",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ]
+         ],
+         "indexes": [
+            [
+               "commandTaskHistory",
+               [
+                  "datasetId",
+                  "taskId",
+                  "resultingRevision"
+               ]
+            ],
+            [
+               "commandPillarHistory",
+               [
+                  "datasetId",
+                  "pillarId",
+                  "resultingRevision"
+               ]
+            ],
+            [
+               "commandProjectHistory",
+               [
+                  "datasetId",
+                  "projectId",
+                  "resultingRevision"
+               ]
+            ],
+            [
+               "commandObjectiveHistory",
+               [
+                  "datasetId",
+                  "objectiveId",
+                  "resultingRevision"
+               ]
+            ],
+            [
+               "commandContextHistory",
+               [
+                  "datasetId",
+                  "contextId",
+                  "resultingRevision"
+               ]
+            ]
+         ],
+         "options": "InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+         "uniqueKeys": [
+            [
+               "operationId",
+               [
+                  "operationId"
+               ]
+            ],
+            [
+               "commandDatasetIdentity",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ]
+         ]
+      },
+      "Context": {
+         "checks": [
+            [
+               "contextIdFormat",
+               "id REGEXP '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'"
+            ],
+            [
+               "contextName",
+               "OCTET_LENGTH(name) BETWEEN 1 AND 1024 AND CHAR_LENGTH(TRIM(name)) > 0"
+            ],
+            [
+               "contextRank",
+               "HEX(sortKey) REGEXP '^(30|31)*31$'"
+            ],
+            [
+               "contextTimes",
+               "createdAt > 0 AND updatedAt >= createdAt AND (archivedAt IS NULL OR archivedAt BETWEEN createdAt AND updatedAt) AND (deletedAt IS NULL OR deletedAt BETWEEN createdAt AND updatedAt)"
+            ],
+            [
+               "contextRevision",
+               "localRevision > 0"
+            ]
+         ],
+         "columns": [
+            {
+               "keys": [
+                  "PK",
+                  "UK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY",
+               "name": "id",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK",
+                  "UK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "datasetId",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "name",
+               "nullable": false,
+               "type": "VARCHAR(1024)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "sortKey",
+               "nullable": false,
+               "type": "VARBINARY(128)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "createdAt",
+               "nullable": false,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "updatedAt",
+               "nullable": false,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NULL",
+               "name": "archivedAt",
+               "nullable": true,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NULL",
+               "name": "deletedAt",
+               "nullable": true,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "localRevision",
+               "nullable": false,
+               "type": "BIGINT"
+            }
+         ],
+         "foreignKeys": [
+            [
+               "contextDataset",
+               [
+                  "datasetId"
+               ],
+               "Dataset",
+               [
+                  "id"
+               ]
+            ]
+         ],
+         "indexes": [
+            [
+               "contextOrder",
+               [
+                  "datasetId",
+                  "deletedAt",
+                  "sortKey",
+                  "id"
+               ]
+            ]
+         ],
+         "options": "InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+         "uniqueKeys": [
+            [
+               "contextIdentity",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ]
+         ]
+      },
+      "Dataset": {
+         "checks": [
+            [
+               "datasetIdFormat",
+               "id REGEXP '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'"
+            ],
+            [
+               "datasetCreatedAt",
+               "createdAt > 0"
+            ]
+         ],
+         "columns": [
+            {
+               "keys": [
+                  "PK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY",
+               "name": "id",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "name",
+               "nullable": false,
+               "type": "VARCHAR(255)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "createdAt",
+               "nullable": false,
+               "type": "BIGINT"
+            }
+         ],
+         "foreignKeys": [],
+         "indexes": [],
+         "options": "InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+         "uniqueKeys": []
+      },
+      "LocalChange": {
+         "checks": [
+            [
+               "changeState",
+               "acknowledgmentState = 'pending'"
+            ],
+            [
+               "changeTargetV3",
+               " (taskId IS NOT NULL) + (pillarId IS NOT NULL) + (projectId IS NOT NULL) + (objectiveId IS NOT NULL) + (contextId IS NOT NULL) = 1 AND (payloadVersion = 3 OR contextId IS NULL)"
+            ],
+            [
+               "changePayloadV3",
+               " ((payloadVersion = 1 AND taskId IS NOT NULL) OR payloadVersion IN (2,3)) AND localRevision > 0 AND JSON_VALID(immutablePayload)"
+            ]
+         ],
+         "columns": [
+            {
+               "keys": [
+                  "PK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY",
+               "name": "id",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK",
+                  "UK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL UNIQUE",
+               "name": "operationId",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "datasetId",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NULL",
+               "name": "taskId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "localRevision",
+               "nullable": false,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "payloadVersion",
+               "nullable": false,
+               "type": "INT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "immutablePayload",
+               "nullable": false,
+               "type": "MEDIUMTEXT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "createdAt",
+               "nullable": false,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT 'pending'",
+               "name": "acknowledgmentState",
+               "nullable": false,
+               "type": "VARCHAR(16)"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NULL DEFAULT NULL",
+               "name": "pillarId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NULL DEFAULT NULL",
+               "name": "projectId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NULL DEFAULT NULL",
+               "name": "objectiveId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NULL DEFAULT NULL",
+               "name": "contextId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            }
+         ],
+         "foreignKeys": [
+            [
+               "changeCommand",
+               [
+                  "operationId"
+               ],
+               "CommandRecord",
+               [
+                  "operationId"
+               ]
+            ],
+            [
+               "changeTaskV2",
+               [
+                  "datasetId",
+                  "taskId"
+               ],
+               "Task",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ],
+            [
+               "changePillarV2",
+               [
+                  "datasetId",
+                  "pillarId"
+               ],
+               "Pillar",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ],
+            [
+               "changeProjectV2",
+               [
+                  "datasetId",
+                  "projectId"
+               ],
+               "Project",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ],
+            [
+               "changeObjectiveV2",
+               [
+                  "datasetId",
+                  "objectiveId"
+               ],
+               "Objective",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ],
+            [
+               "changeContextV3",
+               [
+                  "datasetId",
+                  "contextId"
+               ],
+               "Context",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ]
+         ],
+         "indexes": [
+            [
+               "changePending",
+               [
+                  "datasetId",
+                  "acknowledgmentState",
+                  "createdAt"
+               ]
+            ],
+            [
+               "changePillar",
+               [
+                  "datasetId",
+                  "pillarId"
+               ]
+            ],
+            [
+               "changeProject",
+               [
+                  "datasetId",
+                  "projectId"
+               ]
+            ],
+            [
+               "changeObjective",
+               [
+                  "datasetId",
+                  "objectiveId"
+               ]
+            ],
+            [
+               "changeContext",
+               [
+                  "datasetId",
+                  "contextId"
+               ]
+            ]
+         ],
+         "options": "InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+         "uniqueKeys": [
+            [
+               "operationId",
+               [
+                  "operationId"
+               ]
+            ]
+         ]
+      },
+      "MigrationAttempt": {
+         "checks": [
+            [
+               "attemptVersion",
+               "version >= 2"
+            ],
+            [
+               "attemptStep",
+               "lastCompletedStep >= 1"
+            ],
+            [
+               "attemptStateValue",
+               "attemptState IN ('running', 'failed', 'completed')"
+            ],
+            [
+               "attemptTimes",
+               "startedAt > 0 AND ((attemptState = 'completed' AND completedAt IS NOT NULL AND completedAt >= startedAt) OR (attemptState IN ('running', 'failed') AND completedAt IS NULL))"
+            ]
+         ],
+         "columns": [
+            {
+               "keys": [
+                  "PK"
+               ],
+               "modifiers": "NOT NULL PRIMARY KEY",
+               "name": "version",
+               "nullable": false,
+               "type": "INT"
+            },
+            {
+               "keys": [],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "checksum",
+               "nullable": false,
+               "type": "CHAR(64)"
+            },
+            {
+               "keys": [],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "baselineFingerprint",
+               "nullable": false,
+               "type": "CHAR(64)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "startedAt",
+               "nullable": false,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NULL",
+               "name": "completedAt",
+               "nullable": true,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "lastCompletedStep",
+               "nullable": false,
+               "type": "INT"
+            },
+            {
+               "keys": [],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "attemptState",
+               "nullable": false,
+               "type": "VARCHAR(16)"
+            }
+         ],
+         "foreignKeys": [],
+         "indexes": [],
+         "options": "InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+         "uniqueKeys": []
+      },
+      "Objective": {
+         "checks": [
+            [
+               "objectiveParentChoice",
+               "(pillarId IS NOT NULL) + (projectId IS NOT NULL) = 1"
+            ],
+            [
+               "objectiveIdFormat",
+               "id REGEXP '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'"
+            ],
+            [
+               "objectiveTitle",
+               "OCTET_LENGTH(title) BETWEEN 1 AND 1024 AND CHAR_LENGTH(TRIM(title)) > 0"
+            ],
+            [
+               "objectiveDescription",
+               "description IS NULL OR OCTET_LENGTH(description) <= 65535"
+            ],
+            [
+               "objectiveTimes",
+               "createdAt > 0 AND updatedAt >= createdAt AND (archivedAt IS NULL OR archivedAt BETWEEN createdAt AND updatedAt) AND (deletedAt IS NULL OR deletedAt BETWEEN createdAt AND updatedAt)"
+            ],
+            [
+               "objectiveRevision",
+               "localRevision > 0"
+            ]
+         ],
+         "columns": [
+            {
+               "keys": [
+                  "PK",
+                  "UK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY",
+               "name": "id",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK",
+                  "UK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "datasetId",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NULL",
+               "name": "pillarId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NULL",
+               "name": "projectId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "title",
+               "nullable": false,
+               "type": "VARCHAR(1024)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NULL",
+               "name": "description",
+               "nullable": true,
+               "type": "MEDIUMTEXT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NULL",
+               "name": "archivedAt",
+               "nullable": true,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "createdAt",
+               "nullable": false,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "updatedAt",
+               "nullable": false,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NULL",
+               "name": "deletedAt",
+               "nullable": true,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "localRevision",
+               "nullable": false,
+               "type": "BIGINT"
+            }
+         ],
+         "foreignKeys": [
+            [
+               "objectiveDataset",
+               [
+                  "datasetId"
+               ],
+               "Dataset",
+               [
+                  "id"
+               ]
+            ],
+            [
+               "objectivePillarScope",
+               [
+                  "datasetId",
+                  "pillarId"
+               ],
+               "Pillar",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ],
+            [
+               "objectiveProjectScope",
+               [
+                  "datasetId",
+                  "projectId"
+               ],
+               "Project",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ]
+         ],
+         "indexes": [
+            [
+               "objectivePillar",
+               [
+                  "datasetId",
+                  "pillarId",
+                  "deletedAt"
+               ]
+            ],
+            [
+               "objectiveProject",
+               [
+                  "datasetId",
+                  "projectId",
+                  "deletedAt"
+               ]
+            ]
+         ],
+         "options": "InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+         "uniqueKeys": [
+            [
+               "objectiveDatasetIdentity",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ]
+         ]
+      },
+      "Pillar": {
+         "checks": [
+            [
+               "pillarIdFormat",
+               "id REGEXP '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'"
+            ],
+            [
+               "pillarName",
+               "OCTET_LENGTH(name) BETWEEN 1 AND 1024 AND CHAR_LENGTH(TRIM(name)) > 0"
+            ],
+            [
+               "pillarDescription",
+               "description IS NULL OR OCTET_LENGTH(description) <= 65535"
+            ],
+            [
+               "pillarNotSelf",
+               "parentPillarId IS NULL OR parentPillarId <> id"
+            ],
+            [
+               "pillarTimes",
+               "createdAt > 0 AND updatedAt >= createdAt AND (archivedAt IS NULL OR archivedAt BETWEEN createdAt AND updatedAt) AND (deletedAt IS NULL OR deletedAt BETWEEN createdAt AND updatedAt)"
+            ],
+            [
+               "pillarRevision",
+               "localRevision > 0"
+            ]
+         ],
+         "columns": [
+            {
+               "keys": [
+                  "PK",
+                  "UK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY",
+               "name": "id",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK",
+                  "UK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "datasetId",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NULL",
+               "name": "parentPillarId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "name",
+               "nullable": false,
+               "type": "VARCHAR(1024)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NULL",
+               "name": "description",
+               "nullable": true,
+               "type": "MEDIUMTEXT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NULL",
+               "name": "archivedAt",
+               "nullable": true,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "createdAt",
+               "nullable": false,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "updatedAt",
+               "nullable": false,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NULL",
+               "name": "deletedAt",
+               "nullable": true,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "localRevision",
+               "nullable": false,
+               "type": "BIGINT"
+            }
+         ],
+         "foreignKeys": [
+            [
+               "pillarDataset",
+               [
+                  "datasetId"
+               ],
+               "Dataset",
+               [
+                  "id"
+               ]
+            ],
+            [
+               "pillarParentScope",
+               [
+                  "datasetId",
+                  "parentPillarId"
+               ],
+               "Pillar",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ]
+         ],
+         "indexes": [
+            [
+               "pillarParent",
+               [
+                  "datasetId",
+                  "parentPillarId",
+                  "deletedAt"
+               ]
+            ]
+         ],
+         "options": "InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+         "uniqueKeys": [
+            [
+               "pillarDatasetIdentity",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ]
+         ]
+      },
+      "Project": {
+         "checks": [
+            [
+               "projectParentChoice",
+               "(pillarId IS NOT NULL) + (parentProjectId IS NOT NULL) = 1"
+            ],
+            [
+               "projectNotSelf",
+               "parentProjectId IS NULL OR parentProjectId <> id"
+            ],
+            [
+               "projectIdFormat",
+               "id REGEXP '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'"
+            ],
+            [
+               "projectTitle",
+               "OCTET_LENGTH(title) BETWEEN 1 AND 1024 AND CHAR_LENGTH(TRIM(title)) > 0"
+            ],
+            [
+               "projectDescription",
+               "description IS NULL OR OCTET_LENGTH(description) <= 65535"
+            ],
+            [
+               "projectTimes",
+               "createdAt > 0 AND updatedAt >= createdAt AND (archivedAt IS NULL OR archivedAt BETWEEN createdAt AND updatedAt) AND (deletedAt IS NULL OR deletedAt BETWEEN createdAt AND updatedAt)"
+            ],
+            [
+               "projectRevision",
+               "localRevision > 0"
+            ]
+         ],
+         "columns": [
+            {
+               "keys": [
+                  "PK",
+                  "UK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY",
+               "name": "id",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK",
+                  "UK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "datasetId",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NULL",
+               "name": "pillarId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NULL",
+               "name": "parentProjectId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "title",
+               "nullable": false,
+               "type": "VARCHAR(1024)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NULL",
+               "name": "description",
+               "nullable": true,
+               "type": "MEDIUMTEXT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NULL",
+               "name": "archivedAt",
+               "nullable": true,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "createdAt",
+               "nullable": false,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "updatedAt",
+               "nullable": false,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NULL",
+               "name": "deletedAt",
+               "nullable": true,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "localRevision",
+               "nullable": false,
+               "type": "BIGINT"
+            }
+         ],
+         "foreignKeys": [
+            [
+               "projectDataset",
+               [
+                  "datasetId"
+               ],
+               "Dataset",
+               [
+                  "id"
+               ]
+            ],
+            [
+               "projectPillarScope",
+               [
+                  "datasetId",
+                  "pillarId"
+               ],
+               "Pillar",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ],
+            [
+               "projectParentScope",
+               [
+                  "datasetId",
+                  "parentProjectId"
+               ],
+               "Project",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ]
+         ],
+         "indexes": [
+            [
+               "projectPillar",
+               [
+                  "datasetId",
+                  "pillarId",
+                  "deletedAt"
+               ]
+            ],
+            [
+               "projectParent",
+               [
+                  "datasetId",
+                  "parentProjectId",
+                  "deletedAt"
+               ]
+            ]
+         ],
+         "options": "InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+         "uniqueKeys": [
+            [
+               "projectDatasetIdentity",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ]
+         ]
+      },
+      "SchemaMigration": {
+         "checks": [],
+         "columns": [
+            {
+               "keys": [
+                  "PK"
+               ],
+               "modifiers": "NOT NULL PRIMARY KEY",
+               "name": "version",
+               "nullable": false,
+               "type": "INT"
+            },
+            {
+               "keys": [],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "checksum",
+               "nullable": false,
+               "type": "CHAR(64)"
+            },
+            {
+               "keys": [],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "schemaFingerprint",
+               "nullable": false,
+               "type": "CHAR(64)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "appliedAt",
+               "nullable": false,
+               "type": "BIGINT"
+            }
+         ],
+         "foreignKeys": [],
+         "indexes": [],
+         "options": "InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+         "uniqueKeys": []
+      },
+      "Task": {
+         "checks": [
+            [
+               "taskIdFormat",
+               "id REGEXP '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'"
+            ],
+            [
+               "taskTitle",
+               "OCTET_LENGTH(title) BETWEEN 1 AND 1024 AND CHAR_LENGTH(TRIM(title)) > 0"
+            ],
+            [
+               "taskNotes",
+               "notes IS NULL OR OCTET_LENGTH(notes) <= 65535"
+            ],
+            [
+               "taskLifecycle",
+               "(lifecycleStatus = 'active' AND completedAt IS NULL) OR (lifecycleStatus = 'completed' AND completedAt IS NOT NULL)"
+            ],
+            [
+               "taskTimes",
+               "createdAt > 0 AND updatedAt >= createdAt AND (completedAt IS NULL OR completedAt BETWEEN createdAt AND updatedAt) AND (deletedAt IS NULL OR deletedAt BETWEEN createdAt AND updatedAt)"
+            ],
+            [
+               "taskRevision",
+               "localRevision > 0"
+            ],
+            [
+               "taskOwnerChoice",
+               "(objectiveId IS NOT NULL) + (directProjectId IS NOT NULL) <= 1"
+            ],
+            [
+               "taskPriority",
+               "priority > 0"
+            ],
+            [
+               "taskManualRank",
+               "HEX(manualOrderKey) REGEXP '^(30|31)*31$'"
+            ]
+         ],
+         "columns": [
+            {
+               "keys": [
+                  "PK",
+                  "UK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY",
+               "name": "id",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK",
+                  "UK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "datasetId",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "title",
+               "nullable": false,
+               "type": "VARCHAR(1024)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NULL",
+               "name": "notes",
+               "nullable": true,
+               "type": "MEDIUMTEXT"
+            },
+            {
+               "keys": [],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "lifecycleStatus",
+               "nullable": false,
+               "type": "VARCHAR(16)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "createdAt",
+               "nullable": false,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "updatedAt",
+               "nullable": false,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NULL",
+               "name": "completedAt",
+               "nullable": true,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NULL",
+               "name": "deletedAt",
+               "nullable": true,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "localRevision",
+               "nullable": false,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NULL DEFAULT NULL",
+               "name": "objectiveId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NULL DEFAULT NULL",
+               "name": "directProjectId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL DEFAULT 5",
+               "name": "priority",
+               "nullable": false,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "manualOrderKey",
+               "nullable": false,
+               "type": "VARBINARY(128)"
+            }
+         ],
+         "foreignKeys": [
+            [
+               "taskDataset",
+               [
+                  "datasetId"
+               ],
+               "Dataset",
+               [
+                  "id"
+               ]
+            ],
+            [
+               "taskObjectiveScope",
+               [
+                  "datasetId",
+                  "objectiveId"
+               ],
+               "Objective",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ],
+            [
+               "taskDirectProjectScope",
+               [
+                  "datasetId",
+                  "directProjectId"
+               ],
+               "Project",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ]
+         ],
+         "indexes": [
+            [
+               "taskActive",
+               [
+                  "datasetId",
+                  "deletedAt",
+                  "lifecycleStatus"
+               ]
+            ],
+            [
+               "taskObjective",
+               [
+                  "datasetId",
+                  "objectiveId",
+                  "deletedAt"
+               ]
+            ],
+            [
+               "taskDirectProject",
+               [
+                  "datasetId",
+                  "directProjectId",
+                  "deletedAt"
+               ]
+            ],
+            [
+               "taskBandOrder",
+               [
+                  "datasetId",
+                  "deletedAt",
+                  "priority",
+                  "manualOrderKey",
+                  "id"
+               ]
+            ]
+         ],
+         "options": "InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+         "uniqueKeys": [
+            [
+               "taskDatasetIdentity",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ]
+         ]
+      },
+      "TaskContext": {
+         "checks": [
+            [
+               "taskContextIdFormat",
+               "id REGEXP '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'"
+            ],
+            [
+               "taskContextTimes",
+               "createdAt > 0 AND updatedAt >= createdAt AND (deletedAt IS NULL OR deletedAt BETWEEN createdAt AND updatedAt)"
+            ],
+            [
+               "taskContextRevision",
+               "localRevision > 0"
+            ]
+         ],
+         "columns": [
+            {
+               "keys": [
+                  "PK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY",
+               "name": "id",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK",
+                  "UK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "datasetId",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "taskId",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "contextId",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "createdAt",
+               "nullable": false,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "updatedAt",
+               "nullable": false,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NULL",
+               "name": "deletedAt",
+               "nullable": true,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "localRevision",
+               "nullable": false,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [
+                  "UK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin GENERATED ALWAYS AS (CASE WHEN deletedAt IS NULL THEN RTRIM(taskId) ELSE NULL END) PERSISTENT",
+               "name": "liveTaskId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            }
+         ],
+         "foreignKeys": [
+            [
+               "taskContextTask",
+               [
+                  "datasetId",
+                  "taskId"
+               ],
+               "Task",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ],
+            [
+               "taskContextContext",
+               [
+                  "datasetId",
+                  "contextId"
+               ],
+               "Context",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ]
+         ],
+         "indexes": [
+            [
+               "taskContextByTask",
+               [
+                  "datasetId",
+                  "taskId",
+                  "deletedAt"
+               ]
+            ],
+            [
+               "taskContextByContext",
+               [
+                  "datasetId",
+                  "contextId",
+                  "deletedAt",
+                  "taskId"
+               ]
+            ]
+         ],
+         "options": "InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+         "uniqueKeys": [
+            [
+               "taskContextOneLive",
+               [
+                  "datasetId",
+                  "liveTaskId"
+               ]
+            ]
+         ]
+      },
+      "TaskDayDisposition": {
+         "checks": [
+            [
+               "dayDateZone",
+               "YEAR(workDate) BETWEEN 1000 AND 9999 AND MONTH(workDate) BETWEEN 1 AND 12 AND DAYOFMONTH(workDate) BETWEEN 1 AND 31 AND OCTET_LENGTH(timeZone) > 0"
+            ],
+            [
+               "dayState",
+               " (dayStatus = 'open' AND closureCommandId IS NULL) OR (dayStatus = 'closed' AND closureCommandId IS NOT NULL)"
+            ],
+            [
+               "dayRevision",
+               "updatedAt > 0 AND localRevision > 0"
+            ]
+         ],
+         "columns": [
+            {
+               "keys": [
+                  "PK",
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "datasetId",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "PK",
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "taskId",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "PK"
+               ],
+               "modifiers": "NOT NULL",
+               "name": "workDate",
+               "nullable": false,
+               "type": "DATE"
+            },
+            {
+               "keys": [],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "timeZone",
+               "nullable": false,
+               "type": "VARCHAR(255)"
+            },
+            {
+               "keys": [],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "dayStatus",
+               "nullable": false,
+               "type": "VARCHAR(8)"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NULL",
+               "name": "closureCommandId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "lastCommandId",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "updatedAt",
+               "nullable": false,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "localRevision",
+               "nullable": false,
+               "type": "BIGINT"
+            }
+         ],
+         "foreignKeys": [
+            [
+               "dayTask",
+               [
+                  "datasetId",
+                  "taskId"
+               ],
+               "Task",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ],
+            [
+               "dayClosure",
+               [
+                  "datasetId",
+                  "closureCommandId"
+               ],
+               "CommandRecord",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ],
+            [
+               "dayCommand",
+               [
+                  "datasetId",
+                  "lastCommandId"
+               ],
+               "CommandRecord",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ]
+         ],
+         "indexes": [
+            [
+               "dayByStatus",
+               [
+                  "datasetId",
+                  "workDate",
+                  "dayStatus",
+                  "taskId"
+               ]
+            ],
+            [
+               "dayByClosure",
+               [
+                  "datasetId",
+                  "closureCommandId"
+               ]
+            ],
+            [
+               "dayByCommand",
+               [
+                  "datasetId",
+                  "lastCommandId"
+               ]
+            ]
+         ],
+         "options": "InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+         "primaryKey": [
+            "datasetId",
+            "taskId",
+            "workDate"
+         ],
+         "uniqueKeys": []
+      },
+      "WorkEntry": {
+         "checks": [
+            [
+               "workIdFormat",
+               "id REGEXP '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'"
+            ],
+            [
+               "workDateZone",
+               "YEAR(workDate) BETWEEN 1000 AND 9999 AND MONTH(workDate) BETWEEN 1 AND 12 AND DAYOFMONTH(workDate) BETWEEN 1 AND 31 AND OCTET_LENGTH(timeZone) > 0"
+            ],
+            [
+               "workKind",
+               "kind IN ('quick','session','closure','completion','correction') AND ((kind = 'correction') = (correctsEntryId IS NOT NULL)) AND (correctsEntryId IS NULL OR correctsEntryId <> id)"
+            ],
+            [
+               "workNote",
+               "note IS NULL OR OCTET_LENGTH(note) <= 65535"
+            ],
+            [
+               "workTimes",
+               "recordedAt > 0 AND ((voidedAt IS NULL) = (voidedByCommandId IS NULL)) AND (voidedAt IS NULL OR (kind <> 'correction' AND voidedAt >= recordedAt))"
+            ],
+            [
+               "workRevision",
+               "localRevision > 0"
+            ]
+         ],
+         "columns": [
+            {
+               "keys": [
+                  "PK",
+                  "UK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY",
+               "name": "id",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK",
+                  "UK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "datasetId",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK",
+                  "UK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "taskId",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "commandId",
+               "nullable": false,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [
+                  "UK"
+               ],
+               "modifiers": "NOT NULL",
+               "name": "workDate",
+               "nullable": false,
+               "type": "DATE"
+            },
+            {
+               "keys": [],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "timeZone",
+               "nullable": false,
+               "type": "VARCHAR(255)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "recordedAt",
+               "nullable": false,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NOT NULL",
+               "name": "kind",
+               "nullable": false,
+               "type": "VARCHAR(16)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NULL",
+               "name": "note",
+               "nullable": true,
+               "type": "MEDIUMTEXT"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NULL",
+               "name": "correctsEntryId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NULL",
+               "name": "voidedAt",
+               "nullable": true,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [
+                  "FK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin NULL",
+               "name": "voidedByCommandId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            },
+            {
+               "keys": [],
+               "modifiers": "NOT NULL",
+               "name": "localRevision",
+               "nullable": false,
+               "type": "BIGINT"
+            },
+            {
+               "keys": [
+                  "UK"
+               ],
+               "modifiers": "CHARACTER SET ascii COLLATE ascii_bin GENERATED ALWAYS AS (CASE WHEN kind = 'quick' AND voidedAt IS NULL THEN RTRIM(taskId) ELSE NULL END) PERSISTENT",
+               "name": "liveQuickTaskId",
+               "nullable": true,
+               "type": "CHAR(36)"
+            }
+         ],
+         "foreignKeys": [
+            [
+               "workTask",
+               [
+                  "datasetId",
+                  "taskId"
+               ],
+               "Task",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ],
+            [
+               "workCommand",
+               [
+                  "datasetId",
+                  "commandId"
+               ],
+               "CommandRecord",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ],
+            [
+               "workCorrection",
+               [
+                  "datasetId",
+                  "taskId",
+                  "correctsEntryId"
+               ],
+               "WorkEntry",
+               [
+                  "datasetId",
+                  "taskId",
+                  "id"
+               ]
+            ],
+            [
+               "workVoidCommand",
+               [
+                  "datasetId",
+                  "voidedByCommandId"
+               ],
+               "CommandRecord",
+               [
+                  "datasetId",
+                  "id"
+               ]
+            ]
+         ],
+         "indexes": [
+            [
+               "workHistory",
+               [
+                  "datasetId",
+                  "taskId",
+                  "workDate",
+                  "recordedAt",
+                  "id"
+               ]
+            ],
+            [
+               "workByCommand",
+               [
+                  "datasetId",
+                  "commandId"
+               ]
+            ],
+            [
+               "workByCorrection",
+               [
+                  "datasetId",
+                  "taskId",
+                  "correctsEntryId"
+               ]
+            ],
+            [
+               "workByVoidCommand",
+               [
+                  "datasetId",
+                  "voidedByCommandId"
+               ]
+            ]
+         ],
+         "options": "InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+         "uniqueKeys": [
+            [
+               "workTaskIdentity",
+               [
+                  "datasetId",
+                  "taskId",
+                  "id"
+               ]
+            ],
+            [
+               "workOneQuick",
+               [
+                  "datasetId",
+                  "workDate",
+                  "liveQuickTaskId"
+               ]
+            ]
+         ]
+      }
+   }
+}

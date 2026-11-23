@@ -13,8 +13,8 @@ EntityKey entityKey(const EntitySnapshot &entity) {
 }
 OrganizationEntity asOrganization(const EntitySnapshot &entity) {
    return std::visit([](const auto &value) -> OrganizationEntity {
-      if constexpr (std::is_same_v<std::decay_t<decltype(value)>, Task>) { throw std::invalid_argument("Expected organization."); }
-      else { return value; }
+      if constexpr (std::is_constructible_v<OrganizationEntity, decltype(value)>) { return value; }
+      else { throw std::invalid_argument("Expected organization."); }
    }, entity);
 }
 EntitySnapshot asSnapshot(const OrganizationEntity &entity) {
@@ -30,6 +30,8 @@ std::vector<RevisionCheck> workspaceRevisions(const WorkspaceSnapshot &snapshot)
    std::vector<RevisionCheck> result;
    for (const auto &task : snapshot.tasks) { result.push_back({entityKey(task), task.localRevision}); }
    for (const auto &entity : snapshot.organizations) { result.push_back({entityKey(asSnapshot(entity)), organizationFields(entity).localRevision}); }
+   for (const auto &context : snapshot.contexts) { result.push_back({entityKey(context), context.localRevision}); }
+   for (const auto &link : snapshot.taskContexts) { result.push_back({entityKey(link), link.localRevision}); }
    std::sort(result.begin(), result.end(), [](const auto &first, const auto &second) { return first.key < second.key; });
    return result;
 }
@@ -46,11 +48,14 @@ std::string operationDescription(CommandOperation operation) {
       case CommandOperation::MOVE: return "Move";
       case CommandOperation::ARCHIVE: return "Archive";
       case CommandOperation::RESTORE: return "Restore";
+      case CommandOperation::DELETE_CONTEXT: return "Delete";
+      case CommandOperation::ASSIGN: return "Assign context to";
+      case CommandOperation::REORDER: return "Reorder";
       default: return "";
    }
 }
 std::string label(const WorkspaceReceipt &receipt) {
-   static constexpr const char *NAMES[] = {"task", "pillar", "project", "objective"};
+   static constexpr const char *NAMES[] = {"task", "pillar", "project", "objective", "context", "assignment"};
    return operationDescription(receipt.operation) + " " + NAMES[receipt.after.index()];
 }
 }
@@ -62,14 +67,7 @@ CommandService::CommandService(WorkspaceRepository &repository, std::string data
 }
 WorkspaceSnapshot CommandService::read() { return repository.read(); }
 EntitySnapshot CommandService::requireEntity(const WorkspaceSnapshot &snapshot, const EntityKey &key, std::int64_t revision) const {
-   std::optional<EntitySnapshot> found;
-   if (key.kind == EntityKind::TASK) {
-      for (const auto &task : snapshot.tasks) { if (task.id == key.id) { found = task; break; } }
-   } else {
-      for (const auto &entity : snapshot.organizations) {
-         if (entityKey(asSnapshot(entity)) == key) { found = asSnapshot(entity); break; }
-      }
-   }
+   const auto found = findEntity(snapshot, key);
    if (!found || entityDataset(*found) != datasetId || entityRevision(*found) != revision) {
       throw std::runtime_error("Record changed or is unavailable. Refresh before retrying.");
    }
@@ -80,6 +78,8 @@ void CommandService::validateChange(const WorkspaceSnapshot &snapshot, const Ent
    if (const auto *task = std::get_if<Task>(&after)) {
       validateTask(*task);
       if (!task->deletedAt) { OrganizationRules(datasetId, snapshot.organizations).requireTaskOwner(*task, allowArchived); }
+   } else if (const auto *context = std::get_if<Context>(&after)) {
+      validateContext(*context);
    } else {
       auto entities = snapshot.organizations;
       const auto value = asOrganization(after);
@@ -106,9 +106,11 @@ WorkspaceReceipt CommandService::receipt(CommandOperation operation, const std::
       value.updatedAt = std::max({clock(), previousTime + 1, value.createdAt, value.deletedAt.value_or(0)});
       if constexpr (std::is_same_v<std::decay_t<decltype(value)>, Task>) {
          value.updatedAt = std::max(value.updatedAt, value.completedAt.value_or(0));
-      } else { value.updatedAt = std::max(value.updatedAt, value.archivedAt.value_or(0)); }
+      } else if constexpr (requires { value.archivedAt; }) {
+         value.updatedAt = std::max(value.updatedAt, value.archivedAt.value_or(0));
+      }
    }, after);
-   WorkspaceReceipt result{generateId(), generateId(), operation, before, std::move(after), changedFields, {}, {}, {}};
+   WorkspaceReceipt result{generateId(), generateId(), operation, before, std::move(after), changedFields, {}, {}, {}, {}, {}, clock()};
    if (!isUuid(result.id) || !isUuid(result.operationId)) { throw std::runtime_error("ID generator returned invalid UUID."); }
    OrganizationRules graph(datasetId, snapshot.organizations);
    std::set<OrganizationKey> parents;
@@ -118,7 +120,9 @@ WorkspaceReceipt CommandService::receipt(CommandOperation operation, const std::
          if (task->owner.kind != TaskOwnerKind::INDEPENDENT) {
             parent = {task->owner.kind == TaskOwnerKind::OBJECTIVE ? OrganizationKind::OBJECTIVE : OrganizationKind::PROJECT, task->owner.id};
          }
-      } else { parent = organizationParent(asOrganization(entity)); }
+      } else if (entity.index() < static_cast<std::size_t>(EntityKind::CONTEXT)) {
+         parent = organizationParent(asOrganization(entity));
+      }
       if (parent) {
          for (const auto &ancestor : graph.path(*parent)) { parents.insert(ancestor); }
       }
@@ -135,8 +139,15 @@ WorkspaceReceipt CommandService::executePrepared(const WorkspaceRepository::Prep
    WorkspaceReceipt result;
    try { result = repository.transact(prepare); }
    catch (const CommitOutcomeUnknown &) { clearHistory(); throw; }
-   bool external = result.before && knownRevisions.contains(entityKey(*result.before))
-                   && knownRevisions.at(entityKey(*result.before)) != entityRevision(*result.before);
+   const auto mismatched = [&](const EntitySnapshot &record) {
+      const auto known = knownRevisions.find(entityKey(record));
+      return known != knownRevisions.end() && known->second != entityRevision(record);
+   };
+   bool external = result.before && mismatched(*result.before);
+   for (const auto &patch : result.patches) { external = external || (patch.before && mismatched(*patch.before)); }
+   for (const auto &guard : result.contextGuards) {
+      external = external || std::ranges::any_of(guard.before, mismatched);
+   }
    for (const auto &dependency : result.dependencies) {
       external = external || (knownRevisions.contains(dependency.key) && knownRevisions.at(dependency.key) != dependency.revision);
    }
@@ -145,9 +156,19 @@ WorkspaceReceipt CommandService::executePrepared(const WorkspaceRepository::Prep
    history.push_back({result, result.id});
    if (history.size() > HISTORY_LIMIT) { history.erase(history.begin()); }
    historyIndex = history.size();
-   knownRevisions[entityKey(result.after)] = entityRevision(result.after);
+   remember(result);
    return result;
 }
+
+void CommandService::remember(const WorkspaceReceipt &result) {
+   for (const auto &dependency : result.dependencies) { knownRevisions.try_emplace(dependency.key, dependency.revision); }
+   for (const auto &guard : result.contextGuards) {
+      for (const auto &record : guard.before) { knownRevisions.try_emplace(entityKey(record), entityRevision(record)); }
+   }
+   knownRevisions[entityKey(result.after)] = entityRevision(result.after);
+   for (const auto &patch : result.patches) { knownRevisions[entityKey(patch.after)] = entityRevision(patch.after); }
+}
+
 WorkspaceReceipt CommandService::execute(const TaskCommand &command) {
    return executePrepared([&](const WorkspaceSnapshot &snapshot) {
       if (command.expectedWorkspace && *command.expectedWorkspace != workspaceRevisions(snapshot)) {
@@ -187,6 +208,9 @@ WorkspaceReceipt CommandService::execute(const TaskCommand &command) {
          }
       }
       auto result = receipt(static_cast<CommandOperation>(command.operation), before, after, fields, snapshot);
+      if (command.operation == TaskOperation::CREATE && snapshot.schemaVersion == 3) {
+         prepareTaskCaptureRank(result, snapshot);
+      }
       const bool unchangedOwner = before && std::get<Task>(*before).owner == std::get<Task>(result.after).owner;
       validateChange(snapshot, result.after, unchangedOwner || (command.operation != TaskOperation::CREATE && command.allowArchivedDestination));
       return result;
@@ -249,6 +273,9 @@ WorkspaceReceipt CommandService::compensate(bool forward) {
    WorkspaceReceipt result;
    try {
       result = repository.transact([&](const WorkspaceSnapshot &snapshot) {
+         if (!original.contextGuards.empty() || !original.patches.empty() || std::holds_alternative<Context>(original.after)) {
+            return compensateContext(original, snapshot, forward, entry.lastCommandId);
+         }
          const auto key = entityKey(original.after);
          const auto current = requireEntity(snapshot, key, knownRevisions.at(key));
          for (const auto &dependency : original.dependencies) {
@@ -271,7 +298,7 @@ WorkspaceReceipt CommandService::compensate(bool forward) {
                if (original.changedFields & NOTES) { value.notes = desired.notes; }
                if (original.changedFields & OWNER) { value.owner = desired.owner; }
                if (original.changedFields & LIFECYCLE) { value.status = desired.status; value.completedAt = desired.completedAt; }
-            } else {
+            } else if constexpr (std::is_constructible_v<OrganizationEntity, Value>) {
                if (original.changedFields & TITLE) {
                   if constexpr (std::is_same_v<Value, Pillar>) { value.name = desired.name; }
                   else { value.title = desired.title; }
@@ -294,7 +321,7 @@ WorkspaceReceipt CommandService::compensate(bool forward) {
    } catch (const CommitOutcomeUnknown &) { clearHistory(); throw; }
    entry.lastCommandId = result.id;
    if (forward) { ++historyIndex; } else { --historyIndex; }
-   knownRevisions[entityKey(result.after)] = entityRevision(result.after);
+   remember(result);
    return result;
 }
 WorkspaceReceipt CommandService::undo() { return compensate(false); }

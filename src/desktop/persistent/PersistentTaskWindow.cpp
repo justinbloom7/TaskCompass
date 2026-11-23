@@ -12,6 +12,7 @@
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QHeaderView>
+#include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenuBar>
@@ -116,6 +117,7 @@ PersistentTaskWindow::PersistentTaskWindow(PersistentTaskController::SessionFact
    table->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
    table->horizontalHeader()->setStretchLastSection(true);
    table->setColumnWidth(0, 300);
+   table->setColumnHidden(PersistentTaskModel::CONTEXT_COLUMN, true);
    layout->addWidget(table);
    splitter->setSizes({240, 860});
    splitter->setStretchFactor(1, 1);
@@ -139,6 +141,17 @@ PersistentTaskWindow::PersistentTaskWindow(PersistentTaskController::SessionFact
       }
    });
    completeAction->setObjectName("completeTaskAction");
+   assignContextAction = taskMenu->addAction("Set Context...", this, &PersistentTaskWindow::assignContext);
+   assignContextAction->setObjectName("assignContextAction");
+   auto *contexts = menuBar()->addMenu("&Contexts");
+   contextMenuAction = contexts->menuAction();
+   using Operation = taskcompass::ContextOperation;
+   for (const auto &[label, operation] : {std::pair{"New Context...", Operation::CREATE}, {"Rename...", Operation::RENAME},
+                                          {"Archive...", Operation::ARCHIVE}, {"Restore...", Operation::RESTORE},
+                                          {"Delete...", Operation::DELETE_CONTEXT}, {"Move Earlier...", Operation::MOVE_UP},
+                                          {"Move Later...", Operation::MOVE_DOWN}}) {
+      contexts->addAction(label, this, [this, operation]() { changeContext(operation); });
+   }
    auto *organize = menuBar()->addMenu("&Organize");
    for (const auto kind : {taskcompass::OrganizationKind::PILLAR, taskcompass::OrganizationKind::PROJECT, taskcompass::OrganizationKind::OBJECTIVE}) {
       const QString name = kind == taskcompass::OrganizationKind::PILLAR ? "Pillar" : kind == taskcompass::OrganizationKind::PROJECT ? "Project" : "Objective";
@@ -183,6 +196,9 @@ PersistentTaskWindow::PersistentTaskWindow(PersistentTaskController::SessionFact
       menu.exec(navigation->viewport()->mapToGlobal(point));
    });
    auto *view = menuBar()->addMenu("&View");
+   groupByContextAction = view->addAction("Group by Context", this, [this]() {
+      table->sortByColumn(PersistentTaskModel::CONTEXT_COLUMN, Qt::AscendingOrder);
+   });
    navigationAction = view->addAction("Show &Navigation");
    navigationAction->setCheckable(true);
    navigationAction->setChecked(true);
@@ -190,6 +206,9 @@ PersistentTaskWindow::PersistentTaskWindow(PersistentTaskController::SessionFact
    connect(navigationAction, &QAction::toggled, navigation, &QWidget::setVisible);
    view->addAction("&Filter Tasks", QKeySequence::Find, search, qOverload<>(&QWidget::setFocus));
    reloadAction = view->addAction("&Reload", QKeySequence("F5"), controller, &PersistentTaskController::reload);
+   connect(controller, &PersistentTaskController::commitResolved, this, [this](const QString &message) {
+      statusBar()->showMessage(message);
+   });
    auto *help = menuBar()->addMenu("&Help");
    help->addAction("&About", QKeySequence("F1"), this, [this]() {
       QMessageBox::about(this, "TaskCompass", "Persistent tasks and organization.\nGPL-3.0-or-later.\nSession undo does not survive restart.\nPlanning and synchronization are deferred.");
@@ -258,8 +277,11 @@ void PersistentTaskWindow::refresh() {
    const auto selected = selectedTask();
    if (controller->isReady() && (!navigationRestored || controller->workspace() != renderedWorkspace)) {
       const QSignalBlocker block(table->selectionModel());
+      const bool enableGrouping = renderedWorkspace.schemaVersion != 3 && controller->workspace().schemaVersion == 3;
       renderedWorkspace = controller->workspace();
       model->replaceWorkspace(renderedWorkspace);
+      table->setColumnHidden(PersistentTaskModel::CONTEXT_COLUMN, renderedWorkspace.schemaVersion != 3);
+      if (enableGrouping) { table->sortByColumn(PersistentTaskModel::CONTEXT_COLUMN, Qt::AscendingOrder); }
       rebuildNavigation(); updateScope();
       for (int row = 0; row < model->rowCount(); ++row) {
          if (selected && model->taskAt(row).id == selected->id) {
@@ -274,6 +296,10 @@ void PersistentTaskWindow::refresh() {
    const auto task = selectedTask();
    model->setWritable(enabled);
    organizationModel->setReparentingEnabled(enabled && navigationMode->currentIndex() == 0);
+   const bool contextsEnabled = enabled && renderedWorkspace.schemaVersion == 3;
+   contextMenuAction->setEnabled(contextsEnabled);
+   groupByContextAction->setEnabled(contextsEnabled);
+   assignContextAction->setEnabled(contextsEnabled && task.has_value());
    newAction->setEnabled(enabled);
    editAction->setEnabled(enabled && task.has_value());
    completeAction->setEnabled(enabled && task.has_value());
@@ -531,4 +557,99 @@ void PersistentTaskWindow::populateCreationMenu(QMenu *menu) {
       editOrganization(taskcompass::OrganizationKind::PILLAR, true);
    });
    pillar->setEnabled(newAction->isEnabled());
+}
+
+namespace {
+
+QString contextChoice(const taskcompass::Context &context, const std::vector<taskcompass::Context> &choices) {
+   auto name = QString::fromStdString(context.name);
+   if (context.archivedAt) { name += " [archived]"; }
+   if (context.name == "No context" || std::ranges::count(choices, context.name, &taskcompass::Context::name) > 1) {
+      name += " (" + QString::fromStdString(context.id) + ")";
+   }
+   return name;
+}
+
+}
+
+void PersistentTaskWindow::changeContext(taskcompass::ContextOperation operation) {
+   using Operation = taskcompass::ContextOperation;
+   const auto snapshot = renderedWorkspace;
+   taskcompass::ContextCommand command;
+   command.operation = operation;
+   if (operation == Operation::MOVE_UP || operation == Operation::MOVE_DOWN) {
+      command.expectedWorkspace = taskcompass::workspaceRevisions(snapshot);
+   }
+   QString oldName;
+   bool confirmed = false;
+   if (operation != Operation::CREATE) {
+      auto choices = taskcompass::orderedContexts(snapshot, true);
+      if (operation == Operation::MOVE_UP && !choices.empty()) { choices.erase(choices.begin()); }
+      if (operation == Operation::MOVE_DOWN && !choices.empty()) { choices.pop_back(); }
+      std::erase_if(choices, [operation](const auto &context) {
+         return (operation == Operation::RESTORE && !context.archivedAt)
+                || (operation == Operation::ARCHIVE && context.archivedAt);
+      });
+      QStringList labels;
+      for (const auto &context : choices) { labels.append(contextChoice(context, choices)); }
+      if (labels.empty()) {
+         QMessageBox::information(this, "Contexts", "There are no contexts available for this action.");
+         return;
+      }
+      const auto label = QInputDialog::getItem(this, "Contexts", "Context", labels, 0, false, &confirmed);
+      if (!confirmed) { return; }
+      const auto &context = choices.at(static_cast<std::size_t>(labels.indexOf(label)));
+      command.id = context.id;
+      command.expectedRevision = context.localRevision;
+      oldName = QString::fromStdString(context.name);
+      if (operation == Operation::DELETE_CONTEXT) {
+         const taskcompass::ContextGuard guard{taskcompass::ContextGuardKind::LINKS, context.id, 0, {}, {}, {}, {}};
+         command.expectedLinks.emplace();
+         for (const auto &link : taskcompass::contextWitness(snapshot, guard)) {
+            command.expectedLinks->push_back({taskcompass::entityKey(link), taskcompass::entityRevision(link)});
+         }
+         const auto count = command.expectedLinks->size();
+         if (QMessageBox::question(this, "Delete Context",
+                                   QString("Delete “%1” and clear %2 task assignment(s)? The tasks will remain.")
+                                      .arg(oldName).arg(count)) != QMessageBox::Yes) { return; }
+      }
+   }
+   if (operation == Operation::CREATE || operation == Operation::RENAME) {
+      const auto name = QInputDialog::getText(this, "Context", "Name", QLineEdit::Normal, oldName, &confirmed);
+      if (!confirmed || name.trimmed().isEmpty() || name == oldName) { return; }
+      command.name = name.toStdString();
+   }
+   controller->execute(command);
+}
+
+void PersistentTaskWindow::assignContext() {
+   const auto task = selectedTask();
+   if (!task) { return; }
+   const auto snapshot = renderedWorkspace;
+   const auto choices = taskcompass::orderedContexts(snapshot, false);
+   const auto *link = taskcompass::primaryContext(snapshot, task->id);
+   const auto *current = taskcompass::effectiveContext(snapshot, task->id, true);
+   QStringList labels{"No context"};
+   int selected = 0;
+   for (const auto &context : choices) {
+      labels.append(contextChoice(context, choices));
+      if (link && link->contextId == context.id) { selected = static_cast<int>(labels.size() - 1); }
+   }
+   bool confirmed = false;
+   const auto label = QInputDialog::getItem(this, "Set Context", current && current->archivedAt
+      ? QString("Context — currently assigned to archived “%1”").arg(QString::fromStdString(current->name)) : "Context",
+      labels, selected, false, &confirmed);
+   if (!confirmed) { return; }
+   const auto index = labels.indexOf(label);
+   if (index < 0 || (index == 0 && !link)) { return; }
+   taskcompass::ContextCommand command;
+   command.operation = taskcompass::ContextOperation::ASSIGN;
+   command.id = task->id;
+   command.expectedRevision = task->localRevision;
+   command.expectedWorkspace = taskcompass::workspaceRevisions(snapshot);
+   if (index > 0) {
+      command.destination = choices.at(static_cast<std::size_t>(index - 1)).id;
+      if (link && link->contextId == *command.destination) { return; }
+   }
+   controller->execute(command);
 }

@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
       check(MigrationRunner::migrationStatements(1).size() == 5);
       for (const auto &statement : MigrationRunner::migrationStatements(2)) { check(!statement.trimmed().isEmpty()); }
       check(sql2.count(';') == 9 && sql2.contains("commandTargetV2") && sql2.contains("taskOwnerChoice"));
-      rejects([&]() { MigrationRunner::migrationSql(3); });
+      rejects([&]() { MigrationRunner::migrationSql(4); });
       rejects([&]() { MigrationRunner::tableNamesForVersion(0); });
       DatabaseConfig test{"127.0.0.1", 3306, "taskcompass_phase12_test", "taskcompass_phase12_test", "not-a-secret"};
       test.validate(); test.validateIdentity("taskcompass_phase12_test", "taskcompass_phase12_test@127.0.0.1");
@@ -95,7 +95,7 @@ int main(int argc, char **argv) {
          check(output.contains(message) && !output.contains("not-a-secret"));
       };
       const auto migrate = application.arguments()[2], integration = application.arguments()[3];
-      for (const auto &target : {"0", "3", "garbage", "-1"}) {
+      for (const auto &target : {"0", "4", "garbage", "-1"}) {
          runGuard(migrate, {"--verify", "--to-version", target}, 1, "Unsupported migration target");
       }
       runGuard(migrate, {"--to-version", "2"}, 1, "Use --apply or --verify");

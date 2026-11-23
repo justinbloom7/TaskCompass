@@ -45,7 +45,7 @@ DatabaseConnection::DatabaseConnection(const DatabaseConfig &config)
        || !query.exec("SET SESSION sql_quote_show_create = 1")
        || !query.exec("SET SESSION check_constraint_checks = ON")
        || !query.exec("SET SESSION foreign_key_checks = ON")
-       || !query.exec("SET SESSION sql_mode = 'STRICT_ALL_TABLES,NO_ENGINE_SUBSTITUTION'")) {
+       || !query.exec("SET SESSION sql_mode = 'STRICT_ALL_TABLES,NO_ENGINE_SUBSTITUTION,NO_ZERO_DATE,NO_ZERO_IN_DATE'")) {
       query.finish();
       query = QSqlQuery();
       reject("Cannot establish strict utf8mb4/UTC MariaDB session.");

@@ -4,7 +4,7 @@
 
 namespace taskcompass {
 
-enum class EntityKind { TASK, PILLAR, PROJECT, OBJECTIVE };
+enum class EntityKind { TASK, PILLAR, PROJECT, OBJECTIVE, CONTEXT, TASK_CONTEXT };
 struct EntityKey {
    EntityKind kind = EntityKind::TASK;
    std::string id;

@@ -2,10 +2,10 @@
 
 # Phase 1.3 — Everyday task management
 
-**Current status — A–G structure approved. Stage A specification submitted for review.**
-The owner authorized specification and approved the No context and daily UI
-boundaries. The [Stage A record](#stage-a-specification) supersedes earlier
-proposal details where identified. Stage B awaits explicit approval.
+**Current status — Stage A accepted. Stage B source work submitted for review.**
+The owner approved the Stage A recommended defaults and authorized only Stage B
+source and database-free validation. See the [Stage B record](#stage-b-contexts-and-shared-persistence).
+Stage C and every database execution require separate explicit authorization.
 
 ## Baseline and authorization
 
@@ -1024,7 +1024,7 @@ permission rules for archived organizational branches keep applying.
   relative-link check passed. Only this milestone changed. No application
   build or CTest was run for documentation-only work.
 
-### Approval Requested — Stage A exit and Stage B entry
+### Historical approval request — Stage A exit and Stage B entry (approved)
 
 Approve the Stage A specification and record the recommended defaults or
 your changes to the remaining product decisions. Separately authorize
@@ -1158,7 +1158,7 @@ constraints.
 
 ### Stage B approval boundary
 
-Stage B is pending. Authorizing Stage B grants **source, documentation and
+The later owner authorization for Stage B grants **source, documentation and
 database-free validation only**. It grants no migration execution,
 schema/database provisioning, account or privilege changes, database-backed
 tests, fixture restores or writes to preserved databases. Existing and
@@ -1180,3 +1180,222 @@ Markdown link checks and `git diff --check` passed. No SQL or build/test
 targets were executed. No additional architectural blocker was found in
 the documentation review. Native DDL compatibility is still an isolated
 execution gate, and Stage B source work still requires owner approval.
+
+## Stage B — Contexts and shared persistence
+
+**2026-11-23 status — Source delivered for owner review.** The owner accepted
+Stage A and its recommended defaults and authorized Stage B on
+`jb_20261122_ms1p3`. Stage B began from a clean tree at
+`af3591e483bd91c4748392f879fbb1b7158c0978`. The original planning and
+Stage A records above remain historical. No MariaDB connection, SQL
+execution, migration, privilege change, provisioning or database-backed
+test was performed. No Git publication was performed.
+
+### Implemented and deferred
+
+- Shared C++ rank encoder, syntax validation, exact midpoint arithmetic and
+  deterministic seeding. Bounded window normalization uses byte/limb arithmetic
+  and rejects without writes when no valid position exists. The shared code
+  serves Context order and destination/initial task ranks required in B.
+- Context create, rename, button ordering, archive/restore, confirmed
+  deletion, and chronological undo/redo. Archive retains links and keys.
+  Deletion's transaction checks the confirmed live link set and tombstones it
+  with the context. Undo reactivates the same IDs when guards still match.
+- Task primary assignment sets, replaces or clears the link in place within
+  the same workspace transaction as the task rank and journal. An explicit
+  No context selection can clear an archived assignment. The persistent desktop
+  has a Context menu, a task Set Context picker, and a Group by Context view
+  using contiguous rows and the Context column. Archived assignments show in
+  the tooltip or in the archive-inclusive view. Group order uses rank/UUID,
+  task priority/rank/UUID, and No context last. Header rows, insertion feedback
+  and drag/keyboard task reorder belong to D. Priority editing belongs to C.
+- Workspace command receipts now support a root plus revisioned participant
+  patches, assignment provenance, typed dependency witnesses and guarded
+  placement intervals. A transaction validates before/after projections,
+  persists root and audit, applies prevalidated participant CAS writes with live
+  link clearing before activation, and writes the identical audit envelope to
+  LocalChange. Revision history does not accept a later observed external
+  revision as part of a verified session chain. Known rollback preserves the
+  cursor. A schema-3 commit acknowledgment loss clears history and defers
+  operation lookup until an explicit Reload makes a fresh connection and
+  compares the operation's audit and outbox payloads in the same dataset.
+- Source declares all approved 003 DDL, including WorkEntry and
+  TaskDayDisposition. Work and day application commands and their Qt controls
+  belong to E. Legacy completion/reopen remains functional through the audit
+  path at this stage. Schema-2 desktop compatibility is retained for source
+  regression and existing installations. It opens without applying 003.
+  Schema 3 uses receipt version 3. The v1/v2 audit data and runtime decoding
+  paths remain available. Full drag intent and daily receipt fields follow
+  their feature stages.
+- Ordinary CTest contains no live integration entries, even with either old
+  DB-test cache option ON. Existing Phase 1.1/1.2 live test binaries remain
+  buildable for their separate historical operator procedures. Offline test
+  fixtures exercise rejection paths and mocks only.
+
+### Source schema and migration limits
+
+`003_ContextsAndDailyWork.sql` matches the eight Stage A DDL statements,
+with SHA-256
+`86e4a84969a6eb36e77682ef2b8410546dbd511607a11840c817568c294abf32`.
+The runner includes version-aware catalog and journal validation, the schema-2
+projection digest using SQL HEX of each old field, a transactional UUID-ordered
+rank backfill and numbered journal transitions. The CLI verifies in a fresh
+connection after a confirmed 003 apply. Step failure, incomplete history and
+unknown commit stop and leave recovery to review. There is no automatic replay
+or down migration. Migration 003 application is restricted in source to the
+proposed disposable `taskcompass_phase13_test` loopback target with the same-name
+migration principal and explicit expected dataset/fingerprint. An isolated
+desktop session has its own proposed principal `taskcompass_phase13_app`.
+No account or schema exists by implication. Backup and exact grant preflight
+remain operator procedure prerequisites for future isolated approvals.
+Deployment to an existing development database is outside the Stage B CLI
+application path and requires separate review.
+
+The old migrations and `SchemaManifest.json` are unchanged. Version 3 uses
+`Schema3Manifest.json` so the accepted schema-2 artifact retains its checksum.
+The cumulative diagram and registry were regenerated from 001–003. The
+Markdown includes exact CHECK expressions, generated-column definitions,
+composite keys, index order and FK scope. The standalone SVG presents fields,
+keys and FK relationships and is intended for zoom in an XHTML-capable browser.
+Its 13 tables, 130 columns, 32 FK edges and two logical links match the source.
+The first headless render failed under the command sandbox with
+`sandbox_host_linux.cc:41 ... Operation not permitted`. It succeeded through
+escalated local rendering with the Chromium sandbox enabled. The full and detail
+screenshots were inspected. The full diagram fit inside the overview with its
+self-edges and right-most tables visible; individual fields are best inspected
+at native size. No renderer package was installed.
+
+### Changed-file inventory
+
+- Build registration: `CMakeLists.txt`.
+- Domain: new `src/domain/{Context,FractionalRank}.{h,cpp}`; updated
+  `src/domain/Task.{h,cpp}`.
+- Application: new `src/application/ContextCommand.h` and
+  `ContextCommands.cpp`; updated `CommandService.{h,cpp}`,
+  `CommitOutcomeUnknown.h`, `OrganizationCommand.h` and `WorkspaceRepository.h`.
+- Desktop: `src/desktop/persistent/PersistentMain.cpp`,
+  `PersistentTaskController.{h,cpp}`, `PersistentTaskFilter.cpp`,
+  `PersistentTaskModel.{h,cpp}` and `PersistentTaskWindow.{h,cpp}`.
+- Storage: `src/infrastructure/storage/DatabaseConfig.{h,cpp}`,
+  `DatabaseConnection.cpp`, `MariaDbWorkspaceRepository.{h,cpp}`,
+  `MigrateMain.cpp`, `MigrationRunner.{h,cpp}`, `Migrations.qrc` and
+  `WorkspaceCodec.{h,cpp}`. New migration source and version-3 manifest under
+  `migrations/mariadb/`.
+- Tests: new `tests/ContextStageTests.cpp`; updated
+  `tests/DatabaseSchemaTests.py`, `MemoryWorkspaceRepository.h` and
+  `WorkspaceCodecTests.cpp`.
+- Documentation: `docs/DataModel.md`,
+  `docs/diagrams/{DatabaseSchema.md,DatabaseSchema.svg,GenerateDatabaseSchema.py}`
+  and this milestone. Earlier milestones, accepted evidence and scripts are
+  unchanged.
+
+### Exact database compatibility work requiring separate approval
+
+On **each** MariaDB 10.5.29 and 13.0.2 native platform, approve the actual
+loopback port, proposed fresh `taskcompass_phase13_test` schema, migration
+and runtime accounts, exact grants, installation of synthetic schema-2 fixtures,
+and a retained pre-operation export. Separately authorize any write or restore
+case and its fresh destination. Set only the reviewed per-process
+`TASKCOMPASS_PHASE13_TEST_DB_*` identity and use the documented secret
+mechanism. Review the environment report before the run. The following are
+candidate commands with placeholders, **not executed**:
+
+```bash
+TaskCompassMigrate --phase13-test --verify --to-version 2
+TaskCompassMigrate --phase13-test --apply --to-version 3 \
+   --expected-dataset '<approved-dataset-uuid>' \
+   --expected-baseline-fingerprint '<approved-schema-2-fingerprint>'
+TaskCompassMigrate --phase13-test --verify --to-version 3
+```
+
+1. Use the Stage A compatibility SQL diagnostics to compare SHOW CREATE,
+   ordered FK/index parts, generated expressions, CHECK bodies/defaults
+   and exact catalog counts. Test SELECT-only visibility, account grants,
+   SQL modes and name casing. Verify journal versions 1–3, attempts 2 and 3,
+   003 checksum, step 10 completed, exact original projections and default
+   priority/rank values in both empty and populated fixture runs.
+2. Reproduce the Stage A named CHECK replacement, generated-column
+   PAD_CHAR_TO_FULL_LENGTH/NULL uniqueness tests and cross-dataset/wrong-task FK
+   probes with otherwise-valid fixture data. For every expected failure,
+   verify the named CHECK, key or FK and exact equal before/after projections.
+   Bind and read all 127/128/129-byte rank vectors, signed maximum priority,
+   zero/invalid dates and valid leap days through native QMYSQL.
+3. Inject failures after attempt reservation, after each DDL before
+   acknowledgment, within backfill, before final metadata commit and during
+   commit acknowledgment. Inspect actual DDL and journal on a fresh connection.
+   Verify refusal to resume, and preserve failed fixture and artifacts.
+4. Through the isolated runtime principal only, compare context-create/order,
+   archived linkage, reassignment, context delete/undo/redo and task ranks
+   with expected receipts and unchanged protected rows. Inject participant
+   and outbox failures, run concurrent same-gap and conflicting assignments,
+   verify commit recovery in both recorded/absent cases, and compare exact
+   pre-/post-restart state. Native GUI, restore and end-to-end cross-platform
+   acceptance remain later gates. Stage A's fallback controls apply to every
+   incompatibility.
+
+Live operation scopes, concrete grant statements and target identities are
+pending separate review; these candidate commands are not approval to execute.
+
+### Approval Requested — Stage B exit and Stage C entry
+
+Review the Stage B source and offline evidence, then explicitly approve its
+exit and separately authorize Stage C source work if accepted. No Stage C
+work or database execution follows from the Stage B authorization. Any
+request to run an isolated native case must specify exact host/port, schema,
+account, statements, expected modifications, verification and recovery before
+execution. Current compatibility risks are the two untested native MariaDB
+DDL/driver combinations, the generated expression catalog spelling,
+session modes, and real CAS/DDL/acknowledgment fault behavior. Native Windows
+build and GUI are pending. The in-memory and offscreen results do not establish
+database or Windows behavior.
+
+### 2026-11-23 Stage B database-free validation
+
+Commands used on CentOS Stream 9:
+
+```bash
+cmake -S . -B /tmp/taskcompass-stageb-build \
+   -DTASKCOMPASS_ENABLE_DB_TESTS=ON -DTASKCOMPASS_ENABLE_PHASE12_DB_TESTS=ON
+cmake --build /tmp/taskcompass-stageb-build -j 8
+scripts/environment-report.sh --build-dir /tmp/taskcompass-stageb-build \
+   --output-dir /tmp/taskcompass-stageb-evidence --context phase1.3-stage-b-offline-final
+ctest --test-dir /tmp/taskcompass-stageb-build --show-only=json-v1
+ctest --test-dir /tmp/taskcompass-stageb-build --output-on-failure -j 6
+python3 docs/diagrams/GenerateDatabaseSchema.py --manifest-only
+python3 docs/diagrams/GenerateDatabaseSchema.py
+python3 docs/diagrams/GenerateDatabaseSchema.py --check
+python3 tests/DatabaseSchemaTests.py
+sha256sum migrations/mariadb/00*.sql migrations/mariadb/SchemaManifest.json
+git diff --check
+git status --short --branch
+```
+
+Both legacy cache options were deliberately set ON to verify that they could
+not register either live suite. CMake reported them unused. The JSON CTest
+inventory had 31 entries and contained neither live integration binary.
+The final build succeeded with GCC 11.5.0 and Qt 6.10.3. Final CTest passed
+**31/31** in 75.25 seconds, with zero failures or skips, including old
+prototype/application/model/codec tests, offline script fixtures, and the
+new context/rank/receipt/preview checks. The direct schema verification and
+all six diagram tests passed, including the SVG's embedded constraint and
+index inventory. The environment reporter preserved
+`/tmp/taskcompass-stageb-evidence/environment-2026-11-23T090258.520719_0000-ad794997.json`,
+build notes, and no connection-derived server metadata. Final build/CTest logs
+and overview/detail screenshots are in the same temporary evidence directory.
+
+An earlier build caught a switch-case initialization issue in the impact
+guard, fixed by scoping the deletion case. The first full offline run passed
+29/31. The existing codec test expected version 3 to be unsupported, and a
+new test used Qt's mutable JSON lookup to check for absence. The tests now
+probe unsupported version 4 and use explicit key presence. The corrected
+focused run passed 4/4 before the final 31/31 result. No database-backed
+suite or native Windows build was run.
+
+Verified SHA-256 values remain
+`bb901d7580398893b5c04ee263f813b9d05873eb4bae08e0daf377faf73b0ea0`
+for 001,
+`7de311935843e4fc04cbca74d025d9f38986a4154d70bdd29b35a2820f87b736`
+for 002, and
+`9d7328b58902fd135c1433e62695274e677d2e91ad02561a419323f395e76755`
+for the accepted v1/v2 schema registry. The working tree contains the Stage B
+inventory above. Prior accepted evidence files have no diff.

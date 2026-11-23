@@ -19,11 +19,13 @@ int main(int argc, char *argv[]) {
    PersistentTaskWindow window([]() {
       auto session = std::make_unique<PersistentTaskSession>();
       const auto config = taskcompass::DatabaseConfig::fromEnvironment();
-      if (config.user != "taskcompass_app") {
-         throw std::runtime_error("The desktop requires the taskcompass_app runtime account; diagnostic/migration/admin accounts are not accepted.");
+      if (config.user != "taskcompass_app" && config.user != "taskcompass_phase13_app") {
+         throw std::runtime_error("The desktop requires the configured TaskCompass runtime account.");
       }
       auto connection = std::make_shared<taskcompass::DatabaseConnection>(config);
-      const auto datasetId = taskcompass::MigrationRunner(connection->database()).verify(2);
+      taskcompass::MigrationRunner migration(connection->database());
+      const auto datasetId = migration.verify();
+      if (migration.verifiedVersion() < 2) { throw std::runtime_error("The desktop requires a verified schema 2 or 3."); }
       session->connectionLifetime = connection;
       session->workspaceRepository = std::make_unique<taskcompass::MariaDbWorkspaceRepository>(connection->database(), datasetId);
       session->commands = std::make_unique<taskcompass::CommandService>(*session->workspaceRepository, datasetId,

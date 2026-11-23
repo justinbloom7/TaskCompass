@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Apply the reviewed CREATE/ALTER subset of actual migrations 001+002 for docs.
+"""Apply the reviewed CREATE/ALTER subset of actual migrations 001–003 for docs.
 
 No SQL engine, database access, shell SQL execution, or software installation.
 Unknown migrations or syntax fail closed; this is not a general SQL interpreter.
@@ -13,13 +13,15 @@ import re
 import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
+from xml.sax.saxutils import escape
 
 DIRECTORY = Path(__file__).resolve().parent
 REPOSITORY = DIRECTORY.parent.parent
 MIGRATIONS = [REPOSITORY / 'migrations/mariadb/001_PersistentTaskFoundation.sql',
-              REPOSITORY / 'migrations/mariadb/002_OrganizationalManagement.sql']
+              REPOSITORY / 'migrations/mariadb/002_OrganizationalManagement.sql',
+              REPOSITORY / 'migrations/mariadb/003_ContextsAndDailyWork.sql']
 CONFIG = DIRECTORY / 'MermaidConfig.json'
-TABLE_ORDER = ['Dataset', 'Pillar', 'Project', 'Objective', 'Task', 'CommandRecord', 'LocalChange', 'SchemaMigration', 'MigrationAttempt']
+TABLE_ORDER = ['Dataset', 'Pillar', 'Project', 'Objective', 'Task', 'Context', 'TaskContext', 'WorkEntry', 'TaskDayDisposition', 'CommandRecord', 'LocalChange', 'SchemaMigration', 'MigrationAttempt']
 LOGICAL_LINKS = ['compensatesCommandId', 'reappliesCommandId']
 
 
@@ -57,7 +59,8 @@ def definition(table, source, modify=False):
    check = re.fullmatch(r'CONSTRAINT (\w+) CHECK \((.*)\)', line)
    unique = re.fullmatch(r'UNIQUE KEY (\w+) \(([^)]+)\)', line)
    index = re.fullmatch(r'INDEX (\w+) \(([^)]+)\)', line)
-   column = re.fullmatch(r'(\w+) (INT|BIGINT|MEDIUMTEXT|CHAR\(\d+\)|VARCHAR\(\d+\)) (.+)', line)
+   primary = re.fullmatch(r'PRIMARY KEY \(([^)]+)\)', line)
+   column = re.fullmatch(r'(\w+) (INT|BIGINT|MEDIUMTEXT|DATE|VARBINARY\(\d+\)|CHAR\(\d+\)|VARCHAR\(\d+\)) (.+)', line)
    if foreign:
       table['foreignKeys'].append((foreign[1], [x.strip() for x in foreign[2].split(',')], foreign[3], [x.strip() for x in foreign[4].split(',')]))
    elif check:
@@ -66,6 +69,10 @@ def definition(table, source, modify=False):
       table['uniqueKeys'].append((unique[1], [x.strip() for x in unique[2].split(',')]))
    elif index:
       table['indexes'].append((index[1], [x.strip() for x in index[2].split(',')]))
+   elif primary:
+      if 'primaryKey' in table:
+         raise ValueError('Duplicate composite primary key')
+      table['primaryKey'] = [part.strip() for part in primary[1].split(',')]
    elif column:
       name, dataType, modifiers = column.groups()
       value = {'name': name, 'type': dataType, 'modifiers': modifiers,
@@ -122,7 +129,7 @@ def parseMigrations(sources):
             raise ValueError('Unsupported migration statement: ' + statement[:80])
    for table in tables.values():
       for column in table['columns']:
-         column['keys'] = ['PK'] if 'PRIMARY KEY' in column['modifiers'] else []
+         column['keys'] = ['PK'] if 'PRIMARY KEY' in column['modifiers'] or column['name'] in table.get('primaryKey', []) else []
          if any(column['name'] in key[1] for key in table['foreignKeys']):
             column['keys'].append('FK')
          if any(column['name'] in key[1] for key in table['uniqueKeys']):
@@ -137,9 +144,11 @@ def parseMigrations(sources):
 
 def columnComment(column):
    text = 'NULL' if column['nullable'] else 'NOT NULL'
-   default = re.search(r"DEFAULT ('[^']*'|NULL)", column['modifiers'])
+   default = re.search(r"DEFAULT ('[^']*'|NULL|[0-9]+)", column['modifiers'])
    if default:
       text += '; default ' + default[1]
+   if 'GENERATED ALWAYS AS' in column['modifiers']:
+      text += '; stored generated key'
    if column['name'] in LOGICAL_LINKS:
       text += '; logical reference only - no FK'
    return text
@@ -176,13 +185,13 @@ def provenance(tables):
 def markdown(tables):
    text = '''<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
-# TaskCompass database schema — cumulative migrations 001–002
+# TaskCompass database schema — cumulative migrations 001–003
 
 Authority: [001_PersistentTaskFoundation.sql](../../migrations/mariadb/001_PersistentTaskFoundation.sql)
-and [002_OrganizationalManagement.sql](../../migrations/mariadb/002_OrganizationalManagement.sql).
-This is the cumulative schema defined by actual migration source, **not evidence
-that migration 002 has been executed or accepted on a live database**. Phase 1.1
-schema deployment/evidence remains preserved in its milestone.
+[002_OrganizationalManagement.sql](../../migrations/mariadb/002_OrganizationalManagement.sql)
+and [003_ContextsAndDailyWork.sql](../../migrations/mariadb/003_ContextsAndDailyWork.sql).
+This is the cumulative source schema. Migration 003 awaits separate MariaDB
+compatibility and execution approval. Earlier live evidence remains in its milestones.
 
 [Open the standalone SVG](DatabaseSchema.svg) in Firefox; zoom for individual fields.
 Solid lines labeled FK represent actual SQL constraints; dashed LOGICAL links are
@@ -190,6 +199,8 @@ unenforced references. PK/UK/FK annotate column membership, not individual uniqu
 of composite-key members. NULL/NOT NULL and explicit defaults are included.
 Optional FK lines reflect SQL nullability, not permission to violate exclusive
 parent/target CHECK constraints. No cascading delete/update actions are declared.
+The standalone SVG embeds the structured source constraint and index inventory
+as XML metadata alongside the rendered ER diagram.
 
 ## Mermaid ER diagram
 
@@ -198,7 +209,7 @@ parent/target CHECK constraints. No cascading delete/update actions are declared
    text += mermaidDiagram(tables) + '\n```\n\n'
    text += '## Primary and unique keys\n\n| Table | Primary key | Additional unique keys |\n| --- | --- | --- |\n'
    for name in TABLE_ORDER:
-      primary = ', '.join(column['name'] for column in tables[name]['columns'] if 'PK' in column['keys'])
+      primary = ', '.join(tables[name].get('primaryKey', [column['name'] for column in tables[name]['columns'] if 'PK' in column['keys']]))
       uniques = '; '.join('`' + key + '(' + ', '.join(columns) + ')`' for key, columns in tables[name]['uniqueKeys']) or 'None'
       text += '| ' + name + ' | `' + primary + '` | ' + uniques + ' |\n'
    text += '\nInline operationId UNIQUE constraints are shown using their column name; no explicit SQL constraint name is invented.\n'
@@ -211,7 +222,7 @@ parent/target CHECK constraints. No cascading delete/update actions are declared
 A referenced parent may have zero children. Composite (datasetId, id) keys prevent
 cross-dataset references. Project/Objective each have exactly one organizational
 parent; Task has at most one objective or direct project; CommandRecord/LocalChange
-each target exactly one of four entity types. Audit target columns identify the
+each target exactly one entity; Context is available to version 3 only. Audit target columns identify the
 mutated entity, not redundant task ownership. MigrationAttempt and SchemaMigration
 are local metadata with no SQL FK between their version columns.
 
@@ -227,7 +238,9 @@ atomic receipt/change insertion. SQL permits a command with no LocalChange.
 Ancestor cycles, live-parent availability, inherited archive, singleton dataset,
 revision ordering and snapshot shape/equality are application/migration rules.
 JSON_VALID alone checks JSON syntax. Version-1 payloads remain task-only; new
-version-2 payloads support four targets. Partial migrations require explicit review.
+version-2 payloads support four targets. Version 3 adds Context. Partial migrations
+require explicit review. TaskContext retains link history and allows one live primary
+assignment per task. Calendar disposition is independent of scheduling.
 
 ## CHECK constraints
 
@@ -239,7 +252,12 @@ Expressions below come from cumulative SQL (whitespace normalized), with removed
 '''
    for name in TABLE_ORDER:
       for key, expression in tables[name]['checks']:
-         text += '| ' + name + ' | `' + key + '` | `' + expression + '` |\n'
+         text += '| ' + name + ' | `' + key + '` | `' + expression.replace('|', r'\|') + '` |\n'
+   text += '\n## Stored generated columns\n\n| Table.column | SQL modifiers |\n| --- | --- |\n'
+   for name in TABLE_ORDER:
+      for column in tables[name]['columns']:
+         if 'GENERATED ALWAYS AS' in column['modifiers']:
+            text += '| ' + name + '.' + column['name'] + ' | `' + column['modifiers'] + '` |\n'
    text += '\n## Declared non-unique indexes\n\n| Table | Index | Ordered columns |\n| --- | --- | --- |\n'
    for name in TABLE_ORDER:
       for key, columns in tables[name]['indexes']:
@@ -250,14 +268,13 @@ engine-generated index names are not asserted as explicit migration declarations
 All tables use InnoDB and default utf8mb4/utf8mb4_unicode_ci. Identity/checksum/
 fingerprint and controlled status strings use explicit ascii/ascii_bin as in source.
 BIGINT timestamps are UTC epoch milliseconds by application convention. No physical
-SQL JSON columns, AUTO_INCREMENT, organization completion lifecycle, ordering,
-contexts, planning or sync tables are introduced. archivedAt is explicit; inherited
+SQL JSON columns, AUTO_INCREMENT, planning/schedule or sync tables are present. archivedAt is explicit; inherited
 archive is derived and never stored on descendants as redundant flags.
 
 ## Regeneration and validation
 
 [GenerateDatabaseSchema.py](GenerateDatabaseSchema.py) interprets only the reviewed
-CREATE/ALTER subset from the two exact migration files, and fails on unknown syntax
+CREATE/ALTER subset from the three exact migration files, and fails on unknown syntax
 or an additional migration. Extend/review the reader for every later migration;
 never substitute the preliminary logical model or assume all SQL is supported.
 No database is accessed. Dependencies remain Python 3.9+ standard library and
@@ -273,7 +290,7 @@ The SVG is a native Mermaid export with deterministic IDs/provenance and an oute
 foreignObject labels supported by Firefox/Chromium; librsvg does not render those
 labels correctly. Do not disable browser sandboxing or install dependencies to
 work around renderer restrictions without approval. A source schema change is not
-live migration approval. Render/visual inspection results are in Phase1.2.md.
+live migration approval. Render and inspection results are in [Phase 1.3](../milestones/Phase1.3.md).
 
 Migration SHA-256 values:\n\n'''
    for path in MIGRATIONS:
@@ -287,6 +304,8 @@ def validateArtifacts(tables, svg):
    ns = {'s': 'http://www.w3.org/2000/svg'}
    metadata = root.find('s:metadata[@id="TaskCompassProvenance"]', ns)
    assert metadata is not None and json.loads(metadata.text) == provenance(tables)
+   manifest = root.find('s:metadata[@id="TaskCompassSchema"]', ns)
+   assert manifest is not None and json.loads(manifest.text) == json.loads(json.dumps(tables))
    nodes = {}
    for node in root.findall('.//s:g', ns):
       if 'node' not in node.attrib.get('class', '').split():
@@ -319,6 +338,10 @@ def validateArtifacts(tables, svg):
    assert bounds[2] > bounds[3]
 
 
+def schemaMetadata(tables):
+   return '<metadata id="TaskCompassSchema">' + escape(json.dumps(tables, sort_keys=True)) + '</metadata>'
+
+
 def renderMermaid(tables):
    with tempfile.TemporaryDirectory(prefix='taskcompass-mermaid-') as temporary:
       output = Path(temporary) / 'schema.svg'
@@ -335,7 +358,7 @@ def renderMermaid(tables):
       svg = opening + svg[end:]
       start = svg.index('>', svg.index('<svg')) + 1
       metadata = '<metadata id="TaskCompassProvenance">' + json.dumps(provenance(tables), sort_keys=True) + '</metadata>'
-      svg = svg[:start] + metadata + svg[start:]
+      svg = svg[:start] + metadata + schemaMetadata(tables) + svg[start:]
       if result.stderr:
          print(result.stderr.strip())
       return svg
@@ -352,15 +375,18 @@ def main():
    tables = parseMigrations(sources)
    manifestPath = MIGRATIONS[0].parent / 'SchemaManifest.json'
    expectedManifest = json.dumps({str(version): parseMigrations(sources[:version]) for version in [1, 2]}, indent=3, sort_keys=True) + '\n'
+   assert manifestPath.read_text(encoding="utf-8") == expectedManifest, 'Historical schema registry differs'
+   schema3Path = manifestPath.with_name('Schema3Manifest.json')
+   schema3 = json.dumps({'3': tables}, indent=3, sort_keys=True) + '\n'
    if arguments.manifest_only:
       if arguments.check:
          raise ValueError('Choose check or manifest-only')
-      manifestPath.write_bytes(expectedManifest.encode("utf-8"))
+      schema3Path.write_bytes(schema3.encode("utf-8"))
       print('Generated structural manifest only; no renderer or database accessed.')
       return
    expectedMarkdown = markdown(tables)
    if arguments.check:
-      assert manifestPath.read_text(encoding="utf-8") == expectedManifest, 'Stale structural registry JSON'
+      assert schema3Path.read_text(encoding="utf-8") == schema3, 'Stale schema 3 registry JSON'
       assert (DIRECTORY / 'DatabaseSchema.md').read_text(encoding="utf-8") == expectedMarkdown, 'Stale Markdown'
       svg = (DIRECTORY / 'DatabaseSchema.svg').read_text(encoding="utf-8")
    else:
@@ -369,7 +395,7 @@ def main():
    if not arguments.check:
       (DIRECTORY / 'DatabaseSchema.md').write_bytes(expectedMarkdown.encode("utf-8"))
       (DIRECTORY / 'DatabaseSchema.svg').write_bytes(svg.encode("utf-8"))
-      manifestPath.write_bytes(expectedManifest.encode("utf-8"))
+      schema3Path.write_bytes(schema3.encode("utf-8"))
    print(('Verified' if arguments.check else 'Generated') + ': ' + str(len(tables)) + ' tables, '
          + str(sum(len(table['columns']) for table in tables.values())) + ' columns, '
          + str(sum(len(table['foreignKeys']) for table in tables.values())) + ' SQL FKs, 2 logical references.')

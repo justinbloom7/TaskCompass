@@ -1,21 +1,24 @@
 # Preliminary relational model
 
-For the cumulative migration 001 + 002 source schema, see the
+For the cumulative migration 001–003 source schema, see the
 [database ER diagram and constraint reference](diagrams/DatabaseSchema.md) or
 [open its standalone SVG](diagrams/DatabaseSchema.svg). Those artifacts derive
-from migration SQL; the broader logical model below includes future features.
+from migration SQL. Migration 003 is available in source for Stage B review.
+Its native MariaDB compatibility and execution await separate approval.
+[Phase 1.3](milestones/Phase1.3.md) records the implemented context/assignment
+scope and the deferred daily-progress application behavior.
 
 **The broad model below includes future features.** Phase 1.1 migration 001 was
 accepted with Linux/Windows validation; see [its historical report](milestones/Phase1.1.md).
 Phase 1.2 migration002 passed populated isolated rehearsals and both development
 upgrades (owner-reported), including original legacy preservation, final runtime
-privileges and independent health verification. GUI acceptance and schema2 backup/
-restore validation remain pending. See the milestone for current review status.
+privileges and independent health verification. Phase 1.2 was formally
+accepted on both platforms. See the milestone for its evidence boundaries.
 See [002](../migrations/mariadb/002_OrganizationalManagement.sql) and the
 [Phase 1.2 record](milestones/Phase1.2.md) for current approval/validation status.
 Table names use PascalCase and columns camelCase.
 
-## Phase 1.2 physical subset — development upgrades verified, acceptance pending
+## Accepted Phase 1.2 physical subset
 
 The cumulative schema has nine tables. Dataset, Task, SchemaMigration,
 CommandRecord and LocalChange retain all existing rows; 001 is immutable.

@@ -4,11 +4,12 @@
 #include "application/WorkspaceRepository.h"
 #include <QAbstractTableModel>
 #include <memory>
+#include <unordered_map>
 
 class PersistentTaskModel : public QAbstractTableModel {
    Q_OBJECT
 public:
-   enum Column { TITLE_COLUMN, STATUS_COLUMN, CREATED_COLUMN, UPDATED_COLUMN, COMPLETED_COLUMN, ORGANIZATION_COLUMN, COLUMN_COUNT };
+   enum Column { TITLE_COLUMN, STATUS_COLUMN, CREATED_COLUMN, UPDATED_COLUMN, COMPLETED_COLUMN, ORGANIZATION_COLUMN, CONTEXT_COLUMN, COLUMN_COUNT };
    explicit PersistentTaskModel(QObject *parent = nullptr);
    int rowCount(const QModelIndex &parent = {}) const override;
    int columnCount(const QModelIndex &parent = {}) const override;
@@ -21,6 +22,9 @@ public:
    bool effectivelyArchived(int row) const;
    bool matchesScope(int row, const std::optional<taskcompass::OrganizationKey> &scope, bool independentOnly) const;
    const taskcompass::Task &taskAt(int row) const;
+   const taskcompass::Context *contextAt(int row, bool includeArchived) const;
+   void setArchivedContextsVisible(bool enabled);
+   bool hasContexts() const;
    void setWritable(bool enabled);
 
 signals:
@@ -29,5 +33,8 @@ signals:
 private:
    std::unique_ptr<taskcompass::OrganizationRules> graph;
    std::vector<taskcompass::Task> tasks;
+   taskcompass::WorkspaceSnapshot contextSnapshot;
+   std::unordered_map<std::string, std::size_t> contextIndexes;
+   bool archivedContextsVisible = false;
    bool writable = false;
 };

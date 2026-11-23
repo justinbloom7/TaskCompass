@@ -1,5 +1,6 @@
 #include "PersistentTaskFilter.h"
 #include "PersistentTaskModel.h"
+#include <tuple>
 
 void PersistentTaskFilter::setIncludeCompleted(bool enabled) {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
@@ -36,6 +37,7 @@ void PersistentTaskFilter::setIncludeArchived(bool enabled) {
    beginFilterChange();
 #endif
    includeArchived = enabled;
+   static_cast<PersistentTaskModel *>(sourceModel())->setArchivedContextsVisible(enabled);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
    endFilterChange(QSortFilterProxyModel::Direction::Rows);
 #else
@@ -44,6 +46,17 @@ void PersistentTaskFilter::setIncludeArchived(bool enabled) {
 }
 
 bool PersistentTaskFilter::lessThan(const QModelIndex &left, const QModelIndex &right) const {
+   const auto *model = static_cast<const PersistentTaskModel *>(sourceModel());
+   if (left.column() == PersistentTaskModel::CONTEXT_COLUMN && model->hasContexts()) {
+      const auto key = [&](int row) {
+         const auto *context = model->contextAt(row, includeArchived);
+         const auto &task = model->taskAt(row);
+         return std::tuple{context == nullptr, context ? std::string_view(context->sortKey) : std::string_view{},
+                           context ? std::string_view(context->id) : std::string_view{},
+                           task.priority, std::string_view(task.manualOrderKey), std::string_view(task.id)};
+      };
+      return sortOrder() == Qt::AscendingOrder ? key(left.row()) < key(right.row()) : key(right.row()) < key(left.row());
+   }
    const int comparison = QString::compare(left.data().toString(), right.data().toString(), Qt::CaseInsensitive);
    return comparison == 0 ? left.data(Qt::UserRole).toString() < right.data(Qt::UserRole).toString() : comparison < 0;
 }

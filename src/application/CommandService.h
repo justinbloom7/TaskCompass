@@ -2,6 +2,7 @@
 
 #include "WorkspaceRepository.h"
 #include "TaskCommand.h"
+#include "ContextCommand.h"
 #include <map>
 
 namespace taskcompass {
@@ -15,6 +16,7 @@ public:
    WorkspaceSnapshot read();
    WorkspaceReceipt execute(const TaskCommand &command);
    WorkspaceReceipt execute(const OrganizationCommand &command);
+   WorkspaceReceipt execute(const ContextCommand &command);
    WorkspaceReceipt undo();
    WorkspaceReceipt redo();
    bool canUndo() const;
@@ -28,6 +30,9 @@ private:
       WorkspaceReceipt original;
       std::string lastCommandId;
    };
+   void prepareTaskCaptureRank(WorkspaceReceipt &receipt, const WorkspaceSnapshot &snapshot);
+   void remember(const WorkspaceReceipt &receipt);
+   WorkspaceReceipt compensateContext(const WorkspaceReceipt &original, const WorkspaceSnapshot &snapshot, bool forward, const std::string &lastCommandId);
    WorkspaceReceipt executePrepared(const WorkspaceRepository::Prepare &prepare);
    WorkspaceReceipt compensate(bool forward);
    WorkspaceReceipt receipt(CommandOperation operation, const std::optional<EntitySnapshot> &before,

@@ -24,6 +24,8 @@ struct Task {
    std::optional<Timestamp> deletedAt;
    std::int64_t localRevision = 0;
    TaskOwner owner = {};
+   std::int64_t priority = 5;
+   std::string manualOrderKey = "1";
    bool operator==(const Task &) const = default;
 };
 

@@ -1,4 +1,5 @@
 #include "Task.h"
+#include "FractionalRank.h"
 
 #include <algorithm>
 #include <stdexcept>
@@ -75,6 +76,7 @@ std::string normalizeTitle(const std::string &title) {
 
 void validateTask(const Task &task) {
    validateTaskOwner(task.owner);
+   if (task.priority <= 0 || !validRank(task.manualOrderKey)) { throw std::invalid_argument("Invalid task priority or rank."); }
    if (!isUuid(task.id) || !isUuid(task.datasetId)) {
       throw std::invalid_argument("Invalid canonical task or dataset UUID.");
    }

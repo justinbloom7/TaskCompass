@@ -14,6 +14,7 @@ struct DatabaseConfig {
    void validateIdentity(const QString &selectedDatabase, const QString &authenticatedAccount) const;
    static DatabaseConfig fromEnvironment(bool integration = false);
    static DatabaseConfig fromPhase12Environment();
+   static DatabaseConfig fromPhase13Environment();
 };
 
 }

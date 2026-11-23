@@ -131,8 +131,8 @@ if(BUILD_TESTING)
 endif()
 
 # Phase 1.1: standard-C++ core, Qt SQL adapter and separate persistent desktop.
-add_library(TaskCore STATIC src/domain/Task.cpp src/domain/OrganizationRules.cpp
-            src/application/CommandService.cpp src/application/TaskService.cpp)
+add_library(TaskCore STATIC src/domain/Task.cpp src/domain/OrganizationRules.cpp src/domain/FractionalRank.cpp src/domain/Context.cpp
+            src/application/CommandService.cpp src/application/ContextCommands.cpp src/application/TaskService.cpp)
 set_target_properties(TaskCore PROPERTIES AUTOMOC OFF)
 target_include_directories(TaskCore PUBLIC src)
 
@@ -191,25 +191,12 @@ if(BUILD_TESTING)
 endif()
 
 if(BUILD_TESTING)
+   # Live suites are explicit operator-run binaries, never CTest entries.
    add_executable(MariaDbIntegrationTests tests/MariaDbIntegrationTests.cpp)
    target_link_libraries(MariaDbIntegrationTests PRIVATE TaskStorage)
-   option(TASKCOMPASS_ENABLE_DB_TESTS "Enable explicitly approved destructive tests on taskcompass_integration only" OFF)
-   if(TASKCOMPASS_ENABLE_DB_TESTS)
-      add_test(NAME MariaDbIntegrationTests COMMAND MariaDbIntegrationTests --run --allow-reset)
-   else()
-      add_test(NAME MariaDbIntegrationTests COMMAND MariaDbIntegrationTests)
-   endif()
-   set_tests_properties(MariaDbIntegrationTests PROPERTIES SKIP_RETURN_CODE 77 LABELS integration TIMEOUT 120)
    find_package(Threads REQUIRED)
    add_executable(OrganizationIntegrationTests tests/OrganizationIntegrationTests.cpp)
    target_link_libraries(OrganizationIntegrationTests PRIVATE TaskStorage Threads::Threads)
-   option(TASKCOMPASS_ENABLE_PHASE12_DB_TESTS "Enable separately approved Phase 1.2 tests on fresh taskcompass_phase12_test only" OFF)
-   if(TASKCOMPASS_ENABLE_PHASE12_DB_TESTS)
-      add_test(NAME OrganizationIntegrationTests COMMAND OrganizationIntegrationTests --run --allow-reset)
-   else()
-      add_test(NAME OrganizationIntegrationTests COMMAND OrganizationIntegrationTests)
-   endif()
-   set_tests_properties(OrganizationIntegrationTests PROPERTIES SKIP_RETURN_CODE 77 LABELS integration TIMEOUT 600)
 endif()
 
 if(BUILD_TESTING)
@@ -229,4 +216,13 @@ if(BUILD_TESTING)
             "${CMAKE_CURRENT_SOURCE_DIR}/migrations/mariadb/001_PersistentTaskFoundation.sql"
             $<TARGET_FILE:MariaDbIntegrationTests>)
    set_tests_properties(MigrationSqlPreview PROPERTIES PASS_REGULAR_EXPRESSION "CREATE TABLE Task")
+endif()
+
+if(BUILD_TESTING)
+   add_executable(ContextStageTests tests/ContextStageTests.cpp)
+   target_link_libraries(ContextStageTests PRIVATE PersistentDesktop TaskStorage)
+   add_dependencies(ContextStageTests TaskCompassMigrate)
+   add_test(NAME ContextStageTests COMMAND ContextStageTests
+            "${CMAKE_CURRENT_SOURCE_DIR}/migrations/mariadb/003_ContextsAndDailyWork.sql" $<TARGET_FILE:TaskCompassMigrate>)
+   set_tests_properties(ContextStageTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 30)
 endif()

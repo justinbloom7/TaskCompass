@@ -16,6 +16,7 @@ public:
    void reload();
    void execute(const taskcompass::TaskCommand &command);
    void execute(const taskcompass::OrganizationCommand &command);
+   void execute(const taskcompass::ContextCommand &command);
    void undo();
    void redo();
    bool isBusy() const;
@@ -30,6 +31,7 @@ public:
 signals:
    void changed();
    void failed(const QString &message);
+   void commitResolved(const QString &message);
 
 private:
    void dispatch(std::function<void(PersistentTaskSession &)> operation);
@@ -37,6 +39,8 @@ private:
    QThread thread;
    QObject *worker;
    std::unique_ptr<PersistentTaskSession> session;
+   std::string unresolvedDataset;
+   std::string unresolvedOperation; // Worker thread only.
    std::vector<taskcompass::Task> currentTasks;
    taskcompass::WorkspaceSnapshot currentWorkspace;
    QString undoText;

@@ -31,6 +31,12 @@ void PersistentTaskController::dispatch(std::function<void(PersistentTaskSession
          if (!session) {
             session = factory();
          }
+         QString resolution;
+         if (!unresolvedOperation.empty()) {
+            const bool committed = session->workspaceRepository->operationCommitted(unresolvedOperation, unresolvedDataset);
+            resolution = committed ? "The previous operation committed. Workspace reloaded."
+                                   : "The previous operation was absent from the audit and outbox. Workspace reloaded.";
+         }
          operation(*session);
          auto workspace = session->commands ? session->commands->read() : taskcompass::WorkspaceSnapshot{session->service->list(), {}};
          auto result = workspace.tasks;
@@ -39,7 +45,9 @@ void PersistentTaskController::dispatch(std::function<void(PersistentTaskSession
          const bool redo = session->commands ? session->commands->canRedo() : session->service->canRedo();
          const auto undoLabel = QString::fromStdString(session->commands ? session->commands->undoDescription() : session->service->undoDescription());
          const auto redoLabel = QString::fromStdString(session->commands ? session->commands->redoDescription() : session->service->redoDescription());
-         QMetaObject::invokeMethod(this, [receiver, undoLabel, redoLabel, result = std::move(result), workspace = std::move(workspace), undo, redo]() {
+         unresolvedOperation.clear();
+         unresolvedDataset.clear();
+         QMetaObject::invokeMethod(this, [receiver, undoLabel, redoLabel, resolution, result = std::move(result), workspace = std::move(workspace), undo, redo]() {
             if (!receiver) {
                return;
             }
@@ -52,11 +60,17 @@ void PersistentTaskController::dispatch(std::function<void(PersistentTaskSession
             receiver->busy = false;
             receiver->ready = true;
             emit receiver->changed();
+            if (!resolution.isEmpty()) { emit receiver->commitResolved(resolution); }
          });
       } catch (const std::exception &error) {
-         if (dynamic_cast<const taskcompass::CommitOutcomeUnknown *>(&error) && session) {
+         if (const auto *unknown = dynamic_cast<const taskcompass::CommitOutcomeUnknown *>(&error); unknown && session) {
             if (session->commands) { session->commands->clearHistory(); }
             else { session->service->clearHistory(); }
+            if (!unknown->operationId.empty()) {
+               unresolvedOperation = unknown->operationId;
+               unresolvedDataset = unknown->datasetId;
+               session.reset();
+            }
          }
          const auto message = QString::fromUtf8(error.what());
          // Disable editing until explicit reload, preserving the last visible snapshot.
@@ -88,6 +102,14 @@ void PersistentTaskController::execute(const taskcompass::OrganizationCommand &c
    if (ready) {
       dispatch([command](PersistentTaskSession &session) {
          if (!session.commands) { throw std::runtime_error("Organization requires a schema-2 workspace."); }
+         session.commands->execute(command);
+      });
+   }
+}
+void PersistentTaskController::execute(const taskcompass::ContextCommand &command) {
+   if (ready) {
+      dispatch([command](PersistentTaskSession &session) {
+         if (!session.commands) { throw std::runtime_error("Contexts require a schema-3 workspace."); }
          session.commands->execute(command);
       });
    }

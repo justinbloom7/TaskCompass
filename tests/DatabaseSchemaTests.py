@@ -19,12 +19,12 @@ class DatabaseSchemaTests(unittest.TestCase):
       self.tables = SCHEMA.parseMigrations(self.sources)
 
    def testCumulativeKeysAndNullability(self):
-      self.assertEqual(len(self.tables), 9)
-      self.assertEqual(sum(len(t['columns']) for t in self.tables.values()), 85)
-      self.assertEqual(sum(len(t['foreignKeys']) for t in self.tables.values()), 20)
+      self.assertEqual(len(self.tables), 13)
+      self.assertEqual(sum(len(t['columns']) for t in self.tables.values()), 130)
+      self.assertEqual(sum(len(t['foreignKeys']) for t in self.tables.values()), 32)
       for name in ['CommandRecord', 'LocalChange']:
          columns = {c['name']: c for c in self.tables[name]['columns']}
-         for field in ['taskId', 'pillarId', 'projectId', 'objectiveId']:
+         for field in ['taskId', 'pillarId', 'projectId', 'objectiveId', 'contextId']:
             self.assertTrue(columns[field]['nullable'])
             self.assertIn('FK', columns[field]['keys'])
       self.assertNotIn('commandTask', [k[0] for k in self.tables['CommandRecord']['foreignKeys']])
@@ -38,10 +38,18 @@ class DatabaseSchemaTests(unittest.TestCase):
       with self.assertRaises(ValueError):
          SCHEMA.splitSql("CREATE TABLE Broken (name VARCHAR(2);", ';')
 
-   def testRegistryMatchesBothSourceVersions(self):
+   def testRegistriesMatchSourceVersions(self):
       sources = [path.read_text(encoding="utf-8") for path in SCHEMA.MIGRATIONS]
       expected = {str(version): SCHEMA.parseMigrations(sources[:version]) for version in [1, 2]}
       self.assertEqual(json.loads((SCHEMA.MIGRATIONS[0].parent / 'SchemaManifest.json').read_text(encoding="utf-8")), json.loads(json.dumps(expected)))
+
+   def testSchema3SpecificKeys(self):
+      registry = json.loads((SCHEMA.MIGRATIONS[2].parent / 'Schema3Manifest.json').read_text(encoding="utf-8"))
+      self.assertEqual(registry, json.loads(json.dumps({'3': self.tables})))
+      self.assertEqual(self.tables['TaskDayDisposition']['primaryKey'], ['datasetId', 'taskId', 'workDate'])
+      self.assertIn(('taskContextOneLive', ['datasetId', 'liveTaskId']), self.tables['TaskContext']['uniqueKeys'])
+      self.assertIn(('workCorrection', ['datasetId', 'taskId', 'correctsEntryId'], 'WorkEntry', ['datasetId', 'taskId', 'id']),
+                    self.tables['WorkEntry']['foreignKeys'])
 
    def testCheckIsIndependentOfWindowsDefaultEncoding(self):
       readText = Path.read_text

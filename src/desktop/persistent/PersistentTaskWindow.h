@@ -32,6 +32,8 @@ private:
    void moveOrganization(std::optional<taskcompass::OrganizationKey> destination = {});
    void populateCreationMenu(QMenu *menu);
    QLabel *selectionDetails;
+   void changeContext(taskcompass::ContextOperation operation);
+   void assignContext();
    void archiveOrganization(bool restore);
    void rebuildNavigation();
    void updateScope();
@@ -61,4 +63,7 @@ private:
    QAction *redoAction;
    QAction *reloadAction;
    QAction *navigationAction;
+   QAction *contextMenuAction;
+   QAction *assignContextAction;
+   QAction *groupByContextAction;
 };

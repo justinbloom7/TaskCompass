@@ -2,6 +2,8 @@
    <qresource prefix="/migrations">
       <file alias="001.sql">../../../migrations/mariadb/001_PersistentTaskFoundation.sql</file>
       <file alias="002.sql">../../../migrations/mariadb/002_OrganizationalManagement.sql</file>
+      <file alias="003.sql">../../../migrations/mariadb/003_ContextsAndDailyWork.sql</file>
       <file alias="schema.json">../../../migrations/mariadb/SchemaManifest.json</file>
+      <file alias="schema3.json">../../../migrations/mariadb/Schema3Manifest.json</file>
    </qresource>
 </RCC>

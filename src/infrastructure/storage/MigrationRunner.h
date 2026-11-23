@@ -15,6 +15,7 @@ public:
    // Explicit caller consent is enforced by the separate CLI; never called by GUI.
    void applyInitial();
    void applyToVersion(int version);
+   void applyContexts(const std::string &expectedDataset, const QString &expectedFingerprint);
    std::string verify(int requiredVersion = 0); // Read-only; returns the singleton dataset UUID.
    static QByteArray migrationSql(int version = 1);
    static QStringList migrationStatements(int version);
@@ -26,6 +27,8 @@ private:
    QString fingerprint(int version = 1);
    void requireShape(int version);
    QByteArray legacyDataDigest();
+   QByteArray schema2DataDigest();
+   void requireSchema3Modes();
    QSqlDatabase database;
    int currentVersion = 0;
    std::function<void(int)> afterStep;
