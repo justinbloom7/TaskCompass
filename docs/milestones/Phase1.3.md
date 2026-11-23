@@ -1038,3 +1038,145 @@ execution, fixture provisioning, grants, restore and subsequent stages
 remain separate checkpoints. The MariaDB compatibility findings must be
 recorded from separately approved isolated runs before relying on 003
 for a deployment.
+
+### Final Stage A refinement — rank length boundaries
+
+In these vectors `0^n` means exactly n ASCII zero bytes. The caret, exponent
+and concatenation notation are outside the encoding. Validate the original
+byte count and alphabet before accepting a persisted or external token.
+Only the arithmetic encoder strips trailing zero bits.
+
+| Vector | Bytes | Expected |
+| --- | ---: | --- |
+| `0^126 + 1` | 127 | Accept. Value 2^-127. Canonical round trip returns the original bytes. |
+| `0^127 + 1` | 128 | Accept. Value 2^-128. Canonical round trip returns the original bytes. |
+| `0^128 + 1` | 129 | Reject on length. It represents an exact dyadic but exceeds the Phase 1.3 ceiling. |
+| `0^126 + 10` | 128 | Reject as noncanonical trailing zero. It represents the same value as the 127-byte token. |
+| `0^127 + 10` | 129 | Reject the input. Arithmetic results of this representation reduce to the 128-byte token before their limit is checked. |
+| `0^126 + 11` | 128 | Accept. This extension of the 127-byte token sorts after it. |
+| `0^127 + 0x80` | 128 | Reject a byte outside the encoding alphabet. |
+
+The three accepted values above sort in the order `0^127 + 1`,
+`0^126 + 1`, `0^126 + 11`. The midpoint from head sentinel 0 to the
+127-byte token produces the valid 128-byte token. The midpoint from 0 to
+the 128-byte token needs 129 bytes and enters bounded normalization. The
+midpoint between `0^127 + 1` and `0^126 + 11` has raw numerator 4 at
+precision 129 and reduces to the valid 127-byte token. This checks that the
+arithmetic length gate runs **after** reduction. With one existing row and
+no exterior rows, head normalization assigns `01` to the incoming row and
+`1` to the existing row. The C++ and QMYSQL parity fixtures must use the
+full bytes, including the leading zeros. SQL must reject oversized values
+under the required strict session mode and reject wrong alphabets or
+trailing zeros via the rank CHECK.
+
+### WorkEntry correction through undo and redo
+
+Consider a task with session W1 (note “draft”), recordedAt 1000 and
+localRevision 1 on the captured date. Correct its note to “review” using
+command C at UTC 1100. The annotations below are projection values
+`(voidedAt, voidedByCommandId, localRevision)`. Each command is committed
+as one transaction with the Task root revision advance, CommandRecord,
+WorkEntry patches and LocalChange.
+
+| Committed operation | W1 original session | W2 replacement session | Immutable correction rows appended |
+| --- | --- | --- | --- |
+| Correct C at 1100 | `(1100,C,2)` | Insert with recordedAt 1100 and `(NULL,NULL,1)` | C1 targets W1. C's receipt records W2 as its replacement. |
+| Undo U at 1200 | `(NULL,NULL,3)` | `(1200,U,2)` | U1 targets W1 (reactivation), U2 targets W2 (void). U compensates C. |
+| Redo R at 1300 | `(1300,R,4)` | `(NULL,NULL,3)` | R1 targets W1 (void), R2 targets W2 (reactivation). R reapplies C. |
+
+C1, U1/U2 and R1/R2 are separate `kind='correction'` WorkEntry rows,
+each with its own ID, recordedAt, the original work date/zone, its
+own commandId and a same-task `correctsEntryId` referring to a session.
+The receipt names the effect of each correction row. These rows keep
+`voidedAt` and `voidedByCommandId` NULL permanently and are excluded from
+Worked Today derivation. Undo and redo change the session projections and
+append audit. They leave the original session and correction payloads,
+recordedAt and commandId intact. The adapter rejects a correction of a
+correction row. The same inverse pattern without W2 applies to a void-only
+correction. Completion events remain under lifecycle commands.
+
+For `workTimes`, set or clear the two void fields together in one UPDATE.
+For a void, use the command's recorded UTC millis floored at the affected
+entry's recordedAt, so a backward wall clock cannot violate the CHECK.
+Preserve raw command timing in the audit envelope. Every live or correction
+row has a NULL pair. Keep the original capture date and zone even when
+compensating on a later calendar day. The command FK refers to the new audit
+root when setting a void. Verify the expected pair, revisions and marker
+uniqueness before any projection changes. If reactivation would conflict
+with a newer live quick marker, reject the whole inverse transaction under
+the receipt guard. Native tests must reject half-null pairs, void dates
+earlier than recordedAt and attempts to void a correction row even with an
+otherwise valid timestamp and command FK. Verify the full sequence above
+including all five immutable correction rows, revision increments, surviving
+work and restart persistence.
+
+### MariaDB compatibility details and fallback gate
+
+Run the exact candidate and the following test cases independently on MariaDB
+10.5.29 and 13.0.2, through the native QMYSQL connection used by the adapter.
+Future execution requires individually approved fixtures, each with a
+synthetic schema-2 baseline, captured original projections, canonical UUIDs
+and fresh test data. Keep CHECK/FK enforcement on. Use a new fixture for an
+alternate DDL candidate and preserve rejected attempts.
+
+| Version-sensitive area | Exact isolated test and expected result |
+| --- | --- |
+| CHECK replacement, DDL 05/06 | On a populated schema-2 fixture run the exact ALTERs with `DROP CONSTRAINT name` and named table-level `ADD CONSTRAINT ... CHECK` in the same ALTER. Compare original command/outbox projections byte for byte. Inspect SHOW CREATE TABLE for absence of replaced V2 names, presence of all V3 names, and retained `commandLifecycleTargetV2`. With all other columns and FKs valid, insert a V1 task root, V2 organizational root and V3 Context root (all succeed). Attempt zero/two root IDs, V2 Context root, V2 `day-close`, V3 Context `complete`, payloadVersion 4 and invalid JSON (each fails). For LocalChange use a known existing operationId from a matching test command with no outbox row yet, so the unique/FK constraints cannot explain a failed CHECK. |
+| Indexed generated columns, DDL 02/07 | Inspect COLUMN_TYPE, EXTRA, GENERATION_EXPRESSION and index parts. In approved strict sessions with `PAD_CHAR_TO_FULL_LENGTH` off and on, test the same canonical full UUID and conditions used by the `CASE ... RTRIM(taskId) ... END` expressions. The generated value is byte-identical in both modes for a live link/quick marker and NULL for its tombstone/void. With valid other fields, issue a second active link for the same task in a different Context and a second live quick marker for the same task/date. Each fails on its named unique key. Tombstone/void the first, retry the second (succeeds), then attempt reactivation of the first (fails). Repeat a void/replacement and roll back, verifying both rows against pre-state. Two independent history rows with NULL generated key and same unique prefix coexist. A quick marker on another date or task succeeds. |
+| Composite FKs, DDL 02/05/06/07/08 | Verify ordered child and parent key parts in KEY_COLUMN_USAGE, explicit parent unique keys and child BTREE left prefixes in STATISTICS, matching ASCII collation/length and InnoDB engine. Verify constraint names remain unique across the schema for 10.5. Using synthetic tasks T1/T2 in dataset D1 and independently seeded dataset D2 in a dedicated constraint-only fixture, attempt (D1,T1, Context from D2), a WorkEntry from D1 referencing a D2 command, a correction for T1 targeting an existing T2 entry, and a disposition referencing a D2 task with D1. Each fails on the intended FK. Repeat with correctly scoped identities (succeeds). The synthetic D2 case tests raw constraints in isolation from the single-dataset application verifier. Verify nullable optional references succeed when their CHECK allows NULL. Verify restrictive delete using an otherwise removable synthetic parent with a referencing child, under separate explicit destructive-test authorization only. |
+| Driver and catalog behavior | Bind the exact rank boundary bytes and date values from this specification using prepared parameters. Inspect lengths, HEX and order on successful reads. Reject 129-byte tokens under strict mode. Compare every original projection and the complete structural manifest. Check narrow SELECT-only visibility separately. Record each native diagnostic, vendor code/SQLSTATE when rejected and observed row state. |
+
+Expected failures must identify the named constraint or demonstrate by
+controlled single-field substitution that the intended constraint rejects the
+row. Roll back probe transactions. For migration tests, preserve the journal
+and the actual schema separately because DDL can commit independently.
+Reference MariaDB's documentation for
+[CHECK syntax](https://mariadb.com/docs/server/reference/sql-statements/data-definition/alter/alter-table),
+[indexed generated columns and mode consistency](https://mariadb.com/docs/server/reference/sql-statements/data-definition/create/generated-columns)
+and [foreign-key restrictions](https://mariadb.com/docs/server/ha-and-performance/optimization-and-tuning/optimization-and-indexes/foreign-keys).
+The proposal uses named table-level FK clauses and ordinary indexed columns
+for the FK paths. Generated columns participate in uniqueness only.
+
+There is no evidence yet that either version requires a fallback. If named
+CHECK replacement fails, first distinguish a syntax rejection from a
+baseline name or grant mismatch. For a confirmed combined-ALTER limitation,
+a candidate for review may put ADD COLUMN and its indexes/FK in a preceding
+ALTER and keep each table's CHECK drop and add together in a dedicated
+ALTER, with a revised step journal and no intermediate schema accepted by
+runtime. If neither form preserves enforced CHECK replacement, stop for
+migration redesign. If persistent generated-key syntax or index
+compatibility fails, first review a portable spelling/type with the same
+semantics. A materialized nullable key is a redesign candidate only if a
+reviewed null-safe CHECK enforces equality to the same CASE result
+(`keyColumn <=> CASE ... END`), the same unique index remains, and every
+write and compensation updates the projection atomically. If a composite
+FK fails, inspect column types, collations, constraint names and key
+ordering, then revise the candidate DDL to match and retest. Do not remove
+the FK or substitute a single-column key. Every fallback requires review
+and a new candidate checksum and target; none runs automatically or bypasses
+constraints.
+
+### Stage B approval boundary
+
+Stage B is pending. Authorizing Stage B grants **source, documentation and
+database-free validation only**. It grants no migration execution,
+schema/database provisioning, account or privilege changes, database-backed
+tests, fixture restores or writes to preserved databases. Existing and
+restored databases and their accounts, backups and evidence are excluded
+from the compatibility fixtures. Each future database operation needs
+its own explicit approval naming host/port, schema, account, exact SQL or
+command, expected state changes, verification and recovery. Any approved
+isolated test runner must fail closed before connection or writes if its
+explicit authorization and target configuration are absent or mismatched.
+Ordinary Stage B CTest must exclude database integration tests regardless
+of inherited settings. Stage B cannot start solely from approval of this
+refinement.
+
+Refinement verification used an offline `python3 -` check with Fraction
+arithmetic for seven boundary vectors and three exact midpoint cases, plus
+a direct evaluation of the workTimes predicates for the three projection
+states and four invalid states. UTF-8/LF, whitespace, fence and relative
+Markdown link checks and `git diff --check` passed. No SQL or build/test
+targets were executed. No additional architectural blocker was found in
+the documentation review. Native DDL compatibility is still an isolated
+execution gate, and Stage B source work still requires owner approval.
